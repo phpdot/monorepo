@@ -1,0 +1,67 @@
+{
+    "name": "phpdot/bun",
+    "description": "A PHP wrapper around the Bun binary (oven-sh/bun, MIT licensed): manages a hidden Bun runtime and exposes its CLI as console commands.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["bun", "bundler", "javascript", "npm", "php", "phpdot"],
+    "require": {
+        "php": ">=8.5",
+        "ext-curl": "*",
+        "nyholm/psr7": "^1.8",
+        "phpdot/console": "^0.1",
+        "psr/container": "^2.0",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.0",
+        "psr/http-message": "^1.1 || ^2.0",
+        "symfony/console": "^8.0",
+        "symfony/http-client": "^8.0",
+        "symfony/process": "^8.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "phpdot/container": "Autowires the #[Singleton]/#[Binds] services and the #[Config('bun')] DTO (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
+        "phpdot/package": "Auto-discovers bun's services and config by scanning the #[Singleton]/#[Binds]/#[Config] attributes at composer install — zero manual wiring.",
+        "phpdot/config": "Populates BunConfig from config/bun.php (pinnedVersion, registryUrl, runtimeDir, workingDir) when used with phpdot/package.",
+        "ext-pcntl": "Forwards SIGINT/SIGTERM to long-lived child processes (bun run dev server, build --watch) for clean shutdown."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Bun\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Bun\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/bun",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

@@ -1,0 +1,58 @@
+{
+    "name": "phpdot/mail",
+    "description": "Coroutine-safe transactional email for the PHPdot ecosystem: a fluent, immutable message builder over any symfony/mailer transport.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["mail", "mailer", "email", "smtp", "swoole", "phpdot"],
+    "require": {
+        "php": ">=8.5",
+        "symfony/mailer": "^8.0",
+        "symfony/mime": "^8.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "phpdot/container": "Auto-wires the mailer via #[Singleton], #[Binds] and #[Config] attributes (inert at runtime; standalone consumers don't need it installed).",
+        "phpdot/config": "Populates MailConfig from config/mail.php when used with phpdot/package.",
+        "phpdot/package": "Auto-discovers the mailer's services via attribute scanning."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Mail\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Mail\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/mail",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

@@ -1,0 +1,24 @@
+/vendor/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+packages/*/vendor/
+packages/*/composer.lock
+
+# tool caches — regenerated locally, never committed (per-package + root)
+.phpunit.cache/
+.phpunit.result.cache
+.php-cs-fixer.cache
+
+# framework runtime scratch (downloaded toolchains, locks) — never committed
+.phpdot/
+
+# OS / editor artifacts — never commit (the split ships packages/ to public mirrors)
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+Desktop.ini
+*.swp

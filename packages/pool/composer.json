@@ -1,0 +1,54 @@
+{
+    "name": "phpdot/pool",
+    "description": "Generic coroutine-safe connection pool for Swoole. Holds any object. Channel-based with idle cleanup, optional heartbeat, and leak prevention.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["pool", "connection-pool", "swoole", "coroutine", "channel"],
+    "require": {
+        "php": ">=8.5",
+        "ext-swoole": ">=6.2",
+        "phpdot/contracts": "^0.1"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0",
+        "swoole/ide-helper": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Pool\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Pool\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/pool",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

@@ -1,0 +1,11 @@
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+
+parameters:
+    level: max
+    paths:
+        - src
+    scanFiles:
+        - vendor/swoole/ide-helper/src/swoole/Swoole/Coroutine.php
+        - vendor/swoole/ide-helper/src/swoole/Swoole/Coroutine/Channel.php
+        - vendor/swoole/ide-helper/src/swoole/Swoole/Timer.php

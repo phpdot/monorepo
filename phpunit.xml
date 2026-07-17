@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         failOnRisky="true"
+         failOnWarning="true"
+         executionOrder="random"
+         cacheDirectory=".phpunit.cache">
+    <testsuites>
+        <testsuite name="packages">
+            <directory>packages/*/tests</directory>
+            <!-- vendored PSR-7 conformance base classes (support code, not a test suite) -->
+            <exclude>packages/http/tests/Psr7</exclude>
+        </testsuite>
+    </testsuites>
+    <php>
+        <!-- factories the vendored PSR-7 conformance suite builds its inputs from -->
+        <const name="URI_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
+        <const name="STREAM_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
+        <const name="UPLOADED_FILE_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
+    </php>
+    <source>
+        <include>
+            <directory>packages/*/src</directory>
+        </include>
+    </source>
+</phpunit>

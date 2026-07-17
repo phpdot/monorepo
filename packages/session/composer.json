@@ -1,0 +1,59 @@
+{
+    "name": "phpdot/session",
+    "description": "Secure session management with pluggable handlers, flash data, CSRF tokens, and PSR-15 middleware.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["session", "flash", "csrf", "redis", "middleware", "psr-15"],
+    "require": {
+        "php": ">=8.5",
+        "phpdot/contracts": "^0.1",
+        "psr/http-message": "^2.0",
+        "psr/http-server-handler": "^1.0",
+        "psr/http-server-middleware": "^1.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpdot/http": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "ext-redis": "To use the Redis session handler (RedisHandler)."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Session\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Session\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/session",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

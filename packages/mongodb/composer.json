@@ -1,0 +1,54 @@
+{
+    "name": "phpdot/mongodb",
+    "description": "Resilient MongoDB client with fluent CRUD builders, Document object, exception translation, and query logging.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["mongodb", "database", "nosql", "fluent", "document", "crud"],
+    "require": {
+        "php": ">=8.5",
+        "ext-mongodb": "^2.1",
+        "mongodb/mongodb": "^2.1",
+        "phpdot/contracts": "^0.1"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\MongoDB\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\MongoDB\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/mongodb",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

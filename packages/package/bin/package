@@ -1,0 +1,41 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use Composer\InstalledVersions;
+use PHPdot\Package\Cli\Application;
+
+/**
+ * phpdot/package CLI entry point.
+ *
+ * Resolves the project's autoloader (Composer sets $GLOBALS['_composer_autoload_path']
+ * via its bin-proxy when the binary is invoked from a project's vendor/bin).
+ * Falls back to common relative locations when the binary is run from a checkout.
+ */
+
+if (isset($GLOBALS['_composer_autoload_path']) && is_string($GLOBALS['_composer_autoload_path'])) {
+    require $GLOBALS['_composer_autoload_path'];
+} else {
+    $autoloadCandidates = [
+        __DIR__ . '/../../../autoload.php',          // installed in a project's vendor/
+        __DIR__ . '/../vendor/autoload.php',         // running from the package checkout
+    ];
+
+    foreach ($autoloadCandidates as $candidate) {
+        if (is_file($candidate)) {
+            require $candidate;
+            break;
+        }
+    }
+}
+
+if (!class_exists(InstalledVersions::class)) {
+    fwrite(STDERR, "phpdot/package: composer autoloader not found.\n");
+    exit(1);
+}
+
+$projectRoot = InstalledVersions::getRootPackage()['install_path'];
+$resolved = realpath($projectRoot);
+
+(new Application($resolved !== false ? $resolved : $projectRoot))->run();

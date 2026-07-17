@@ -1,0 +1,265 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+# Serialize runs per ref. Splits are cumulative, so a superseded pending run
+# on main is safely covered by the newer one.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+# Mirror pushes use SPLIT_TOKEN; the workflow token needs read only.
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # The split copies packages/ VERBATIM into the public mirrors, so anything
+      # tracked ships. Reject the three ways junk has crept in — OS/editor
+      # droppings, tool/runtime caches, and oversized binaries — before any
+      # other work. Fail fast and loud.
+      - name: Repo hygiene (no artifacts, caches, or binaries)
+        run: |
+          set -euo pipefail
+          JUNK=$(git ls-files | grep -iE \
+            '(^|/)(\.DS_Store|Thumbs\.db|Desktop\.ini|\._[^/]+|\.Spotlight-V100|\.Trashes|.*\.swp|\.phpunit(\.result)?\.cache|\.php-cs-fixer\.cache)$|(^|/)\.phpdot/' \
+            || true)
+          # oversized blobs: no source/test/doc is > 1 MiB (largest legit is composer.lock ~190 KB).
+          # ls-tree --long prints each blob's size directly — no fragile per-file loop under set -e.
+          BIG=$(git ls-tree -r --long HEAD | awk -F'\t' '{split($1,a," "); if (a[4]+0 > 1048576) print $2" ("a[4]" bytes)"}')
+          if [ -n "${JUNK}${BIG}" ]; then
+            echo "::error::tracked artifacts/caches/binaries must never be committed (splits ship packages/ verbatim):"
+            [ -n "$JUNK" ] && echo "$JUNK" | sed 's/^/  artifact: /'
+            [ -n "$BIG" ]  && echo "$BIG"  | sed 's/^/  oversized: /'
+            exit 1
+          fi
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: swoole, pdo_sqlite, redis, mongodb, sockets, intl, gd, zip
+          coverage: none
+
+      - name: Validate manifests
+        run: |
+          set -euo pipefail
+          composer validate --strict
+          for d in packages/*/; do
+            [ -f "${d}composer.json" ] || { echo "::error::${d} has no composer.json"; exit 1; }
+            (cd "$d" && composer validate --strict --no-check-lock)
+            php -r '
+              $root = json_decode(file_get_contents("composer.json"), true, 8, JSON_THROW_ON_ERROR);
+              $name = json_decode(file_get_contents($argv[1]), true, 8, JSON_THROW_ON_ERROR)["name"];
+              if (!isset($root["replace"][$name])) {
+                fwrite(STDERR, "$name missing from root replace map\n");
+                exit(1);
+              }
+            ' "${d}composer.json"
+
+            # the php platform requirement is stated per package (mirrors are
+            # standalone) but must never drift from the root
+            php -r '
+              $root = json_decode(file_get_contents("composer.json"), true, 8, JSON_THROW_ON_ERROR)["require"]["php"];
+              $pkg = json_decode(file_get_contents($argv[1]), true, 8, JSON_THROW_ON_ERROR)["require"]["php"] ?? "(missing)";
+              if ($pkg !== $root) {
+                fwrite(STDERR, "{$argv[1]}: requires php \"$pkg\" but the root requires \"$root\"\n");
+                exit(1);
+              }
+            ' "${d}composer.json"
+
+            # hybrid model: every split repo must be standalone-checkable and
+            # must not drift from the tree-wide standards
+            [ -f "${d}phpstan.neon" ] || { echo "::error::${d} has no phpstan.neon"; exit 1; }
+            grep -qE '^\s*level:\s*max\s*$' "${d}phpstan.neon" \
+              || { echo "::error::${d}phpstan.neon is not at level max"; exit 1; }
+            [ -f "${d}.php-cs-fixer.php" ] || { echo "::error::${d} has no .php-cs-fixer.php"; exit 1; }
+            if [ -d "${d}tests" ]; then
+              [ -f "${d}phpunit.xml" ] || { echo "::error::${d} has tests but no phpunit.xml"; exit 1; }
+            fi
+          done
+
+      - name: Cache vendor
+        uses: actions/cache@v6
+        with:
+          path: vendor
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress
+
+      - name: Tests
+        run: composer test
+
+      - name: Static analysis
+        run: composer analyse
+
+      - name: Code style
+        run: composer cs-check
+
+  # The split matrix is derived from the tree, so a new package can never be
+  # silently left out of mirroring. Bootstrap for a new package: create the
+  # empty repo phpdot/<name>, grant SPLIT_TOKEN access, merge the package —
+  # CI populates the mirror on the next push to main.
+  discover:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      packages: ${{ steps.list.outputs.packages }}
+    steps:
+      - uses: actions/checkout@v7
+      - id: list
+        run: echo "packages=$(ls packages | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
+
+  split:
+    needs: [gates, discover]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.discover.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history is load-bearing: a shallow clone changes every split
+          # sha and would try to rewrite the mirrors.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Split package history and push
+        env:
+          TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          SHA=$(git subtree split --prefix="packages/$PACKAGE" HEAD)
+          # No --force: split output is append-only, so every push here is a
+          # fast-forward. A rejected push means mirror history diverged from
+          # the monorepo — a human must investigate; nothing is overwritten.
+          git push "https://x-access-token:${TOKEN}@github.com/phpdot/${PACKAGE}.git" "$SHA:refs/heads/main"
+          echo "$PACKAGE: mirror main -> $SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  release:
+    needs: gates
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history required: split shas and the previous-tag lookup
+          # both depend on it.
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Tag package mirrors per release policy
+        env:
+          TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          echo "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            || { echo "::error::'$TAG' is not a release tag (vX.Y.Z) — refusing to release"; exit 1; }
+
+          TAGGED=$(git rev-parse HEAD)
+          git merge-base --is-ancestor "$TAGGED" origin/main \
+            || { echo "::error::$TAG does not point into main history — releases are cut from main only"; exit 1; }
+
+          # RELEASES.md: cross-package constraints are ^X.0 per major — except
+          # during major zero, where caret narrows to the minor, so they must
+          # read ^0.Y and be bumped together with each minor.
+          X=${TAG%%.*}; X=${X#v}
+          Y=$(echo "$TAG" | cut -d. -f2)
+          if [ "$X" = 0 ]; then EXPECT="^0.$Y"; else EXPECT="^$X.0"; fi
+          for f in packages/*/composer.json; do
+            php -r '
+              [, $f, $expect] = $argv;
+              foreach (json_decode(file_get_contents($f), true, 8, JSON_THROW_ON_ERROR)["require"] ?? [] as $dep => $c) {
+                if (str_starts_with($dep, "phpdot/") && $c !== $expect) {
+                  fwrite(STDERR, "$f: requires $dep \"$c\" but this release line needs \"$expect\"\n");
+                  exit(1);
+                }
+              }
+            ' "$f" "$EXPECT"
+          done
+
+          PREV=$(git describe --tags --abbrev=0 "$TAGGED^" 2>/dev/null || true)
+          IS_MINOR=false
+          case "$TAG" in *.0) IS_MINOR=true;; esac
+
+          # ---- phase 1: plan — strictly read-only ------------------------
+          # Every package is resolved (skip / idempotent / pending) and every
+          # mirror is checked for a tag collision BEFORE anything is pushed.
+          # A policy failure here aborts with zero mirror writes.
+          PENDING_PKG=()
+          PENDING_SHA=()
+          SUMMARY=()
+
+          for DIR in packages/*/; do
+            PACKAGE=$(basename "$DIR")
+            REMOTE="https://x-access-token:${TOKEN}@github.com/phpdot/${PACKAGE}.git"
+
+            if [ "$IS_MINOR" = false ] && [ -n "$PREV" ]; then
+              if git diff --quiet "$PREV" "$TAGGED" -- "$DIR"; then
+                echo "$PACKAGE: unchanged since $PREV — not tagged"
+                SUMMARY+=("| $PACKAGE | unchanged since $PREV |")
+                continue
+              fi
+            fi
+
+            SHA=$(git subtree split --prefix="packages/$PACKAGE" "$TAGGED")
+
+            # Published tags are immutable. The same sha is an idempotent
+            # re-run; a different sha is refused. Mirror tags are lightweight,
+            # so ls-remote yields the commit sha itself.
+            EXISTING=$(git ls-remote "$REMOTE" "refs/tags/$TAG" | cut -f1)
+            if [ -n "$EXISTING" ]; then
+              if [ "$EXISTING" = "$SHA" ]; then
+                echo "$PACKAGE: $TAG already on mirror — nothing to do"
+                SUMMARY+=("| $PACKAGE | already tagged (idempotent) |")
+                continue
+              fi
+              {
+                echo "| package | $TAG |"; echo "|---|---|"
+                echo "| **aborted** | $PACKAGE: $TAG already on mirror at $EXISTING, split is $SHA — nothing was pushed for any package |"
+              } >> "$GITHUB_STEP_SUMMARY"
+              echo "::error::$PACKAGE: $TAG exists on mirror at $EXISTING, split is $SHA — refusing to move a published tag; nothing was pushed for any package"
+              exit 1
+            fi
+
+            echo "$PACKAGE: planned $TAG at $SHA"
+            PENDING_PKG+=("$PACKAGE")
+            PENDING_SHA+=("$SHA")
+          done
+
+          # ---- phase 2: push — only reached when the whole plan is clean --
+          # Tag ref only: mirror main belongs to the split job, and the tag
+          # alone carries the full split history. Only an infrastructure
+          # failure mid-loop can leave a partial release; an idempotent
+          # re-run of this job converges it.
+          if [ "${#PENDING_PKG[@]}" -gt 0 ]; then
+            for i in "${!PENDING_PKG[@]}"; do
+              PACKAGE=${PENDING_PKG[$i]}
+              SHA=${PENDING_SHA[$i]}
+              git push "https://x-access-token:${TOKEN}@github.com/phpdot/${PACKAGE}.git" "$SHA:refs/tags/$TAG"
+              echo "$PACKAGE: tagged $TAG"
+              SUMMARY+=("| $PACKAGE | tagged at $SHA |")
+            done
+          fi
+
+          {
+            echo "| package | $TAG |"; echo "|---|---|"
+            printf '%s\n' "${SUMMARY[@]}"
+          } >> "$GITHUB_STEP_SUMMARY"

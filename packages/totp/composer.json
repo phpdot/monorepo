@@ -1,0 +1,56 @@
+{
+    "name": "phpdot/totp",
+    "description": "Coroutine-safe, zero-dependency HOTP/TOTP (RFC 4226 / RFC 6238) with provisioning URIs for the PHPdot ecosystem.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": ["totp", "hotp", "otp", "2fa", "mfa", "rfc6238", "rfc4226", "phpdot"],
+    "require": {
+        "php": ">=8.5",
+        "psr/clock": "^1.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.1",
+        "phpdot/qrcode": "^0.1",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "phpdot/qrcode": "Render a provisioning URI as a scannable QR code via QrCodeBridge (^0.1)."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Totp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Totp\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/totp",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}
