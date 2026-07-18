@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PHPdot\MongoDB\Tests\Integration;
 
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Config\MongoConfig;
+use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Exception\AuthenticationException;
 use PHPdot\MongoDB\Exception\ConnectionException;
 use PHPUnit\Framework\Attributes\Test;
@@ -23,7 +23,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_connects_to_mongodb(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -34,7 +34,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_reports_not_connected_before_connect(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
 
         self::assertFalse($connection->isConnected());
@@ -43,7 +43,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_pings_the_server(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -54,7 +54,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_returns_false_ping_when_not_connected(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
 
         self::assertFalse($connection->ping());
@@ -63,7 +63,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_closes_connection(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -75,7 +75,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_reconnects(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
         $connection->reconnect();
@@ -88,7 +88,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_throws_when_ensure_connected_but_not(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
 
         $this->expectException(ConnectionException::class);
@@ -98,7 +98,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_returns_client(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -110,7 +110,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_returns_database(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -122,7 +122,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_throws_when_no_database_configured(): void
     {
-        $config = new MongoConfig(database: '');
+        $config = self::mongoTestConfig(database: '');
         $connection = new MongoConnection($config);
         $connection->connect();
 
@@ -134,7 +134,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_throws_when_getting_client_without_connection(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
 
         $this->expectException(ConnectionException::class);
@@ -144,7 +144,7 @@ final class MongoConnectionTest extends TestCase
     #[Test]
     public function it_returns_config(): void
     {
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $connection = new MongoConnection($config);
 
         self::assertSame($config, $connection->getConfig());
@@ -169,6 +169,8 @@ final class MongoConnectionTest extends TestCase
     public function it_fails_with_bad_auth(): void
     {
         $config = new MongoConfig(
+            hosts: getenv('MONGO_HOST') ?: 'localhost',
+            port: (int) (getenv('MONGO_PORT') ?: 27017),
             database: 'phpdot_test',
             username: 'baduser',
             password: 'badpass',

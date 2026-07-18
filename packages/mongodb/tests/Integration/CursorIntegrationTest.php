@@ -6,7 +6,6 @@ namespace PHPdot\MongoDB\Tests\Integration;
 
 use PHPdot\MongoDB\Collection\Collection;
 use PHPdot\MongoDB\MongoConnection;
-use PHPdot\MongoDB\Config\MongoConfig;
 use PHPdot\MongoDB\Database\Database;
 use PHPdot\MongoDB\Document\Cursor;
 use PHPdot\MongoDB\Document\Document;
@@ -24,7 +23,7 @@ final class CursorIntegrationTest extends TestCase
     {
         $this->skipUnlessMongoAvailable();
 
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $this->connection = new MongoConnection($config);
         $this->connection->connect();
         $database = new Database($this->connection);
