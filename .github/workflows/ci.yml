@@ -74,15 +74,19 @@ jobs:
 
       - name: Enable Swoole
         run: |
-          set -euo pipefail
+          set -euxo pipefail
           sudo cp ~/swoole/swoole.so "$(php -r 'echo ini_get("extension_dir");')/swoole.so"
-          INI_DIR=$(php -i | sed -n 's/^Scan this dir for additional .ini files => //p')
-          php -m | grep -qx swoole || echo 'extension=swoole' | sudo tee "${INI_DIR}/99-swoole.ini" > /dev/null
-          if php --ri swoole | grep -q coroutine_pgsql; then
+          if ! php -r 'exit(extension_loaded("swoole") ? 0 : 1);'; then
+            INI_DIR=$(php -i > /tmp/php-info.txt; sed -n 's/^Scan this dir for additional .ini files => //p' /tmp/php-info.txt)
+            echo 'extension=swoole' | sudo tee "${INI_DIR}/99-swoole.ini" > /dev/null
+          fi
+          php --ri swoole > /tmp/swoole-info.txt
+          if grep -q coroutine_pgsql /tmp/swoole-info.txt; then
             echo '::error::swoole was built with the pgsql hook — pdo_pgsql would deadlock'
             exit 1
           fi
-          php --ri swoole | head -2
+          grep -E 'Version|curl-native|sockets' /tmp/swoole-info.txt
+          php -r 'exit(extension_loaded("swoole") ? 0 : 1);'
 
       - name: Validate manifests
         run: |
