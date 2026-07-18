@@ -5,6 +5,7 @@ on:
     branches: [main]
     tags: ['v*']
   pull_request:
+  workflow_dispatch:
 
 # Serialize runs per ref. Splits are cumulative, so a superseded pending run
 # on main is safely covered by the newer one.
@@ -20,7 +21,7 @@ permissions:
 jobs:
   gates:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
 
@@ -44,11 +45,46 @@ jobs:
             exit 1
           fi
 
+      # swoole is built below — prebuilt bundles ship the pgsql hook, which breaks pdo_pgsql
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: swoole, pdo_sqlite, redis, mongodb, sockets, intl, gd, zip
+          extensions: apcu, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, mongodb, sockets, intl, gd, zip
+          ini-values: apc.enable_cli=1
           coverage: none
+
+      - name: Cache Swoole build
+        id: swoole-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/swoole/swoole.so
+          key: swoole-6.2.2-php8.5-nopgsqlhook-${{ runner.os }}
+
+      - name: Build Swoole without the pgsql hook
+        if: steps.swoole-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libssl-dev libcurl4-openssl-dev
+          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.2
+          mkdir -p ~/swoole
+          cp "$(php -r 'echo ini_get("extension_dir");')/swoole.so" ~/swoole/swoole.so
+
+      - name: Enable Swoole
+        run: |
+          set -euxo pipefail
+          sudo cp ~/swoole/swoole.so "$(php -r 'echo ini_get("extension_dir");')/swoole.so"
+          if ! php -r 'exit(extension_loaded("swoole") ? 0 : 1);'; then
+            INI_DIR=$(php -i > /tmp/php-info.txt; sed -n 's/^Scan this dir for additional .ini files => //p' /tmp/php-info.txt)
+            echo 'extension=swoole' | sudo tee "${INI_DIR}/99-swoole.ini" > /dev/null
+          fi
+          php --ri swoole > /tmp/swoole-info.txt
+          if grep -q coroutine_pgsql /tmp/swoole-info.txt; then
+            echo '::error::swoole was built with the pgsql hook — pdo_pgsql would deadlock'
+            exit 1
+          fi
+          grep -E 'Version|curl-native|sockets' /tmp/swoole-info.txt
+          php -r 'exit(extension_loaded("swoole") ? 0 : 1);'
 
       - name: Validate manifests
         run: |
@@ -96,6 +132,19 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --no-progress
+
+      - name: Start test services
+        run: |
+          set -euo pipefail
+          docker compose up -d --quiet-pull
+          UNHEALTHY=pending
+          for i in $(seq 1 90); do
+            UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy | grep -v minio-init || true)
+            [ -z "$UNHEALTHY" ] && break
+            sleep 2
+          done
+          docker compose ps -a
+          [ -z "$UNHEALTHY" ] || { echo "::error::services failed to become healthy: ${UNHEALTHY}"; exit 1; }
 
       - name: Tests
         run: composer test

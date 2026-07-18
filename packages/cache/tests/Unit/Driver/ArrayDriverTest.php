@@ -77,7 +77,10 @@ final class ArrayDriverTest extends TestCase
     {
         $this->driver->set('key', 'value', 1);
 
-        sleep(2);
+        $deadline = microtime(true) + 5.0;
+        while ($this->driver->get('key') !== null && microtime(true) < $deadline) {
+            usleep(100_000);
+        }
 
         self::assertNull($this->driver->get('key'));
     }
@@ -87,7 +90,10 @@ final class ArrayDriverTest extends TestCase
     {
         $this->driver->set('key', 'value', 1);
 
-        sleep(2);
+        $deadline = microtime(true) + 5.0;
+        while ($this->driver->has('key') && microtime(true) < $deadline) {
+            usleep(100_000);
+        }
 
         self::assertFalse($this->driver->has('key'));
     }

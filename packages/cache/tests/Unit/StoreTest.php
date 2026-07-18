@@ -50,7 +50,10 @@ final class StoreTest extends TestCase
 
         self::assertSame('value', $this->store->get('key'));
 
-        sleep(2);
+        $deadline = microtime(true) + 5.0;
+        while ($this->store->get('key') !== null && microtime(true) < $deadline) {
+            usleep(100_000);
+        }
 
         self::assertNull($this->store->get('key'));
     }

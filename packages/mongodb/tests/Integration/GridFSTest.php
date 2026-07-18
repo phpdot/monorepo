@@ -6,7 +6,6 @@ namespace PHPdot\MongoDB\Tests\Integration;
 
 use MongoDB\BSON\ObjectId;
 use PHPdot\MongoDB\MongoConnection;
-use PHPdot\MongoDB\Config\MongoConfig;
 use PHPdot\MongoDB\GridFS\Bucket;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -22,7 +21,7 @@ final class GridFSTest extends TestCase
     {
         $this->skipUnlessMongoAvailable();
 
-        $config = new MongoConfig(database: 'phpdot_test');
+        $config = self::mongoTestConfig();
         $this->connection = new MongoConnection($config);
         $this->connection->connect();
         $this->bucket = new Bucket($this->connection, 'test_fs');

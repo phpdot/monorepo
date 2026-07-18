@@ -107,7 +107,10 @@ final class FileDriverTest extends TestCase
 
         self::assertSame('value', $this->driver->get('key'));
 
-        sleep(2);
+        $deadline = microtime(true) + 5.0;
+        while ($this->driver->get('key') !== null && microtime(true) < $deadline) {
+            usleep(100_000);
+        }
 
         self::assertNull($this->driver->get('key'));
     }

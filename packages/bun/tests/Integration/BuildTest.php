@@ -109,7 +109,7 @@ final class BuildTest extends TestCase
 
     private function writeWatchRunner(): string
     {
-        $autoload = dirname(__DIR__, 2) . '/vendor/autoload.php';
+        $autoload = dirname((new \ReflectionClass(\Composer\Autoload\ClassLoader::class))->getFileName(), 2) . '/autoload.php';
         $runtimeDir = sys_get_temp_dir() . '/phpdot-bun-it-runtime';
         // Drive the real Bun service in a subprocess via the test factory, which constructs the graph
         // directly (no container) — same wiring as the rest of the suite. Nowdoc keeps the template

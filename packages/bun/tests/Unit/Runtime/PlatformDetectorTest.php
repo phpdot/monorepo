@@ -37,13 +37,11 @@ final class PlatformDetectorTest extends TestCase
 
     public function testLddMuslOutputYieldsMuslLibc(): void
     {
-        if (PHP_OS_FAMILY !== 'Linux' || file_exists('/etc/alpine-release')) {
-            self::markTestSkipped('libc-from-ldd branch only exercises on non-Alpine Linux');
-        }
-
         $runner = new FakeProcessRunner([new ProcessResult(1, '', 'musl libc (x86_64)')]);
-        $platform = (new PlatformDetector($runner))->detect();
+        $detector = new PlatformDetector($runner);
 
-        self::assertSame('musl', $platform->libc);
+        $libc = (new \ReflectionMethod($detector, 'detectLibc'))->invoke($detector);
+
+        self::assertSame('musl', $libc);
     }
 }
