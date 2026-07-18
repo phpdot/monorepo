@@ -22,7 +22,7 @@ final class RedisDriverTest extends TestCase
         $this->redis = new \Redis();
 
         try {
-            $this->redis->connect('127.0.0.1', 6379);
+            $this->redis->connect(getenv('REDIS_HOST') ?: '127.0.0.1', (int) (getenv('REDIS_PORT') ?: 6379));
             $this->redis->select(15);
             $this->redis->flushDb();
         } catch (\RedisException) {
@@ -82,7 +82,10 @@ final class RedisDriverTest extends TestCase
 
         self::assertSame('value', $this->driver->get('key'));
 
-        sleep(2);
+        $deadline = microtime(true) + 5.0;
+        while ($this->driver->get('key') !== null && microtime(true) < $deadline) {
+            usleep(100_000);
+        }
 
         self::assertNull($this->driver->get('key'));
     }

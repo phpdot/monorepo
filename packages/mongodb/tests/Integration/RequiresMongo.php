@@ -22,11 +22,25 @@ trait RequiresMongo
     protected function skipUnlessMongoAvailable(): void
     {
         try {
-            $probe = new MongoConnection(new MongoConfig(database: 'phpdot_test', timeoutMs: 500, maxRetries: 0));
+            $probe = new MongoConnection(self::mongoTestConfig(timeoutMs: 500, maxRetries: 0));
             $probe->connect();
             $probe->close();
         } catch (\Throwable $e) {
             $this->markTestSkipped('MongoDB is not available: ' . $e->getMessage());
         }
+    }
+
+    protected static function mongoTestConfig(
+        int $timeoutMs = 1000,
+        int $maxRetries = 3,
+        string $database = 'phpdot_test',
+    ): MongoConfig {
+        return new MongoConfig(
+            hosts: getenv('MONGO_HOST') ?: 'localhost',
+            port: (int) (getenv('MONGO_PORT') ?: 27017),
+            database: $database,
+            timeoutMs: $timeoutMs,
+            maxRetries: $maxRetries,
+        );
     }
 }

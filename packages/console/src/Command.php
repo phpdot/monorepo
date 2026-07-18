@@ -45,6 +45,10 @@ abstract class Command extends SymfonyCommand
      * are carried out of the scheduler and rethrown, so Symfony's error
      * rendering and exit-code semantics are identical in both modes.
      *
+     * Hooks everything except native curl: HTTP clients create their
+     * curl-multi handle before the scheduler starts, and the native-curl
+     * hook throws on handles it did not create.
+     *
      * @param InputInterface $input
      * @param OutputInterface $output
      *
@@ -58,6 +62,8 @@ abstract class Command extends SymfonyCommand
 
         $exit = self::FAILURE;
         $thrown = null;
+
+        Coroutine::set(['hook_flags' => SWOOLE_HOOK_ALL & ~SWOOLE_HOOK_NATIVE_CURL]);
 
         Coroutine\run(function () use ($input, $output, &$exit, &$thrown): void {
             try {

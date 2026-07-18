@@ -15,7 +15,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function readReturnsEmptyWhenRedisFalse(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $redis->method('get')->willReturn(false);
 
         $handler = new RedisHandler($redis);
@@ -27,7 +27,10 @@ final class RedisHandlerTest extends TestCase
     public function readReturnsStoredString(): void
     {
         $redis = $this->createMock(\Redis::class);
-        $redis->method('get')->with('session:id1')->willReturn('{"key":"value"}');
+        $redis->expects(self::once())
+            ->method('get')
+            ->with('session:id1')
+            ->willReturn('{"key":"value"}');
 
         $handler = new RedisHandler($redis);
 
@@ -74,7 +77,10 @@ final class RedisHandlerTest extends TestCase
     public function existsReturnsTrueWhenKeyExists(): void
     {
         $redis = $this->createMock(\Redis::class);
-        $redis->method('exists')->with('session:id1')->willReturn(1);
+        $redis->expects(self::once())
+            ->method('exists')
+            ->with('session:id1')
+            ->willReturn(1);
 
         $handler = new RedisHandler($redis);
 
@@ -85,7 +91,10 @@ final class RedisHandlerTest extends TestCase
     public function existsReturnsFalseWhenKeyMissing(): void
     {
         $redis = $this->createMock(\Redis::class);
-        $redis->method('exists')->with('session:id1')->willReturn(0);
+        $redis->expects(self::once())
+            ->method('exists')
+            ->with('session:id1')
+            ->willReturn(0);
 
         $handler = new RedisHandler($redis);
 
@@ -95,7 +104,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function readWrapsRedisException(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $redis->method('get')->willThrowException(new \RedisException('Connection lost'));
 
         $handler = new RedisHandler($redis);
@@ -109,7 +118,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function writeWrapsRedisException(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $redis->method('setex')->willThrowException(new \RedisException('Connection lost'));
 
         $handler = new RedisHandler($redis);
@@ -123,7 +132,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function destroyWrapsRedisException(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $redis->method('del')->willThrowException(new \RedisException('Connection lost'));
 
         $handler = new RedisHandler($redis);
@@ -137,7 +146,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function existsWrapsRedisException(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $redis->method('exists')->willThrowException(new \RedisException('Connection lost'));
 
         $handler = new RedisHandler($redis);
@@ -150,7 +159,7 @@ final class RedisHandlerTest extends TestCase
     #[Test]
     public function gcReturnsZero(): void
     {
-        $redis = $this->createMock(\Redis::class);
+        $redis = $this->createStub(\Redis::class);
         $handler = new RedisHandler($redis);
 
         self::assertSame(0, $handler->gc(3600));
