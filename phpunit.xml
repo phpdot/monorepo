@@ -19,6 +19,21 @@
         <const name="URI_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
         <const name="STREAM_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
         <const name="UPLOADED_FILE_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
+
+        <!-- integration defaults target the docker-compose.yml stack; real
+             environment variables take precedence (force="false"), which is
+             how CI points the suites at its own service containers -->
+        <env name="MYSQL_PORT" value="3307"/>
+        <env name="REDIS_PORT" value="6380"/>
+        <env name="RABBITMQ_PORT" value="5673"/>
+        <env name="MONGO_PORT" value="27018"/>
+        <env name="BUN_LIVE" value="1"/>
+        <env name="AWS_ACCESS_KEY_ID" value="phpdot"/>
+        <env name="AWS_SECRET_ACCESS_KEY" value="phpdot-secret"/>
+        <env name="AWS_DEFAULT_REGION" value="us-east-1"/>
+        <env name="PHPDOT_S3_TEST_BUCKET" value="phpdot-test"/>
+        <env name="PHPDOT_S3_TEST_ENDPOINT" value="http://127.0.0.1:9002"/>
+        <env name="PHPDOT_S3_TEST_PATH_STYLE" value="1"/>
     </php>
     <source>
         <include>
