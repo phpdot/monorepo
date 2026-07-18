@@ -108,8 +108,9 @@ jobs:
 
   # The split matrix is derived from the tree, so a new package can never be
   # silently left out of mirroring. Bootstrap for a new package: create the
-  # empty repo phpdot/<name>, grant SPLIT_TOKEN access, merge the package —
-  # CI populates the mirror on the next push to main.
+  # empty repo phpdot/<name> (the phpdot-splitter App's org-wide install covers
+  # it automatically), add the sole-pusher ruleset, merge the package — CI
+  # populates the mirror on the next push to main.
   discover:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
