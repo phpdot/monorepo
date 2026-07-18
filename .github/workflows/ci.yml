@@ -12,7 +12,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
 
-# Mirror pushes use SPLIT_TOKEN; the workflow token needs read only.
+# Mirror pushes authenticate as the phpdot-splitter GitHub App (sole pusher to
+# the mirrors); the workflow's own token needs read only.
 permissions:
   contents: read
 
@@ -137,9 +138,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: 4328936
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: phpdot
+
       - name: Split package history and push
         env:
-          TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
           PACKAGE: ${{ matrix.package }}
         run: |
           set -euo pipefail
@@ -163,9 +171,16 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - uses: actions/create-github-app-token@v2
+        id: app-token
+        with:
+          app-id: 4328936
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: phpdot
+
       - name: Tag package mirrors per release policy
         env:
-          TOKEN: ${{ secrets.SPLIT_TOKEN }}
+          TOKEN: ${{ steps.app-token.outputs.token }}
           TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
