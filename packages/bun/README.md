@@ -23,7 +23,7 @@ for your platform and delegates, streaming output through; every subprocess goes
 | PHP | `>= 8.5` |
 | `ext-mbstring` | `*` |
 | `nyholm/psr7` | `^1.8` |
-| `phpdot/console` | `^0.1` |
+| `phpdot/console` | `^0.2` |
 | `psr/http-client` | `^1.0` |
 | `psr/http-factory` | `^1.0` |
 | `psr/http-message` | `^1.1 \|\| ^2.0` |

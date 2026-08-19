@@ -18,13 +18,13 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/attribute": "^0.1",
+        "phpdot/attribute": "^0.2",
         "psr/container": "^2.0",
         "symfony/console": "^8.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.1",
+        "phpdot/container": "^0.2",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",

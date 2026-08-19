@@ -32,7 +32,7 @@ return, and prevents leaks and cross-coroutine sharing — created in `onWorkerS
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-swoole` | `>= 6.2` |
-| `phpdot/contracts` | `^0.1` |
+| `phpdot/contracts` | `^0.2` |
 
 ## Installation
 

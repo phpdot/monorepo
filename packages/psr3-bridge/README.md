@@ -25,8 +25,8 @@ It is a **peer** of [phpdot/tracelog](https://github.com/phpdot/tracelog) (the f
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/container` | `^0.1` |
-| `phpdot/contracts` | `^0.1` |
+| `phpdot/container` | `^0.2` |
+| `phpdot/contracts` | `^0.2` |
 | `psr/log` | `^3.0` |
 
 ## Installation

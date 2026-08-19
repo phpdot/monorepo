@@ -21,7 +21,7 @@ exception hierarchy translated from driver errors, optional query logging, and a
 | PHP | `>= 8.5` |
 | `ext-mongodb` | `^2.1` |
 | `mongodb/mongodb` | `^2.1` |
-| `phpdot/contracts` | `^0.1` |
+| `phpdot/contracts` | `^0.2` |
 
 `phpdot/container` is a dev-only suggestion — the `#[Config('mongodb')]` attribute on `MongoConfig` is
 inert until a phpdot application reflects it.

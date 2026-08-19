@@ -28,8 +28,8 @@ It is a **peer** of [phpdot/psr3-bridge](https://github.com/phpdot/psr3-bridge) 
 |---|---|
 | PHP | `>= 8.5` |
 | ext-openssl | `*` — record encryption |
-| `phpdot/container` | `^0.1` |
-| `phpdot/contracts` | `^0.1` |
+| `phpdot/container` | `^0.2` |
+| `phpdot/contracts` | `^0.2` |
 
 ## Installation
 

@@ -19,7 +19,7 @@ API.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/package` | `^0.1` |
+| `phpdot/package` | `^0.2` |
 | `psr/container` | `^2.0` |
 | `twig/twig` | `^3.10` |
 

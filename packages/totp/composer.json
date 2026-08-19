@@ -25,15 +25,15 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.1",
-        "phpdot/qrcode": "^0.1",
+        "phpdot/container": "^0.2",
+        "phpdot/qrcode": "^0.2",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"
     },
     "suggest": {
         "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
-        "phpdot/qrcode": "Render a provisioning URI as a scannable QR code via QrCodeBridge (^0.1)."
+        "phpdot/qrcode": "Render a provisioning URI as a scannable QR code via QrCodeBridge (^0.2)."
     },
     "autoload": {
         "psr-4": {

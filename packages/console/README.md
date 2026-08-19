@@ -20,7 +20,7 @@ discovery, and output helpers. Standalone.
 | PHP | `>= 8.5` |
 | `symfony/console` | `^8.0` |
 | `psr/container` | `^2.0` |
-| `phpdot/attribute` | `^0.1` |
+| `phpdot/attribute` | `^0.2` |
 
 `phpdot/container` is a dev-only suggestion — it exposes `#[Config('console')]` to a phpdot
 framework boot. Standalone consumers do not need it; the attribute is inert until reflected.

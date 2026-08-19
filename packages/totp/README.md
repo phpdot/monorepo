@@ -22,7 +22,7 @@ only runtime dependency is the `psr/clock` interface.
 | PHP | `>= 8.5` |
 | `psr/clock` | `^1.0` |
 
-`phpdot/qrcode` (`^0.1`) is an optional suggestion — install it only if you want `QrCodeBridge` to render
+`phpdot/qrcode` (`^0.2`) is an optional suggestion — install it only if you want `QrCodeBridge` to render
 the enrollment QR code; the core (secrets, codes, provisioning URIs) needs nothing but `psr/clock`.
 
 ## Installation
