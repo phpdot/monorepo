@@ -399,6 +399,10 @@ final class Collection
     /**
      * Execute an aggregation pipeline.
      *
+     * Pipeline objects exist only in the mongodb/mongodb 2.x line; on the
+     * 1.19 pairing (the last generation that speaks to MongoDB 3.6) pass the
+     * pipeline as an array — the union type never loads the missing class.
+     *
      * @param Pipeline|list<array<string, mixed>> $pipeline
      * @param array<string, mixed> $options
      *

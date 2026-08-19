@@ -19,12 +19,18 @@ exception hierarchy translated from driver errors, optional query logging, and a
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `ext-mongodb` | `^2.1` |
-| `mongodb/mongodb` | `^2.1` |
+| `ext-mongodb` | `^1.19 \|\| ^2.1` |
+| `mongodb/mongodb` | `^1.19 \|\| ^2.1` |
 | `phpdot/contracts` | `^0.2` |
 
 `phpdot/container` is a dev-only suggestion — the `#[Config('mongodb')]` attribute on `MongoConfig` is
 inert until a phpdot application reflects it.
+
+The `^1.19` pairing is deliberate, not legacy drift: ext-mongodb 1.19.x is the last driver
+generation that speaks wire protocol 6 (MongoDB 3.6), so it is the only way to reach 3.6
+servers from modern PHP. Every API here works on both pairings, with one nuance:
+`Collection::aggregate()` accepts `MongoDB\Builder\Pipeline` objects only on the 2.x
+pairing — array pipelines work on both. The monorepo develops and tests against 2.x.
 
 ## Installation
 

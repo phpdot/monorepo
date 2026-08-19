@@ -19,8 +19,8 @@
     ],
     "require": {
         "php": ">=8.5",
-        "ext-mongodb": "^2.1",
-        "mongodb/mongodb": "^2.1",
+        "ext-mongodb": "^1.19 || ^2.1",
+        "mongodb/mongodb": "^1.19 || ^2.1",
         "phpdot/contracts": "^0.2"
     },
     "require-dev": {

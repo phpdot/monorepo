@@ -194,7 +194,11 @@
         ]
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "platform": {
+            "php": "8.5.0",
+            "ext-mongodb": "2.3.3"
+        }
     },
     "minimum-stability": "stable"
 }

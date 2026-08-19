@@ -6,6 +6,12 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+  # Weekly gates + rehearsal against freshly resolved dependencies, so
+  # upstream drift (new phpstan inferences, changed stubs, ext bumps)
+  # surfaces on a schedule instead of blocking a release. The split and
+  # release jobs are push/tag-gated and never run from here.
+  schedule:
+    - cron: "0 5 * * 1"
 
 # Serialize runs per ref. Splits are cumulative, so a superseded pending run
 # on main is safely covered by the newer one.
