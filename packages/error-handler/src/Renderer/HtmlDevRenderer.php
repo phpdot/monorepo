@@ -34,7 +34,8 @@ final class HtmlDevRenderer implements RendererInterface
 
         ob_start();
         require $this->templatePath;
+        $html = ob_get_clean();
 
-        return ob_get_clean();
+        return $html === false ? '' : $html;
     }
 }

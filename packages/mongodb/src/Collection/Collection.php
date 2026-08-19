@@ -381,7 +381,10 @@ final class Collection
     /**
      * Execute multiple write operations.
      *
-     * @param list<array<string, mixed>> $operations
+     * The per-operation shape is the library's own contract, restated here so
+     * a malformed operation fails the caller's analysis instead of the wire.
+     *
+     * @param list<array{deleteMany: array{0: array<string, mixed>|object, 1?: array<string, mixed>}}|array{deleteOne: array{0: array<string, mixed>|object, 1?: array<string, mixed>}}|array{insertOne: array{array<string, mixed>|object}}|array{replaceOne: array{0: array<string, mixed>|object, 1: array<string, mixed>|object, 2?: array<string, mixed>}}|array{updateMany: array{0: array<string, mixed>|object, 1: array<string, mixed>|object, 2?: array<string, mixed>}}|array{updateOne: array{0: array<string, mixed>|object, 1: array<string, mixed>|object, 2?: array<string, mixed>}}> $operations
      * @param array<string, mixed> $options
      *
      * @return BulkWriteResult
