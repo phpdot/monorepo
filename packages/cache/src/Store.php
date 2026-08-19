@@ -51,13 +51,13 @@ final class Store implements StoreInterface
 
         $seconds = $this->normalizeTtl($ttl);
 
-        if ($seconds < 0) {
+        if ($seconds !== null && $seconds <= 0) {
             $this->driver->delete($key);
 
             return true;
         }
 
-        return $this->driver->set($key, $value, $seconds);
+        return $this->driver->set($key, $value, $seconds ?? 0);
     }
 
     /**
@@ -115,13 +115,13 @@ final class Store implements StoreInterface
 
         $seconds = $this->normalizeTtl($ttl);
 
-        if ($seconds < 0) {
+        if ($seconds !== null && $seconds <= 0) {
             $this->driver->deleteMultiple(array_keys($valuesArray));
 
-            return false;
+            return true;
         }
 
-        return $this->driver->setMultiple($valuesArray, $seconds);
+        return $this->driver->setMultiple($valuesArray, $seconds ?? 0);
     }
 
     /**
@@ -200,14 +200,18 @@ final class Store implements StoreInterface
     /**
      * Normalize a PSR-16 TTL value to integer seconds.
      *
+     * Null means "no expiry" and stays null so callers can tell it apart from
+     * an explicit zero: PSR-16 requires a zero or negative TTL to delete the
+     * item, while the drivers use 0 seconds to mean "store forever".
+     *
      * @param \DateInterval|int|null $ttl
      *
-     * @return int
+     * @return int|null
      */
-    private function normalizeTtl(null|int|\DateInterval $ttl): int
+    private function normalizeTtl(null|int|\DateInterval $ttl): int|null
     {
         if ($ttl === null) {
-            return 0;
+            return null;
         }
 
         if ($ttl instanceof \DateInterval) {

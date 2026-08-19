@@ -13,7 +13,6 @@ use PHPdot\MongoDB\Exception\QueryException;
 use PHPdot\MongoDB\Exception\TimeoutException;
 use PHPdot\MongoDB\Exception\ValidationException;
 use PHPdot\MongoDB\Exception\WriteException;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

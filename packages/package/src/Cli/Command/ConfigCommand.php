@@ -65,7 +65,7 @@ final class ConfigCommand extends Command
         }
 
         foreach ($configs as $name => $content) {
-            $output->writeln(sprintf('<info># config/%s.php — original defaults</info>', $name));
+            $output->writeln(sprintf('<info># config/%s.php — original defaults</info>', str_replace('.', '/', $name)));
             $output->writeln('');
             $output->write($content);
             $output->writeln('');

@@ -24,6 +24,7 @@ discovery, and output helpers. Standalone.
 
 `phpdot/container` is a dev-only suggestion — it exposes `#[Config('console')]` to a phpdot
 framework boot. Standalone consumers do not need it; the attribute is inert until reflected.
+`ext-swoole` is suggested — the coroutine-aware helpers in `Command` activate when it is loaded.
 
 ## Installation
 

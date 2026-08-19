@@ -60,7 +60,7 @@ final class Cursor implements IteratorAggregate
      *
      * @return ?Document
      */
-    public function first(): ?Document
+    public function first(): null|Document
     {
         foreach ($this->getIterator() as $document) {
             return $document;

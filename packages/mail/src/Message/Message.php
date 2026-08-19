@@ -19,7 +19,7 @@ use PHPdot\Mail\Receipt;
 
 final class Message
 {
-    private ?Mailbox $from = null;
+    private null|Mailbox $from = null;
 
     /**
      * @var list<Mailbox>
@@ -46,8 +46,8 @@ final class Message
     private array $replyTo = [];
 
     private string $subject = '';
-    private ?string $html = null;
-    private ?string $text = null;
+    private null|string $html = null;
+    private null|string $text = null;
 
     /**
      * @var list<Attachment>
@@ -55,7 +55,7 @@ final class Message
 
     private array $attachments = [];
 
-    private ?int $priority = null;
+    private null|int $priority = null;
 
     /**
      * @var array<string, string>
@@ -70,7 +70,7 @@ final class Message
      * @param (\Closure(self): Receipt)|null $dispatch Delivery closure, or null.
      */
     public function __construct(
-        private readonly ?\Closure $dispatch = null,
+        private readonly null|\Closure $dispatch = null,
     ) {}
 
     /**
@@ -206,7 +206,7 @@ final class Message
      *
      * @return Message
      */
-    public function attach(string $path, ?string $name = null): self
+    public function attach(string $path, null|string $name = null): self
     {
         $clone = clone $this;
         $clone->attachments[] = Attachment::fromPath($path, $name);
@@ -223,7 +223,7 @@ final class Message
      *
      * @return Message
      */
-    public function attachData(string $body, string $name, ?string $contentType = null): self
+    public function attachData(string $body, string $name, null|string $contentType = null): self
     {
         $clone = clone $this;
         $clone->attachments[] = Attachment::fromData($body, $name, $contentType);
@@ -283,7 +283,7 @@ final class Message
      *
      * @return ?Mailbox
      */
-    public function sender(): ?Mailbox
+    public function sender(): null|Mailbox
     {
         return $this->from;
     }
@@ -343,7 +343,7 @@ final class Message
      *
      * @return ?string
      */
-    public function htmlBody(): ?string
+    public function htmlBody(): null|string
     {
         return $this->html;
     }
@@ -353,7 +353,7 @@ final class Message
      *
      * @return ?string
      */
-    public function textBody(): ?string
+    public function textBody(): null|string
     {
         return $this->text;
     }
@@ -373,7 +373,7 @@ final class Message
      *
      * @return ?int
      */
-    public function priorityLevel(): ?int
+    public function priorityLevel(): null|int
     {
         return $this->priority;
     }

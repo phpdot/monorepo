@@ -169,7 +169,7 @@ final class EnvSchema
      *
      * @return mixed The typed value.
      */
-    public function castValue(string $key, ?string $raw): mixed
+    public function castValue(string $key, null|string $raw): mixed
     {
         $definition = $this->getDefinition($key);
 
@@ -245,7 +245,7 @@ final class EnvSchema
      *
      * @return bool True if the raw value is valid for the type.
      */
-    public function validateRaw(string $key, ?string $raw): bool
+    public function validateRaw(string $key, null|string $raw): bool
     {
         try {
             $typed = $this->castValue($key, $raw);

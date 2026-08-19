@@ -20,8 +20,7 @@
         "php": ">=8.5",
         "ext-openssl": "*",
         "phpdot/container": "^0.1",
-        "phpdot/contracts": "^0.1",
-        "psr/log": "^3.0"
+        "phpdot/contracts": "^0.1"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",

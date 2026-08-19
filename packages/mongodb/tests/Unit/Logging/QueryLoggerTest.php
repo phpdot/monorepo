@@ -76,7 +76,7 @@ final class QueryLoggerTest extends TestCase
         self::assertSame(3, $logger->count());
 
         $logs = $logger->getAll();
-        $operations = array_map(static fn (QueryLog $l): string => $l->operation, $logs);
+        $operations = array_map(static fn(QueryLog $l): string => $l->operation, $logs);
         self::assertContains('op4', $operations);
         self::assertNotContains('op1', $operations);
     }

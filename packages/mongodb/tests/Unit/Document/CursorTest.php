@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace PHPdot\MongoDB\Tests\Unit\Document;
 
 use PHPdot\MongoDB\Document\Cursor;
-use PHPdot\MongoDB\Document\Document;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -36,7 +35,7 @@ final class CursorTest extends TestCase
     {
         $reflection = new \ReflectionClass(Cursor::class);
         $methods = array_map(
-            fn (\ReflectionMethod $m) => $m->getName(),
+            fn(\ReflectionMethod $m) => $m->getName(),
             $reflection->getMethods(\ReflectionMethod::IS_PUBLIC),
         );
 

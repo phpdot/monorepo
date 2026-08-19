@@ -21,10 +21,9 @@ for your platform and delegates, streaming output through; every subprocess goes
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `ext-curl` | `*` |
+| `ext-mbstring` | `*` |
 | `nyholm/psr7` | `^1.8` |
 | `phpdot/console` | `^0.1` |
-| `psr/container` | `^2.0` |
 | `psr/http-client` | `^1.0` |
 | `psr/http-factory` | `^1.0` |
 | `psr/http-message` | `^1.1 \|\| ^2.0` |
@@ -33,6 +32,7 @@ for your platform and delegates, streaming output through; every subprocess goes
 | `symfony/process` | `^8.0` |
 
 `ext-pcntl` is suggested — it forwards `SIGINT`/`SIGTERM` to long-lived children (`run`, `build --watch`).
+`ext-curl` is suggested — symfony/http-client uses its curl transport for runtime downloads when present.
 
 ## Installation
 

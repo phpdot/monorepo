@@ -201,4 +201,16 @@ final class FileHandlerTest extends TestCase
 
         $handler->write('id1', 'data', 3600);
     }
+
+    #[Test]
+    public function storageIsNeverReadableByOtherUsers(): void
+    {
+        $this->handler->write('id1', 'data', 3600);
+
+        $directoryMode = fileperms($this->directory) & 0o777;
+        $fileMode = fileperms($this->directory . '/sess_id1') & 0o777;
+
+        self::assertSame(0, $directoryMode & 0o077, 'session directory must have no group/other bits');
+        self::assertSame(0o600, $fileMode, 'session files must be owner read/write only');
+    }
 }

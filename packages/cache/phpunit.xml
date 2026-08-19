@@ -16,4 +16,9 @@
             <directory>src</directory>
         </include>
     </source>
+    <!-- Compose-stack defaults (docker-compose.yml shifts host ports off the local
+         defaults); the env vars override for other environments. -->
+    <php>
+        <env name="REDIS_PORT" value="6380"/>
+    </php>
 </phpunit>

@@ -24,7 +24,10 @@
 
         <!-- integration suites default to the docker-compose stack; real env vars win -->
         <env name="MYSQL_PORT" value="3307"/>
+        <env name="PG_PORT" value="5433"/>
         <env name="REDIS_PORT" value="6380"/>
+        <env name="REDIS_AUTH_PORT" value="6381"/>
+        <env name="REDIS_AUTH_PASS" value="phpdot-secret"/>
         <env name="RABBITMQ_PORT" value="5673"/>
         <env name="MONGO_PORT" value="27018"/>
         <env name="BUN_LIVE" value="1"/>

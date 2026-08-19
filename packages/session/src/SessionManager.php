@@ -47,7 +47,7 @@ final class SessionManager
      *
      * @return Session
      */
-    public function start(?string $cookieId): Session
+    public function start(null|string $cookieId): Session
     {
         $this->maybeGc();
 

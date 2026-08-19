@@ -6,11 +6,13 @@ namespace PHPdot\Validator\Tests\Unit\Exception;
 
 use PHPdot\Validator\Exception\MissingErrorCodeException;
 use PHPdot\Validator\Tests\Stubs\AlwaysFails;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class MissingErrorCodeExceptionTest extends TestCase
 {
-    public function test_exception_carries_field_and_rule_class(): void
+    #[Test]
+    public function exceptionCarriesFieldAndRuleClass(): void
     {
         $e = new MissingErrorCodeException('email', AlwaysFails::class);
 

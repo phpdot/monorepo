@@ -46,7 +46,7 @@ final class Collection
     public function __construct(
         private \MongoDB\Collection $collection,
         private readonly MongoConnection $connection,
-        private readonly ?QueryLogger $logger = null,
+        private readonly null|QueryLogger $logger = null,
     ) {}
 
     /**
@@ -107,7 +107,7 @@ final class Collection
      *
      * @return ?Document
      */
-    public function findOne(array $filter = [], array $options = []): ?Document
+    public function findOne(array $filter = [], array $options = []): null|Document
     {
         /**
          * @var array<string, mixed>|null $result
@@ -313,7 +313,7 @@ final class Collection
      *
      * @return ?Document
      */
-    public function findOneAndUpdate(array $filter, array $update, array $options = []): ?Document
+    public function findOneAndUpdate(array $filter, array $update, array $options = []): null|Document
     {
         /**
          * @var array<string, mixed>|null $result
@@ -338,7 +338,7 @@ final class Collection
      *
      * @return ?Document
      */
-    public function findOneAndReplace(array $filter, array $replacement, array $options = []): ?Document
+    public function findOneAndReplace(array $filter, array $replacement, array $options = []): null|Document
     {
         /**
          * @var array<string, mixed>|null $result
@@ -362,7 +362,7 @@ final class Collection
      *
      * @return ?Document
      */
-    public function findOneAndDelete(array $filter, array $options = []): ?Document
+    public function findOneAndDelete(array $filter, array $options = []): null|Document
     {
         /**
          * @var array<string, mixed>|null $result

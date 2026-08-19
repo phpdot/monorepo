@@ -17,20 +17,20 @@ namespace PHPdot\Bun\Build;
 
 final class BuildSpec
 {
-    private ?string $outDir = null;
-    private ?string $outFile = null;
-    private ?string $target = null;
-    private ?string $format = null;
+    private null|string $outDir = null;
+    private null|string $outFile = null;
+    private null|string $target = null;
+    private null|string $format = null;
     private bool $minify = false;
     private bool $minifySyntax = false;
     private bool $minifyWhitespace = false;
     private bool $minifyIdentifiers = false;
     private bool $splitting = false;
-    private ?string $sourcemap = null;
+    private null|string $sourcemap = null;
     private bool $hashedNames = false;
-    private ?string $chunkNaming = null;
-    private ?string $assetNaming = null;
-    private ?string $metafile = null;
+    private null|string $chunkNaming = null;
+    private null|string $assetNaming = null;
+    private null|string $metafile = null;
     /**
      * @var list<string>
      */
@@ -39,13 +39,34 @@ final class BuildSpec
      * @var list<string>
      */
     private array $external = [];
-    private ?string $banner = null;
-    private ?string $footer = null;
+    private null|string $banner = null;
+    private null|string $footer = null;
     /**
      * @var list<string>
      */
     private array $drop = [];
     private bool $watch = false;
+    private null|string $root = null;
+    private null|string $publicPath = null;
+    private null|string $entryNaming = null;
+    private bool $cssChunking = false;
+    private bool $keepNames = false;
+    private bool $rejectUnresolved = false;
+    /**
+     * @var 'external'|'bundle'|null
+     */
+    private null|string $packages = null;
+    /**
+     * @var list<string>
+     */
+    private array $loader = [];
+    /**
+     * @var list<string>
+     */
+    private array $conditions = [];
+    private null|string $env = null;
+    private null|string $metafileMd = null;
+    private bool $noClearScreen = false;
 
     /**
      * Set the output directory Bun writes the build to.
@@ -377,6 +398,187 @@ final class BuildSpec
         return $c;
     }
 
+
+    /**
+     * Set the root directory used to compute output paths for multiple entry points.
+     *
+     * @param string $root
+     *
+     * @return self
+     */
+    public function root(string $root): self
+    {
+        $c = clone $this;
+        $c->root = $root;
+
+        return $c;
+    }
+
+    /**
+     * Set the prefix prepended to any import paths in bundled code (CDN or subpath serving).
+     *
+     * @param string $path
+     *
+     * @return self
+     */
+    public function publicPath(string $path): self
+    {
+        $c = clone $this;
+        $c->publicPath = $path;
+
+        return $c;
+    }
+
+    /**
+     * Set an explicit entry-point filename pattern. Wins over the hashedNames preset.
+     *
+     * @param string $pattern
+     *
+     * @return self
+     */
+    public function entryNaming(string $pattern): self
+    {
+        $c = clone $this;
+        $c->entryNaming = $pattern;
+
+        return $c;
+    }
+
+    /**
+     * Toggle chunking of CSS shared between multiple entrypoints.
+     *
+     * @param bool $on
+     *
+     * @return self
+     */
+    public function cssChunking(bool $on = true): self
+    {
+        $c = clone $this;
+        $c->cssChunking = $on;
+
+        return $c;
+    }
+
+    /**
+     * Toggle preserving original function and class names when minifying.
+     *
+     * @param bool $on
+     *
+     * @return self
+     */
+    public function keepNames(bool $on = true): self
+    {
+        $c = clone $this;
+        $c->keepNames = $on;
+
+        return $c;
+    }
+
+    /**
+     * Toggle failing the build on dynamic import()/require() specifiers that cannot be resolved.
+     *
+     * @param bool $on
+     *
+     * @return self
+     */
+    public function rejectUnresolved(bool $on = true): self
+    {
+        $c = clone $this;
+        $c->rejectUnresolved = $on;
+
+        return $c;
+    }
+
+    /**
+     * Set dependency handling in one flag: keep every package external, or bundle them all.
+     *
+     * @param 'external'|'bundle' $mode
+     *
+     * @return self
+     */
+    public function packages(string $mode): self
+    {
+        $c = clone $this;
+        $c->packages = $mode;
+
+        return $c;
+    }
+
+    /**
+     * Add a per-extension loader override, given as ".ext:loader" (e.g. ".svg:text").
+     *
+     * @param string $extLoader
+     *
+     * @return self
+     */
+    public function loader(string $extLoader): self
+    {
+        $c = clone $this;
+        $c->loader[] = $extLoader;
+
+        return $c;
+    }
+
+    /**
+     * Add a custom package.json export condition used during resolution.
+     *
+     * @param string $condition
+     *
+     * @return self
+     */
+    public function conditions(string $condition): self
+    {
+        $c = clone $this;
+        $c->conditions[] = $condition;
+
+        return $c;
+    }
+
+    /**
+     * Set environment-variable inlining: 'inline', 'disable', or a prefix pattern like "PUBLIC_*".
+     *
+     * @param string $mode
+     *
+     * @return self
+     */
+    public function env(string $mode): self
+    {
+        $c = clone $this;
+        $c->env = $mode;
+
+        return $c;
+    }
+
+    /**
+     * Write the module-graph markdown visualization to the given path.
+     *
+     * @param string $path
+     *
+     * @return self
+     */
+    public function metafileMd(string $path): self
+    {
+        $c = clone $this;
+        $c->metafileMd = $path;
+
+        return $c;
+    }
+
+    /**
+     * Toggle keeping the terminal scrollback on watch-mode rebuilds.
+     *
+     * @param bool $on
+     *
+     * @return self
+     */
+    public function noClearScreen(bool $on = true): self
+    {
+        $c = clone $this;
+        $c->noClearScreen = $on;
+
+        return $c;
+    }
+
     /**
      * Freeze the spec into an immutable BuildOptions value object.
      *
@@ -405,6 +607,18 @@ final class BuildSpec
             footer: $this->footer,
             drop: $this->drop,
             watch: $this->watch,
+            root: $this->root,
+            publicPath: $this->publicPath,
+            entryNaming: $this->entryNaming,
+            cssChunking: $this->cssChunking,
+            keepNames: $this->keepNames,
+            rejectUnresolved: $this->rejectUnresolved,
+            packages: $this->packages,
+            loader: $this->loader,
+            conditions: $this->conditions,
+            env: $this->env,
+            metafileMd: $this->metafileMd,
+            noClearScreen: $this->noClearScreen,
         );
     }
 }

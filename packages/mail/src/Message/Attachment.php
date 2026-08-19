@@ -23,10 +23,10 @@ final readonly class Attachment
      * @param ?string $contentType
      */
     private function __construct(
-        public ?string $path,
-        public ?string $body,
-        public ?string $name,
-        public ?string $contentType,
+        public null|string $path,
+        public null|string $body,
+        public null|string $name,
+        public null|string $contentType,
     ) {}
 
     /**
@@ -38,7 +38,7 @@ final readonly class Attachment
      *
      * @return self
      */
-    public static function fromPath(string $path, ?string $name = null, ?string $contentType = null): self
+    public static function fromPath(string $path, null|string $name = null, null|string $contentType = null): self
     {
         return new self($path, null, $name, $contentType);
     }
@@ -52,7 +52,7 @@ final readonly class Attachment
      *
      * @return Attachment
      */
-    public static function fromData(string $body, string $name, ?string $contentType = null): self
+    public static function fromData(string $body, string $name, null|string $contentType = null): self
     {
         return new self(null, $body, $name, $contentType);
     }

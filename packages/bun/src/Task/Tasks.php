@@ -66,7 +66,7 @@ final class Tasks
      *
      * @return FlowResult
      */
-    public function run(?string $name = null): FlowResult
+    public function run(null|string $name = null): FlowResult
     {
         $name ??= array_key_first($this->tasks);
         if ($name === null) {

@@ -13,7 +13,7 @@ use Psr\Http\Server\RequestHandlerInterface;
  */
 final class StubRequestHandler implements RequestHandlerInterface
 {
-    public ?ServerRequestInterface $capturedRequest = null;
+    public null|ServerRequestInterface $capturedRequest = null;
 
     public function __construct(
         private readonly ResponseInterface $response,

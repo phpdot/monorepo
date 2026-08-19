@@ -60,7 +60,7 @@ final class Psr3Writer implements WriterInterface
      */
     public function __construct(
         private readonly LoggerInterface $logger,
-        private readonly ?EncryptorInterface $encryptor = null,
+        private readonly null|EncryptorInterface $encryptor = null,
     ) {}
 
     /**

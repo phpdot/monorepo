@@ -48,7 +48,7 @@ final class PackageManager
      * @param list<string> $environments Environment names for config override blocks
      */
     public function __construct(
-        ?string $basePath = null,
+        null|string $basePath = null,
         private readonly array $environments = ['development', 'production', 'staging'],
     ) {
         if ($basePath === null) {
@@ -403,7 +403,7 @@ final class PackageManager
      *
      * @return ?Manifest
      */
-    public function manifest(): ?Manifest
+    public function manifest(): null|Manifest
     {
         $path = $this->phpdotDir() . '/' . self::MANIFEST_FILE;
 

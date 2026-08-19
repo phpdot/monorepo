@@ -115,7 +115,7 @@ final class ManifestGenerator
      *
      * @return string
      */
-    private function generatePackageBlock(string $packageName, array $group, ?PackageMeta $meta): string
+    private function generatePackageBlock(string $packageName, array $group, null|PackageMeta $meta): string
     {
         $lines = "\n        '{$packageName}' => [\n";
 

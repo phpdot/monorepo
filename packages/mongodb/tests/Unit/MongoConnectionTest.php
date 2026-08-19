@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PHPdot\MongoDB\Tests\Unit;
 
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Config\MongoConfig;
 use PHPdot\MongoDB\Exception\ConnectionException;
+use PHPdot\MongoDB\MongoConnection;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 

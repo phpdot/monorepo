@@ -22,7 +22,10 @@ trait RequiresMongo
     protected function skipUnlessMongoAvailable(): void
     {
         try {
-            $probe = new MongoConnection(self::mongoTestConfig(timeoutMs: 500, maxRetries: 0));
+            // 2s, not 500ms: the FIRST connect pays server discovery (SDAM), and
+            // on a cold driver that alone can pass half a second — a probe that
+            // tight skips the whole suite on machines where Mongo is fine.
+            $probe = new MongoConnection(self::mongoTestConfig(timeoutMs: 2000, maxRetries: 0));
             $probe->connect();
             $probe->close();
         } catch (\Throwable $e) {

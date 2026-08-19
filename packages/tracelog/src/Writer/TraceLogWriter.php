@@ -58,7 +58,7 @@ final class TraceLogWriter implements WriterInterface
      */
     public function __construct(
         private readonly ChannelManager $channelManager,
-        private readonly ?EncryptorInterface $encryptor = null,
+        private readonly null|EncryptorInterface $encryptor = null,
     ) {}
 
     /**
@@ -97,7 +97,7 @@ final class TraceLogWriter implements WriterInterface
      *
      * @return array<string, mixed>|null The normalized record, or null if dropped (fail-closed).
      */
-    private function normalizeLog(array $record): ?array
+    private function normalizeLog(array $record): null|array
     {
         $level   = LogLevel::fromPsr($this->toString($record['level'] ?? null, 'debug'));
         $message = $this->toString($record['message'] ?? null);
@@ -131,7 +131,7 @@ final class TraceLogWriter implements WriterInterface
      *
      * @return array<string, mixed>|null The normalized record, or null if dropped (fail-closed).
      */
-    private function normalizeSpan(array $record): ?array
+    private function normalizeSpan(array $record): null|array
     {
         $name   = $this->toString($record['name'] ?? null, 'span');
         $status = $this->toString($record['status'] ?? null);
@@ -199,7 +199,7 @@ final class TraceLogWriter implements WriterInterface
      *
      * @return array{message: string, context: array<array-key, mixed>}|null
      */
-    private function protect(string $message, array $context, bool $sensitive): ?array
+    private function protect(string $message, array $context, bool $sensitive): null|array
     {
         if (!$sensitive) {
             return ['message' => $message, 'context' => $context];

@@ -26,16 +26,16 @@ final class TranslatorTest extends TestCase
         $this->config = new I18nConfig(
             default: 'en',
             supported: ['en', 'ar'],
-            path: __DIR__ . '/../Fixtures/lang',
+            paths: [__DIR__ . '/../Fixtures/lang'],
         );
         $this->loader = new PhpArrayLoader($this->config);
         $this->cache = new ArrayCache();
     }
 
     private function createTranslator(
-        ?LoaderInterface $loader = null,
-        ?ArrayCache $cache = null,
-        ?I18nConfig $config = null,
+        null|LoaderInterface $loader = null,
+        null|ArrayCache $cache = null,
+        null|I18nConfig $config = null,
     ): Translator {
         return new Translator(
             $loader ?? $this->loader,
@@ -582,7 +582,7 @@ final class TranslatorTest extends TestCase
             }
         };
 
-        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], path: __DIR__ . '/../Fixtures/lang'));
+        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], paths: [__DIR__ . '/../Fixtures/lang']));
 
         $translator->translate('messages.welcome', ['name' => 'A']);
         $translator->translate('messages.goodbye');
@@ -607,12 +607,12 @@ final class TranslatorTest extends TestCase
             }
         };
 
-        $t1 = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en'], path: __DIR__ . '/../Fixtures/lang'));
+        $t1 = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en'], paths: [__DIR__ . '/../Fixtures/lang']));
         $t1->translate('messages.welcome', ['name' => 'A']);
         self::assertSame(1, $callCount);
 
         // Second instance shares the same PSR-16 cache
-        $t2 = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en'], path: __DIR__ . '/../Fixtures/lang'));
+        $t2 = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en'], paths: [__DIR__ . '/../Fixtures/lang']));
         $t2->translate('messages.goodbye');
         // Loader should NOT be called again — PSR-16 cache hit
         self::assertSame(1, $callCount);
@@ -634,7 +634,7 @@ final class TranslatorTest extends TestCase
             }
         };
 
-        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], path: __DIR__ . '/../Fixtures/lang'));
+        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], paths: [__DIR__ . '/../Fixtures/lang']));
         $translator->translate('messages.welcome', ['name' => 'A']);
         self::assertSame(1, $callCount);
 
@@ -660,7 +660,7 @@ final class TranslatorTest extends TestCase
             }
         };
 
-        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], path: __DIR__ . '/../Fixtures/lang'));
+        $translator = new Translator($countingLoader, $this->cache, new I18nConfig(default: 'en', supported: ['en', 'ar'], paths: [__DIR__ . '/../Fixtures/lang']));
 
         $translator->translate('messages.welcome', ['name' => 'A']);
         $translator->setLocale('ar');

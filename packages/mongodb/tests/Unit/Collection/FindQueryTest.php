@@ -41,7 +41,7 @@ final class FindQueryTest extends TestCase
     #[Test]
     public function it_builds_filter_from_callback(): void
     {
-        $this->query->where(fn (Filter $f) => $f->eq('status', 'active')->gte('age', 18));
+        $this->query->where(fn(Filter $f) => $f->eq('status', 'active')->gte('age', 18));
 
         $filter = $this->query->getFilter();
         self::assertSame(['$eq' => 'active'], $filter['status']);

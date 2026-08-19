@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode\Tests\Unit;
 
-use OutOfRangeException;
+use PHPdot\QrCode\Exception\QrCodeException;
 use PHPdot\QrCode\Matrix;
 use PHPUnit\Framework\TestCase;
 
@@ -28,7 +28,7 @@ final class MatrixTest extends TestCase
     {
         $matrix = new Matrix([[true]], 1);
 
-        $this->expectException(OutOfRangeException::class);
+        $this->expectException(QrCodeException::class);
 
         $matrix->isDark(1, 0);
     }
@@ -37,7 +37,7 @@ final class MatrixTest extends TestCase
     {
         $matrix = new Matrix([[true]], 1);
 
-        $this->expectException(OutOfRangeException::class);
+        $this->expectException(QrCodeException::class);
 
         $matrix->isDark(0, -1);
     }

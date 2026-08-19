@@ -27,7 +27,7 @@ use Twig\Loader\FilesystemLoader;
 #[Singleton]
 final class EngineFactory
 {
-    private ?Environment $environment = null;
+    private null|Environment $environment = null;
 
     /**
      * Wire the factory to its config, package manifest, and container.

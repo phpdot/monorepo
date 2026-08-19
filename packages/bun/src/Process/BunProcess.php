@@ -33,7 +33,7 @@ final class BunProcess implements ProcessRunnerInterface
      *
      * @param list<string> $args
      */
-    public function run(string $executable, array $args = [], ?string $cwd = null): ProcessResult
+    public function run(string $executable, array $args = [], null|string $cwd = null): ProcessResult
     {
         $process = new Process([$executable, ...$args], $cwd);
         $process->setTimeout(null);
@@ -51,7 +51,7 @@ final class BunProcess implements ProcessRunnerInterface
      *
      * @param list<string> $args
      */
-    public function passthrough(string $executable, array $args = [], ?string $cwd = null): int
+    public function passthrough(string $executable, array $args = [], null|string $cwd = null): int
     {
         $process = new Process([$executable, ...$args], $cwd);
         $process->setTimeout(null);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PHPdot\Pool\Tests\Integration;
 
-use PHPdot\Pool\Exception\BorrowTimeoutException;
 use PHPdot\Pool\Exception\PoolClosedException;
 use PHPdot\Pool\Pool;
 use PHPdot\Pool\PoolConfig;

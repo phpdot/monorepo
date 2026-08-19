@@ -32,5 +32,5 @@ interface ContextProviderInterface
      *
      * @return array<string, mixed> Key-value pairs shown in the tab
      */
-    public function collect(\Throwable $exception, ?ServerRequestInterface $request): array;
+    public function collect(\Throwable $exception, null|ServerRequestInterface $request): array;
 }

@@ -25,7 +25,7 @@ final class DuplicateKeyException extends WriteException
         string $collection = '',
         private readonly string $duplicateKey = '',
         int $code = 0,
-        ?\Throwable $previous = null,
+        null|\Throwable $previous = null,
     ) {
         parent::__construct($message, '', $collection, $code, $previous);
     }

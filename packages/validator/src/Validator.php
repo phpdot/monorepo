@@ -122,7 +122,8 @@ final class Validator
                 throw new MissingErrorCodeException($field, $rule::class);
             }
 
-            $bag->add($code, $field, $rule->params($context));
+            // The call site last, so what `withError()` was given wins.
+            $bag->add($code, $field, [...$rule->params($context), ...$rule->errorParams()]);
 
             if ($bail) {
                 return;

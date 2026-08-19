@@ -17,6 +17,7 @@ use PHPdot\Validator\Rule\StringType;
 use PHPdot\Validator\Rule\Unique;
 use PHPdot\Validator\Tests\Stubs\TestErrorCode;
 use PHPdot\Validator\Validator;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class SignupFormTest extends TestCase
@@ -64,7 +65,8 @@ final class SignupFormTest extends TestCase
         ];
     }
 
-    public function test_valid_signup_payload_produces_no_errors(): void
+    #[Test]
+    public function validSignupPayloadProducesNoErrors(): void
     {
         $bag = $this->validator->validate([
             'username' => 'newuser',
@@ -77,7 +79,8 @@ final class SignupFormTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_missing_required_fields_collect_errors(): void
+    #[Test]
+    public function missingRequiredFieldsCollectErrors(): void
     {
         $bag = $this->validator->validate([], $this->rules());
 
@@ -88,7 +91,8 @@ final class SignupFormTest extends TestCase
         self::assertNotEmpty($bag->forContext('password'));
     }
 
-    public function test_username_messages_use_developer_supplied_codes(): void
+    #[Test]
+    public function usernameMessagesUseDeveloperSuppliedCodes(): void
     {
         $bag = $this->validator->validate([
             'username' => '',
@@ -105,7 +109,8 @@ final class SignupFormTest extends TestCase
         self::assertSame('Username is required.', $usernameErrors[0]->message);
     }
 
-    public function test_taken_username_triggers_unique_rule(): void
+    #[Test]
+    public function takenUsernameTriggersUniqueRule(): void
     {
         $bag = $this->validator->validate([
             'username' => 'admin',
@@ -121,7 +126,8 @@ final class SignupFormTest extends TestCase
         self::assertSame(TestErrorCode::Generic->value, $usernameErrors[0]->code);
     }
 
-    public function test_password_mismatch_uses_confirmed_rule(): void
+    #[Test]
+    public function passwordMismatchUsesConfirmedRule(): void
     {
         $bag = $this->validator->validate([
             'username' => 'newuser',
@@ -138,7 +144,8 @@ final class SignupFormTest extends TestCase
         self::assertContains(TestErrorCode::PasswordMismatch->value, $codes);
     }
 
-    public function test_invalid_role_returns_role_invalid_code(): void
+    #[Test]
+    public function invalidRoleReturnsRoleInvalidCode(): void
     {
         $bag = $this->validator->validate([
             'username' => 'newuser',
@@ -154,7 +161,8 @@ final class SignupFormTest extends TestCase
         self::assertSame(TestErrorCode::RoleInvalid->value, $roleErrors[0]->code);
     }
 
-    public function test_bag_serializes_to_array_for_json_or_flash(): void
+    #[Test]
+    public function bagSerializesToArrayForJsonOrFlash(): void
     {
         $bag = $this->validator->validate([
             'username' => 'ad',
@@ -177,14 +185,16 @@ final class SignupFormTest extends TestCase
         }
     }
 
-    public function test_http_status_is_validation_default(): void
+    #[Test]
+    public function httpStatusIsValidationDefault(): void
     {
         $bag = $this->validator->validate([], $this->rules());
 
         self::assertSame(422, $bag->getHttpStatus());
     }
 
-    public function test_closure_rule_for_business_logic(): void
+    #[Test]
+    public function closureRuleForBusinessLogic(): void
     {
         $bag = $this->validator->validate(
             ['username' => 'forbidden'],

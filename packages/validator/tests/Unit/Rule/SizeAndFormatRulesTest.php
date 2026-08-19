@@ -20,6 +20,7 @@ use PHPdot\Validator\Rule\Slug;
 use PHPdot\Validator\Rule\Url;
 use PHPdot\Validator\Rule\Uuid;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class SizeAndFormatRulesTest extends TestCase
@@ -31,7 +32,8 @@ final class SizeAndFormatRulesTest extends TestCase
         $this->context = new ValidationContext('field', []);
     }
 
-    public function test_min_on_numeric(): void
+    #[Test]
+    public function minOnNumeric(): void
     {
         $rule = new Min(18);
 
@@ -41,7 +43,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertSame(['field' => 'field', 'min' => 18], $rule->params($this->context));
     }
 
-    public function test_min_on_string_uses_length(): void
+    #[Test]
+    public function minOnStringUsesLength(): void
     {
         $rule = new Min(3);
 
@@ -50,7 +53,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('ab', $this->context));
     }
 
-    public function test_min_on_array_uses_count(): void
+    #[Test]
+    public function minOnArrayUsesCount(): void
     {
         $rule = new Min(2);
 
@@ -59,7 +63,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes([1], $this->context));
     }
 
-    public function test_max(): void
+    #[Test]
+    public function max(): void
     {
         $rule = new Max(50);
 
@@ -69,7 +74,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes(str_repeat('x', 51), $this->context));
     }
 
-    public function test_between(): void
+    #[Test]
+    public function between(): void
     {
         $rule = new Between(1, 10);
 
@@ -84,7 +90,8 @@ final class SizeAndFormatRulesTest extends TestCase
         );
     }
 
-    public function test_size_exact(): void
+    #[Test]
+    public function sizeExact(): void
     {
         $rule = new Size(5);
 
@@ -95,7 +102,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('abc', $this->context));
     }
 
-    public function test_email(): void
+    #[Test]
+    public function email(): void
     {
         $rule = new Email();
 
@@ -107,7 +115,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $this->context));
     }
 
-    public function test_url(): void
+    #[Test]
+    public function url(): void
     {
         $rule = new Url();
 
@@ -117,7 +126,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $this->context));
     }
 
-    public function test_uuid(): void
+    #[Test]
+    public function uuid(): void
     {
         $rule = new Uuid();
 
@@ -127,7 +137,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('550e8400-e29b-41d4-a716', $this->context));
     }
 
-    public function test_ip(): void
+    #[Test]
+    public function ip(): void
     {
         $rule = new Ip();
 
@@ -136,7 +147,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('999.0.0.1', $this->context));
     }
 
-    public function test_ipv4(): void
+    #[Test]
+    public function ipv4(): void
     {
         $rule = new Ipv4();
 
@@ -145,7 +157,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('not.an.ip.address', $this->context));
     }
 
-    public function test_ipv6(): void
+    #[Test]
+    public function ipv6(): void
     {
         $rule = new Ipv6();
 
@@ -154,7 +167,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('192.168.1.1', $this->context));
     }
 
-    public function test_regex(): void
+    #[Test]
+    public function regex(): void
     {
         $rule = new Regex('/^[a-z]+$/');
 
@@ -168,7 +182,8 @@ final class SizeAndFormatRulesTest extends TestCase
         );
     }
 
-    public function test_alpha(): void
+    #[Test]
+    public function alpha(): void
     {
         $rule = new Alpha();
 
@@ -179,7 +194,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('', $this->context));
     }
 
-    public function test_alpha_num(): void
+    #[Test]
+    public function alphaNum(): void
     {
         $rule = new AlphaNum();
 
@@ -188,7 +204,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('abc 123', $this->context));
     }
 
-    public function test_alpha_dash(): void
+    #[Test]
+    public function alphaDash(): void
     {
         $rule = new AlphaDash();
 
@@ -198,7 +215,8 @@ final class SizeAndFormatRulesTest extends TestCase
         self::assertFalse($rule->passes('abc.def', $this->context));
     }
 
-    public function test_slug(): void
+    #[Test]
+    public function slug(): void
     {
         $rule = new Slug();
 

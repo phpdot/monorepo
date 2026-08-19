@@ -23,12 +23,14 @@ final readonly class AttributeMap
      * @param list<string> $directories
      * @param list<string> $filter
      * @param int $generatedAt
+     * @param int $visibilityFilter
      */
     public function __construct(
         public array $classes,
         public int $generatedAt,
         public array $directories,
         public array $filter,
+        public int $visibilityFilter = 0,
     ) {}
 
     /**
@@ -53,7 +55,8 @@ final readonly class AttributeMap
      *     }>,
      *     generatedAt: int,
      *     directories: list<string>,
-     *     filter: list<string>
+     *     filter: list<string>,
+     *     visibilityFilter?: int
      * } $data
      *
      * @return self
@@ -112,6 +115,7 @@ final readonly class AttributeMap
             generatedAt: $data['generatedAt'],
             directories: $data['directories'],
             filter: $data['filter'],
+            visibilityFilter: $data['visibilityFilter'] ?? 0,
         );
     }
 
@@ -132,7 +136,7 @@ final readonly class AttributeMap
      *
      * @return ?ClassAttributes
      */
-    public function getClass(string $className): ?ClassAttributes
+    public function getClass(string $className): null|ClassAttributes
     {
         return $this->classes[$className] ?? null;
     }
@@ -181,7 +185,8 @@ final readonly class AttributeMap
      *     }>,
      *     generatedAt: int,
      *     directories: list<string>,
-     *     filter: list<string>
+     *     filter: list<string>,
+     *     visibilityFilter?: int
      * }
      */
     public function toCache(): array
@@ -218,6 +223,7 @@ final readonly class AttributeMap
             'generatedAt' => $this->generatedAt,
             'directories' => $this->directories,
             'filter' => $this->filter,
+            'visibilityFilter' => $this->visibilityFilter,
         ];
     }
 }

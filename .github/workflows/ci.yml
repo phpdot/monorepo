@@ -133,6 +133,17 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress
 
+      # Manifest gaps are invisible in the monorepo (the root install provides
+      # everything) but fatal in the standalone mirrors. Re-derive each
+      # package's real imports and fail on any not covered by its own require.
+      - name: Dependency hygiene (per-package require completeness)
+        run: php .github/scripts/require-check.php
+
+      # The Requirements table is what a mirror consumer reads before
+      # installing — a stale row misdocuments the package's platform contract.
+      - name: README Requirements tables match composer.json
+        run: php .github/scripts/readme-requirements-check.php
+
       - name: Start test services
         run: |
           set -euo pipefail
@@ -147,6 +158,8 @@ jobs:
           [ -z "$UNHEALTHY" ] || { echo "::error::services failed to become healthy: ${UNHEALTHY}"; exit 1; }
 
       - name: Tests
+        env:
+          DB_TESTS_REQUIRED: "1"
         run: composer test
 
       - name: Static analysis
@@ -154,6 +167,103 @@ jobs:
 
       - name: Code style
         run: composer cs-check
+
+  # Every push to main ships packages/ verbatim into standalone public mirrors,
+  # so each package must install and pass its own `composer check` OUTSIDE the
+  # monorepo. This job rehearses exactly that: copy the package out, resolve its
+  # phpdot/* deps from path repositories (stamped with a version satisfying the
+  # current ^0.Y line), then run the package's own gate. Catches broken
+  # per-package phpunit.xml/phpstan.neon, missing require-dev tooling, and
+  # anything else that only the mirror consumer would hit. Integration suites
+  # self-skip here (no services) — the root gates job runs them for real.
+  rehearsal:
+    needs: gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: apcu, pdo_mysql, pdo_pgsql, pdo_sqlite, redis, mongodb, sockets, intl, gd, zip
+          ini-values: apc.enable_cli=1
+          coverage: none
+
+      - name: Cache Swoole build
+        id: swoole-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/swoole/swoole.so
+          key: swoole-6.2.2-php8.5-nopgsqlhook-${{ runner.os }}
+
+      - name: Build Swoole without the pgsql hook
+        if: steps.swoole-cache.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libssl-dev libcurl4-openssl-dev
+          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.2
+          mkdir -p ~/swoole
+          cp "$(php -r 'echo ini_get("extension_dir");')/swoole.so" ~/swoole/swoole.so
+
+      - name: Enable Swoole
+        run: |
+          set -euxo pipefail
+          sudo cp ~/swoole/swoole.so "$(php -r 'echo ini_get("extension_dir");')/swoole.so"
+          if ! php -r 'exit(extension_loaded("swoole") ? 0 : 1);'; then
+            INI_DIR=$(php -i > /tmp/php-info.txt; sed -n 's/^Scan this dir for additional .ini files => //p' /tmp/php-info.txt)
+            echo 'extension=swoole' | sudo tee "${INI_DIR}/99-swoole.ini" > /dev/null
+          fi
+          php -r 'exit(extension_loaded("swoole") ? 0 : 1);'
+
+      - name: Standalone composer check per package
+        run: |
+          set -euo pipefail
+          MONOREPO=$PWD
+          # All cross-package constraints read ^0.Y (release-policy-enforced);
+          # stamp the path repos with a version inside that line.
+          LINE=$(php -r '
+            foreach (glob("packages/*/composer.json") as $f) {
+              foreach (json_decode(file_get_contents($f), true, 8, JSON_THROW_ON_ERROR)["require"] ?? [] as $dep => $c) {
+                if (str_starts_with($dep, "phpdot/")) { echo ltrim($c, "^"); exit; }
+              }
+            }
+            echo "0.1";
+          ')
+          FAILED=()
+          for DIR in packages/*/; do
+            PACKAGE=$(basename "$DIR")
+            WORK="$RUNNER_TEMP/rehearsal/$PACKAGE"
+            rm -rf "$WORK"
+            mkdir -p "$WORK"
+            cp -R "$DIR". "$WORK"/
+            php -r '
+              [, $work, $monorepo, $line] = $argv;
+              $manifest = json_decode(file_get_contents("$work/composer.json"), true, 8, JSON_THROW_ON_ERROR);
+              foreach (glob("$monorepo/packages/*/composer.json") as $f) {
+                $name = json_decode(file_get_contents($f), true, 8, JSON_THROW_ON_ERROR)["name"];
+                $manifest["repositories"][] = [
+                  "type" => "path",
+                  "url" => dirname($f),
+                  "options" => ["versions" => [$name => "$line.9999"]],
+                ];
+              }
+              file_put_contents("$work/composer.json", json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+            ' "$WORK" "$MONOREPO" "$LINE"
+            echo "::group::$PACKAGE"
+            if (cd "$WORK" && composer update --no-interaction --no-progress --quiet && composer check); then
+              echo "$PACKAGE: standalone check passed"
+            else
+              FAILED+=("$PACKAGE")
+              echo "::error::$PACKAGE failed its standalone composer check"
+            fi
+            echo "::endgroup::"
+          done
+          if [ "${#FAILED[@]}" -gt 0 ]; then
+            echo "::error::standalone rehearsal failed for: ${FAILED[*]}"
+            exit 1
+          fi
 
   # The split matrix is derived from the tree, so a new package can never be
   # silently left out of mirroring. Bootstrap for a new package: create the
@@ -172,7 +282,7 @@ jobs:
         run: echo "packages=$(ls packages | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
 
   split:
-    needs: [gates, discover]
+    needs: [gates, rehearsal, discover]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -242,7 +352,7 @@ jobs:
           git merge-base --is-ancestor "$TAGGED" origin/main \
             || { echo "::error::$TAG does not point into main history — releases are cut from main only"; exit 1; }
 
-          # RELEASES.md: cross-package constraints are ^X.0 per major — except
+          # CONTRIBUTING.md (Releases): cross-package constraints are ^X.0 per major — except
           # during major zero, where caret narrows to the minor, so they must
           # read ^0.Y and be bumped together with each minor.
           X=${TAG%%.*}; X=${X#v}

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace PHPdot\Container\Swoole\Tests;
 
 use Closure;
@@ -14,7 +15,6 @@ use PHPdot\Contracts\Container\ContextDestroyInterface;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use stdClass;
-
 use Swoole\Coroutine;
 
 /**
@@ -132,7 +132,9 @@ final class SwooleOnDestroyTest extends TestCase
 
     /**
      * @template T
+     *
      * @param Closure(): T $callback
+     *
      * @return T
      */
     private function runInCoroutine(Closure $callback): mixed
@@ -149,6 +151,7 @@ final class SwooleOnDestroyTest extends TestCase
 
 /**
  * @param list<int> $arr
+ *
  * @return list<int>
  */
 function sort_copy(array $arr): array

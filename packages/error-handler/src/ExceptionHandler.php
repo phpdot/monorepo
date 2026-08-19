@@ -57,7 +57,7 @@ final class ExceptionHandler
         private RendererInterface $devRenderer,
         private RendererInterface $prodRenderer,
         private RendererInterface $jsonRenderer,
-        private ?LoggerInterface $logger = null,
+        private null|LoggerInterface $logger = null,
     ) {}
 
     /**
@@ -68,7 +68,7 @@ final class ExceptionHandler
      *
      * @return string
      */
-    public function handle(\Throwable $exception, ?ServerRequestInterface $request = null): string
+    public function handle(\Throwable $exception, null|ServerRequestInterface $request = null): string
     {
         $context = $this->buildContext($exception, $request);
 
@@ -213,7 +213,7 @@ final class ExceptionHandler
      *
      * @return ErrorContext
      */
-    private function buildContext(\Throwable $exception, ?ServerRequestInterface $request): ErrorContext
+    private function buildContext(\Throwable $exception, null|ServerRequestInterface $request): ErrorContext
     {
         return new ErrorContext(
             exception: $exception,
@@ -277,7 +277,7 @@ final class ExceptionHandler
      *
      * @return list<ContextTab>
      */
-    private function collectContext(\Throwable $exception, ?ServerRequestInterface $request): array
+    private function collectContext(\Throwable $exception, null|ServerRequestInterface $request): array
     {
         $tabs = [];
 
@@ -365,7 +365,7 @@ final class ExceptionHandler
      *
      * @return bool
      */
-    private function wantsJson(?ServerRequestInterface $request): bool
+    private function wantsJson(null|ServerRequestInterface $request): bool
     {
         if ($request === null) {
             return false;

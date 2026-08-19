@@ -35,6 +35,11 @@ final class Mailer implements MailerInterface
         private readonly Transport $transport,
     ) {}
 
+    public function send(Message $message): Receipt
+    {
+        return $this->transport->send($message, $this->config);
+    }
+
     public function message(): Message
     {
         return new Message(fn(Message $message): Receipt => $this->transport->send($message, $this->config));

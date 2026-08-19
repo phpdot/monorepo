@@ -23,7 +23,7 @@ use RuntimeException;
  */
 final class IntegrationBun
 {
-    public static function create(?string $runtimeDir = null, ?string $workingDir = null): Bun
+    public static function create(null|string $runtimeDir = null, null|string $workingDir = null): Bun
     {
         $container = (new ContainerBuilder())
             ->scanAttributesIn(dirname(__DIR__, 2) . '/src')

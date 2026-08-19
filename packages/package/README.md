@@ -32,6 +32,7 @@ Scans vendor packages for container attributes (`#[Singleton]`, `#[Scoped]`, `#[
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
+| `composer-runtime-api` | `^2.2` |
 | `phpdot/container` | `^0.1` |
 | `symfony/console` | `^8.0` |
 

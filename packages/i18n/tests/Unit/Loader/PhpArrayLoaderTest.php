@@ -18,9 +18,12 @@ final class PhpArrayLoaderTest extends TestCase
         $this->basePath = __DIR__ . '/../../Fixtures/lang';
     }
 
-    private function createLoader(?string $path = null): PhpArrayLoader
+    /**
+     * @param list<string>|null $paths
+     */
+    private function createLoader(null|array $paths = null): PhpArrayLoader
     {
-        return new PhpArrayLoader(new I18nConfig(path: $path ?? $this->basePath));
+        return new PhpArrayLoader(new I18nConfig(paths: $paths ?? [$this->basePath]));
     }
 
     #[Test]
@@ -98,7 +101,15 @@ final class PhpArrayLoaderTest extends TestCase
     #[Test]
     public function returnsEmptyForNonExistentBasePath(): void
     {
-        $loader = $this->createLoader('/non/existent/path');
+        $loader = $this->createLoader(['/non/existent/path']);
+
+        self::assertSame([], $loader->loadAll('en'));
+    }
+
+    #[Test]
+    public function returnsEmptyWhenNoPathsAreConfigured(): void
+    {
+        $loader = $this->createLoader([]);
 
         self::assertSame([], $loader->loadAll('en'));
     }
@@ -130,12 +141,84 @@ final class PhpArrayLoaderTest extends TestCase
     #[Test]
     public function skipsFileThatDoesNotReturnArray(): void
     {
-        $loader = $this->createLoader(__DIR__ . '/../../Fixtures/lang_bad');
+        $loader = $this->createLoader([__DIR__ . '/../../Fixtures/lang_bad']);
         $translations = $loader->loadAll('en');
 
         // valid.php returns array, bad_return.php returns null — should be skipped
         self::assertArrayHasKey('valid.hello', $translations);
         self::assertSame('Hello!', $translations['valid.hello']);
         // No crash from bad_return.php
+    }
+
+    #[Test]
+    public function flattensNestedArraysOntoDottedKeys(): void
+    {
+        $translations = $this->nested();
+
+        self::assertSame('Save', $translations['nested.buttons.save']);
+        self::assertSame('Are you sure?', $translations['nested.buttons.confirm.title']);
+    }
+
+    #[Test]
+    public function flattensNumericKeys(): void
+    {
+        $translations = $this->nested();
+
+        self::assertSame('Not found', $translations['nested.404']);
+    }
+
+    #[Test]
+    public function keepsKeysThatAlreadyContainDots(): void
+    {
+        $translations = $this->nested();
+
+        self::assertSame('Mixed depth in one file', $translations['nested.already.dotted']);
+    }
+
+    #[Test]
+    public function dropsLeavesThatAreNotStrings(): void
+    {
+        $translations = $this->nested();
+
+        self::assertArrayNotHasKey('nested.not_a_template', $translations);
+        self::assertArrayNotHasKey('nested.empty_branch', $translations);
+    }
+
+    #[Test]
+    public function readsEveryConfiguredPath(): void
+    {
+        $translations = $this->layered();
+
+        self::assertArrayHasKey('errors.not_found', $translations);
+        self::assertSame('Added by the later path', $translations['messages.only_here']);
+    }
+
+    #[Test]
+    public function laterPathWinsOnADuplicateKey(): void
+    {
+        $translations = $this->layered();
+
+        self::assertSame('Welcome back, {name}!', $translations['messages.welcome']);
+        // Untouched by the override file, so the earlier path still supplies it.
+        self::assertSame('Goodbye!', $translations['messages.goodbye']);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function nested(): array
+    {
+        return $this->createLoader([__DIR__ . '/../../Fixtures/lang_nested'])->loadAll('en');
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function layered(): array
+    {
+        return $this->createLoader([
+            $this->basePath,
+            __DIR__ . '/../../Fixtures/lang_override',
+        ])->loadAll('en');
     }
 }

@@ -30,7 +30,7 @@ final class Date extends Rule
      *
      * @return ?int Unix timestamp, or null if unparseable
      */
-    public static function parse(mixed $value): ?int
+    public static function parse(mixed $value): null|int
     {
         if ($value instanceof DateTimeInterface) {
             return $value->getTimestamp();

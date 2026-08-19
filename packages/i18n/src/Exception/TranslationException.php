@@ -16,4 +16,4 @@ declare(strict_types=1);
 
 namespace PHPdot\I18n\Exception;
 
-final class TranslationException extends \RuntimeException {}
+class TranslationException extends \RuntimeException {}

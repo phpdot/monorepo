@@ -9,12 +9,21 @@
             "email": "omar@phpdot.com"
         }
     ],
-    "keywords": ["twig", "template", "swoole", "phpdot"],
+    "keywords": [
+        "twig",
+        "template",
+        "swoole",
+        "phpdot"
+    ],
     "require": {
         "php": ">=8.5",
         "phpdot/package": "^0.1",
         "psr/container": "^2.0",
         "twig/twig": "^3.10"
+    },
+    "suggest": {
+        "ext-tidy": "Enables the optional HTML formatter (template.format); without it, set template.format to false.",
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed)."
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",

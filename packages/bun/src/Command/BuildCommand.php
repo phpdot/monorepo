@@ -63,7 +63,19 @@ final class BuildCommand extends Command
             ->addOption('banner', null, InputOption::VALUE_REQUIRED, 'Prepend a banner to the output')
             ->addOption('footer', null, InputOption::VALUE_REQUIRED, 'Append a footer to the output')
             ->addOption('drop', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Drop an identifier, e.g. console (repeatable)')
-            ->addOption('watch', null, InputOption::VALUE_NONE, 'Rebuild on change (long-lived)');
+            ->addOption('watch', null, InputOption::VALUE_NONE, 'Rebuild on change (long-lived)')
+            ->addOption('root', null, InputOption::VALUE_REQUIRED, 'Root directory for multiple entry points')
+            ->addOption('public-path', null, InputOption::VALUE_REQUIRED, 'Prefix prepended to import paths in bundled code')
+            ->addOption('entry-naming', null, InputOption::VALUE_REQUIRED, 'Entry filename pattern, e.g. [dir]/[name]-[hash].[ext] (wins over --hashed-names)')
+            ->addOption('css-chunking', null, InputOption::VALUE_NONE, 'Chunk CSS shared between entrypoints')
+            ->addOption('keep-names', null, InputOption::VALUE_NONE, 'Preserve function and class names when minifying')
+            ->addOption('reject-unresolved', null, InputOption::VALUE_NONE, 'Fail on unresolvable dynamic imports')
+            ->addOption('packages', null, InputOption::VALUE_REQUIRED, 'Dependency handling: external|bundle')
+            ->addOption('loader', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Per-extension loader, .ext:loader (repeatable)')
+            ->addOption('conditions', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Custom export condition (repeatable)')
+            ->addOption('env', null, InputOption::VALUE_REQUIRED, "Inline env vars: inline|disable|prefix like 'PUBLIC_*'")
+            ->addOption('metafile-md', null, InputOption::VALUE_REQUIRED, 'Write the module-graph markdown to this path')
+            ->addOption('no-clear-screen', null, InputOption::VALUE_NONE, 'Keep terminal scrollback in watch mode');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -94,9 +106,35 @@ final class BuildCommand extends Command
             footer: $this->string($input, 'footer'),
             drop: $this->stringList($input, 'drop'),
             watch: (bool) $input->getOption('watch'),
+            root: $this->string($input, 'root'),
+            publicPath: $this->string($input, 'public-path'),
+            entryNaming: $this->string($input, 'entry-naming'),
+            cssChunking: (bool) $input->getOption('css-chunking'),
+            keepNames: (bool) $input->getOption('keep-names'),
+            rejectUnresolved: (bool) $input->getOption('reject-unresolved'),
+            packages: $this->packages($input),
+            loader: $this->stringList($input, 'loader'),
+            conditions: $this->stringList($input, 'conditions'),
+            env: $this->string($input, 'env'),
+            metafileMd: $this->string($input, 'metafile-md'),
+            noClearScreen: (bool) $input->getOption('no-clear-screen'),
         );
 
         return $this->bun->buildWith($entry, $options);
+    }
+
+    /**
+     * Read the --packages option, narrowed to the two modes bun accepts.
+     *
+     * @param InputInterface $input
+     *
+     * @return 'external'|'bundle'|null
+     */
+    private function packages(InputInterface $input): null|string
+    {
+        $value = $this->string($input, 'packages');
+
+        return $value === 'external' || $value === 'bundle' ? $value : null;
     }
 
     /**
@@ -107,7 +145,7 @@ final class BuildCommand extends Command
      *
      * @return ?string
      */
-    private function string(InputInterface $input, string $name): ?string
+    private function string(InputInterface $input, string $name): null|string
     {
         $value = $input->getOption($name);
 

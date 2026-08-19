@@ -36,6 +36,6 @@ final readonly class BunConfig
         public string $pinnedVersion = '1.3.14',
         public string $registryUrl = 'https://registry.npmjs.org',
         public string $runtimeDir = '.phpdot/runtime',
-        public ?string $workingDir = null,
+        public null|string $workingDir = null,
     ) {}
 }

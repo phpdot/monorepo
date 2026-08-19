@@ -25,7 +25,7 @@ final class SessionExpiredException extends SessionException
         string $message,
         private readonly string $sessionId,
         int $code = 0,
-        ?\Throwable $previous = null,
+        null|\Throwable $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
     }

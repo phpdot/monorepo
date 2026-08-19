@@ -128,7 +128,7 @@ final class DefinitionGenerator
      *
      * @return string
      */
-    private function generatePackageHeader(string $package, ?PackageMeta $meta): string
+    private function generatePackageHeader(string $package, null|PackageMeta $meta): string
     {
         $lines = "\n    /**\n";
         $lines .= "     * {$package}\n";

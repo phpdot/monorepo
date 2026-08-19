@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Session\Tests\Unit;
 
-use InvalidArgumentException;
+use PHPdot\Session\Exception\SessionConfigException;
 use PHPdot\Session\SessionConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -84,7 +84,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function emptyNameRejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('name must not be empty');
 
         new SessionConfig(name: '');
@@ -109,7 +109,7 @@ final class SessionConfigTest extends TestCase
     #[\PHPUnit\Framework\Attributes\DataProvider('invalidCookieNameProvider')]
     public function invalidCookieNameRejected(string $name): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('contains invalid characters');
 
         new SessionConfig(name: $name);
@@ -118,7 +118,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function negativeLifetimeRejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('lifetime must be >= 0');
 
         new SessionConfig(lifetime: -1);
@@ -127,7 +127,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function unknownSameSiteRejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('sameSite must be one of Strict, Lax, None');
 
         new SessionConfig(sameSite: 'Foo');
@@ -137,7 +137,7 @@ final class SessionConfigTest extends TestCase
     public function lowercaseSameSiteRejected(): void
     {
         // Browsers expect the canonical capitalisation per RFC 6265bis.
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
 
         new SessionConfig(sameSite: 'lax');
     }
@@ -145,7 +145,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function sameSiteNoneRequiresSecure(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('sameSite=None requires secure=true');
 
         new SessionConfig(secure: false, sameSite: 'None');
@@ -163,7 +163,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function negativeGcProbabilityRejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('gcProbability must be in [0, 100]');
 
         new SessionConfig(gcProbability: -1);
@@ -172,7 +172,7 @@ final class SessionConfigTest extends TestCase
     #[Test]
     public function gcProbabilityAbove100Rejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(SessionConfigException::class);
         $this->expectExceptionMessage('gcProbability must be in [0, 100]');
 
         new SessionConfig(gcProbability: 101);

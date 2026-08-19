@@ -27,7 +27,7 @@ final class PlatformTest extends TestCase
     }
 
     #[DataProvider('packageProvider')]
-    public function testNpmPackageMapping(Platform $platform, string $expected, ?string $baseline): void
+    public function testNpmPackageMapping(Platform $platform, string $expected, null|string $baseline): void
     {
         self::assertSame($expected, $platform->npmPackage());
         self::assertSame($baseline, $platform->npmPackageBaseline());

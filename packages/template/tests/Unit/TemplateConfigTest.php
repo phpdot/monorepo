@@ -32,6 +32,8 @@ final class TemplateConfigTest extends TestCase
             charset: 'ISO-8859-1',
             autoReload: true,
             autoescape: false,
+            format: true,
+            formatOptions: ['indent-spaces' => 2],
         );
 
         self::assertSame(['__main__' => ['/views'], 'admin' => ['/admin']], $config->paths);
@@ -41,5 +43,7 @@ final class TemplateConfigTest extends TestCase
         self::assertSame('ISO-8859-1', $config->charset);
         self::assertTrue($config->autoReload);
         self::assertFalse($config->autoescape);
+        self::assertTrue($config->format);
+        self::assertSame(['indent-spaces' => 2], $config->formatOptions);
     }
 }

@@ -25,7 +25,7 @@ final class QueryException extends MongoException
         private readonly string $operation = '',
         private readonly string $collection = '',
         int $code = 0,
-        ?\Throwable $previous = null,
+        null|\Throwable $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
     }

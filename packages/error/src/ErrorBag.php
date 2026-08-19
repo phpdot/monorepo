@@ -37,7 +37,7 @@ final class ErrorBag implements \Countable
      * @param ?MessageTranslatorInterface $translator
      */
     public function __construct(
-        private readonly ?MessageTranslatorInterface $translator = null,
+        private readonly null|MessageTranslatorInterface $translator = null,
     ) {}
 
     /**
@@ -49,7 +49,7 @@ final class ErrorBag implements \Countable
      *
      * @return self
      */
-    public function add(ErrorCodeInterface $error, ?string $context = null, array $params = []): self
+    public function add(ErrorCodeInterface $error, null|string $context = null, array $params = []): self
     {
         $details = $error->getDetails();
 
@@ -129,7 +129,7 @@ final class ErrorBag implements \Countable
      *
      * @return ?ErrorEntry
      */
-    public function first(): ?ErrorEntry
+    public function first(): null|ErrorEntry
     {
         return $this->errors[0] ?? null;
     }

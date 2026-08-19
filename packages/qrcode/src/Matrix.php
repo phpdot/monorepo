@@ -15,7 +15,7 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode;
 
-use OutOfRangeException;
+use PHPdot\QrCode\Exception\QrCodeException;
 
 final readonly class Matrix
 {
@@ -36,14 +36,14 @@ final readonly class Matrix
      * @param int $x
      * @param int $y
      *
-     * @throws OutOfRangeException if the coordinate is outside the grid
+     * @throws QrCodeException if the coordinate is outside the grid
      *
      * @return bool
      */
     public function isDark(int $x, int $y): bool
     {
         if ($x < 0 || $y < 0 || $x >= $this->size || $y >= $this->size) {
-            throw new OutOfRangeException("Coordinate ({$x}, {$y}) is outside the {$this->size}×{$this->size} matrix.");
+            throw new QrCodeException("Coordinate ({$x}, {$y}) is outside the {$this->size}×{$this->size} matrix.");
         }
 
         return $this->modules[$y][$x];

@@ -22,7 +22,7 @@ use PHPdot\Env\Schema\EnvSchema;
 
 final class Env
 {
-    private static ?self $instance = null;
+    private static null|self $instance = null;
 
     /**
      * @var array<string, string>
@@ -276,7 +276,7 @@ final class Env
      *
      * @return string|null The raw value, or null if not set.
      */
-    public function getRaw(string $key): ?string
+    public function getRaw(string $key): null|string
     {
         return $this->rawValues[$key] ?? null;
     }
@@ -294,6 +294,11 @@ final class Env
     /**
      * Compiles the raw values to a PHP cache file for fast loading.
      *
+     * Written to a temporary path and renamed into place: the compiled file
+     * is require()d back by createFromCache, so a partial write must never
+     * be observable — a truncated file would be a parse error at every
+     * subsequent boot.
+     *
      * @param string $outputPath Path to write the compiled PHP file.
      *
      * @throws WriteException If the file cannot be written.
@@ -310,7 +315,14 @@ final class Env
 
         $content = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($data, true) . ";\n";
 
-        if (file_put_contents($outputPath, $content) === false) {
+        $tempPath = $outputPath . '.' . uniqid('', true) . '.tmp';
+
+        if (@file_put_contents($tempPath, $content) === false) {
+            throw WriteException::writeFailed($outputPath);
+        }
+
+        if (!@rename($tempPath, $outputPath)) {
+            @unlink($tempPath);
             throw WriteException::writeFailed($outputPath);
         }
     }
@@ -370,7 +382,7 @@ final class Env
      *
      * @return ?Env
      */
-    public static function getInstance(): ?self
+    public static function getInstance(): null|self
     {
         return self::$instance;
     }

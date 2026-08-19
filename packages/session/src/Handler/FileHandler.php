@@ -72,6 +72,7 @@ final class FileHandler implements SessionHandlerInterface
         $this->ensureDirectory();
 
         $path = $this->path($id);
+        $created = !file_exists($path);
         $handle = @fopen($path, 'cb');
 
         if ($handle === false) {
@@ -82,6 +83,9 @@ final class FileHandler implements SessionHandlerInterface
         }
 
         try {
+            if ($created) {
+                @chmod($path, 0o600);
+            }
             flock($handle, LOCK_EX);
             ftruncate($handle, 0);
             fwrite($handle, $data);
@@ -170,6 +174,10 @@ final class FileHandler implements SessionHandlerInterface
     /**
      * Ensure the storage directory exists.
      *
+     * Created 0700: session files hold authenticated identity, so the store
+     * must never be readable by other local users — the default savePath
+     * lives under the shared /tmp.
+     *
      * @return void
      */
     private function ensureDirectory(): void
@@ -178,7 +186,7 @@ final class FileHandler implements SessionHandlerInterface
             return;
         }
 
-        if (!@mkdir($this->directory, 0777, true) && !is_dir($this->directory)) {
+        if (!@mkdir($this->directory, 0o700, true) && !is_dir($this->directory)) {
             throw new SessionWriteException(
                 \sprintf('Unable to create session directory: %s', $this->directory),
                 '',

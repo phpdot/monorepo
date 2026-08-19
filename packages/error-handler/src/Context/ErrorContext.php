@@ -34,7 +34,7 @@ final readonly class ErrorContext
         public \Throwable $exception,
         public StackTrace $stackTrace,
         public int $statusCode,
-        public ?ServerRequestInterface $request,
+        public null|ServerRequestInterface $request,
         public array $environment,
         public array $context,
         public array $solutions,

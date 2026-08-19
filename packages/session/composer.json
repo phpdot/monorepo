@@ -9,7 +9,14 @@
             "email": "omar@phpdot.com"
         }
     ],
-    "keywords": ["session", "flash", "csrf", "redis", "middleware", "psr-15"],
+    "keywords": [
+        "session",
+        "flash",
+        "csrf",
+        "redis",
+        "middleware",
+        "psr-15"
+    ],
     "require": {
         "php": ">=8.5",
         "phpdot/contracts": "^0.1",
@@ -26,7 +33,8 @@
         "phpunit/phpunit": "^13.0"
     },
     "suggest": {
-        "ext-redis": "To use the Redis session handler (RedisHandler)."
+        "ext-redis": "To use the Redis session handler (RedisHandler).",
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed)."
     },
     "autoload": {
         "psr-4": {

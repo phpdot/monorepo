@@ -16,11 +16,13 @@ use PHPdot\Validator\Rule\NotIn;
 use PHPdot\Validator\Rule\Same;
 use PHPdot\Validator\Rule\StartsWith;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ComparisonRulesTest extends TestCase
 {
-    public function test_same_passes_when_values_match(): void
+    #[Test]
+    public function samePassesWhenValuesMatch(): void
     {
         $rule = new Same('password_confirmation');
         $context = new ValidationContext('password', [
@@ -31,7 +33,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertTrue($rule->passes('secret', $context));
     }
 
-    public function test_same_fails_when_values_differ(): void
+    #[Test]
+    public function sameFailsWhenValuesDiffer(): void
     {
         $rule = new Same('password_confirmation');
         $context = new ValidationContext('password', [
@@ -42,7 +45,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes('secret', $context));
     }
 
-    public function test_different_passes_when_values_differ(): void
+    #[Test]
+    public function differentPassesWhenValuesDiffer(): void
     {
         $rule = new Different('email');
         $context = new ValidationContext('username', [
@@ -53,7 +57,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertTrue($rule->passes('omar', $context));
     }
 
-    public function test_different_fails_when_values_match(): void
+    #[Test]
+    public function differentFailsWhenValuesMatch(): void
     {
         $rule = new Different('email');
         $context = new ValidationContext('username', [
@@ -64,7 +69,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes('a@b.com', $context));
     }
 
-    public function test_confirmed_uses_field_confirmation_suffix(): void
+    #[Test]
+    public function confirmedUsesFieldConfirmationSuffix(): void
     {
         $rule = new Confirmed();
         $context = new ValidationContext('password', [
@@ -79,7 +85,8 @@ final class ComparisonRulesTest extends TestCase
         );
     }
 
-    public function test_confirmed_fails_when_confirmation_missing(): void
+    #[Test]
+    public function confirmedFailsWhenConfirmationMissing(): void
     {
         $rule = new Confirmed();
         $context = new ValidationContext('password', ['password' => 'secret']);
@@ -87,7 +94,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes('secret', $context));
     }
 
-    public function test_gt_against_literal(): void
+    #[Test]
+    public function gtAgainstLiteral(): void
     {
         $rule = new Gt(18);
         $context = new ValidationContext('age', []);
@@ -97,7 +105,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(17, $context));
     }
 
-    public function test_gt_against_other_field(): void
+    #[Test]
+    public function gtAgainstOtherField(): void
     {
         $rule = new Gt('min_age');
         $context = new ValidationContext('age', ['min_age' => 18, 'age' => 25]);
@@ -106,7 +115,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(18, $context));
     }
 
-    public function test_gte_against_other_field(): void
+    #[Test]
+    public function gteAgainstOtherField(): void
     {
         $rule = new Gte('start');
         $context = new ValidationContext('end', ['start' => 5, 'end' => 5]);
@@ -115,7 +125,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(4, $context));
     }
 
-    public function test_lt(): void
+    #[Test]
+    public function lt(): void
     {
         $rule = new Lt(100);
         $context = new ValidationContext('count', []);
@@ -125,7 +136,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(101, $context));
     }
 
-    public function test_lte(): void
+    #[Test]
+    public function lte(): void
     {
         $rule = new Lte(100);
         $context = new ValidationContext('count', []);
@@ -135,7 +147,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(101, $context));
     }
 
-    public function test_in(): void
+    #[Test]
+    public function in(): void
     {
         $rule = new In('admin', 'editor', 'viewer');
         $context = new ValidationContext('role', []);
@@ -146,7 +159,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_in_uses_strict_comparison(): void
+    #[Test]
+    public function inUsesStrictComparison(): void
     {
         $rule = new In(1, 2, 3);
         $context = new ValidationContext('n', []);
@@ -155,7 +169,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes('1', $context));
     }
 
-    public function test_not_in(): void
+    #[Test]
+    public function notIn(): void
     {
         $rule = new NotIn('reserved', 'admin');
         $context = new ValidationContext('username', []);
@@ -164,7 +179,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes('admin', $context));
     }
 
-    public function test_starts_with(): void
+    #[Test]
+    public function startsWith(): void
     {
         $rule = new StartsWith('http://', 'https://');
         $context = new ValidationContext('url', []);
@@ -175,7 +191,8 @@ final class ComparisonRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_ends_with(): void
+    #[Test]
+    public function endsWith(): void
     {
         $rule = new EndsWith('.jpg', '.png');
         $context = new ValidationContext('filename', []);

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace PHPdot\Container\Swoole\Tests;
 
 use Closure;
@@ -329,7 +330,9 @@ final class SwooleIntegrationTest extends TestCase
 
     /**
      * @template T
+     *
      * @param Closure(): T $callback
+     *
      * @return T
      */
     private function runInCoroutine(Closure $callback): mixed

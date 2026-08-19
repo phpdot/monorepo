@@ -34,9 +34,9 @@ final readonly class AttributeResult
         public array $arguments,
         public string $class,
         public TargetType $target,
-        public ?string $method = null,
-        public ?string $property = null,
-        public ?string $parameter = null,
-        public ?string $constant = null,
+        public null|string $method = null,
+        public null|string $property = null,
+        public null|string $parameter = null,
+        public null|string $constant = null,
     ) {}
 }

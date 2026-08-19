@@ -27,7 +27,7 @@ final readonly class Platform
     public function __construct(
         public string $os,
         public string $arch,
-        public ?string $libc,
+        public null|string $libc,
     ) {}
 
     /**
@@ -52,7 +52,7 @@ final readonly class Platform
      *
      * @return ?string
      */
-    public function npmPackageBaseline(): ?string
+    public function npmPackageBaseline(): null|string
     {
         if ($this->arch !== 'x64') {
             return null;

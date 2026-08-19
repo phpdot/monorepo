@@ -17,6 +17,7 @@
     ],
     "require": {
         "php": ">=8.5",
+        "composer-runtime-api": "^2.2",
         "phpdot/container": "^0.1",
         "symfony/console": "^8.0"
     },
@@ -26,6 +27,9 @@
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"
     },
+    "bin": [
+        "bin/package"
+    ],
     "autoload": {
         "psr-4": {
             "PHPdot\\Package\\": "src/"

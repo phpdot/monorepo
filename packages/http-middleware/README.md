@@ -1,8 +1,13 @@
 # phpdot/http-middleware
 
 PSR-15 middlewares for PHPdot. Each is a small, framework-agnostic middleware that plugs into any
-PSR-15 pipeline. Currently: `JsonBodyMiddleware`, which decodes JSON request bodies into the request's
-parsed body.
+PSR-15 pipeline.
+
+| Class | Does |
+|---|---|
+| `Pipeline` | The PSR-15 dispatcher: runs a middleware list (outermost first) around a final handler. Itself a `RequestHandlerInterface`, so pipelines nest and any transport serves one directly. Stateless per call — one shared instance is coroutine-safe under Swoole. |
+| `JsonBodyMiddleware` | Decodes `application/json` request bodies into the request's parsed body; rejects malformed JSON with 400. |
+| `AjaxMiddleware` | Restricts a route to script-issued requests; a browser navigating to it gets a 404. A convenience, not a security control — the signals are client-supplied. |
 
 ## Table of Contents
 
@@ -33,6 +38,26 @@ composer require phpdot/http-middleware
 
 ## Usage
 
+### Pipeline
+
+Compose middlewares around a final handler; the pipeline is itself a PSR-15 handler:
+
+```php
+use PHPdot\HttpMiddleware\JsonBodyMiddleware;
+use PHPdot\HttpMiddleware\Pipeline;
+
+$pipeline = new Pipeline(
+    [new JsonBodyMiddleware($responseFactory, $streamFactory)],
+    $appHandler,
+);
+
+$response = $pipeline->handle($request);
+```
+
+Middlewares run in list order — the first is outermost. Each may short-circuit by returning a
+response without delegating; when every middleware delegates, the final handler runs. Pipelines
+nest: a `Pipeline` is a valid final handler for another `Pipeline`.
+
 ### JsonBodyMiddleware
 
 For requests with a `application/json` content type, it decodes the body and exposes it via
@@ -41,11 +66,12 @@ straight through. Construct it with your PSR-17 response and stream factories an
 
 ```php
 use PHPdot\HttpMiddleware\JsonBodyMiddleware;
+use PHPdot\HttpMiddleware\Pipeline;
 
-$middleware = new JsonBodyMiddleware($responseFactory, $streamFactory);
-
-// In your PSR-15 pipeline, before handlers that read getParsedBody()
-$app->pipe($middleware);
+$pipeline = new Pipeline(
+    [new JsonBodyMiddleware($responseFactory, $streamFactory)],
+    $appHandler,
+);
 ```
 
 ```php

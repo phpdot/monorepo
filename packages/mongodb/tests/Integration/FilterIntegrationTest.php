@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace PHPdot\MongoDB\Tests\Integration;
 
 use PHPdot\MongoDB\Collection\Collection;
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Database\Database;
 use PHPdot\MongoDB\Filter\Filter;
+use PHPdot\MongoDB\MongoConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class FilterIntegrationTest extends TestCase
 {
     use RequiresMongo;
@@ -54,7 +56,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_eq(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->eq('name', 'Omar'))
+            ->where(fn(Filter $f) => $f->eq('name', 'Omar'))
             ->execute()
             ->toArray();
 
@@ -66,7 +68,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_ne(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->ne('status', 'active'))
+            ->where(fn(Filter $f) => $f->ne('status', 'active'))
             ->execute()
             ->toArray();
 
@@ -78,25 +80,25 @@ final class FilterIntegrationTest extends TestCase
     {
         // gt
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->gt('age', 30))
+            ->where(fn(Filter $f) => $f->gt('age', 30))
             ->execute()->toArray();
         self::assertCount(2, $docs);
 
         // gte
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->gte('age', 30))
+            ->where(fn(Filter $f) => $f->gte('age', 30))
             ->execute()->toArray();
         self::assertCount(3, $docs);
 
         // lt
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->lt('age', 30))
+            ->where(fn(Filter $f) => $f->lt('age', 30))
             ->execute()->toArray();
         self::assertCount(2, $docs);
 
         // lte
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->lte('age', 30))
+            ->where(fn(Filter $f) => $f->lte('age', 30))
             ->execute()->toArray();
         self::assertCount(3, $docs);
     }
@@ -105,7 +107,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_range(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->gte('age', 25)->lte('age', 35))
+            ->where(fn(Filter $f) => $f->gte('age', 25)->lte('age', 35))
             ->execute()->toArray();
 
         self::assertCount(4, $docs);
@@ -115,7 +117,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_in(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->in('status', ['active', 'suspended']))
+            ->where(fn(Filter $f) => $f->in('status', ['active', 'suspended']))
             ->execute()->toArray();
 
         self::assertCount(4, $docs);
@@ -125,7 +127,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_nin(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->nin('status', ['inactive', 'suspended']))
+            ->where(fn(Filter $f) => $f->nin('status', ['inactive', 'suspended']))
             ->execute()->toArray();
 
         self::assertCount(3, $docs);
@@ -137,13 +139,13 @@ final class FilterIntegrationTest extends TestCase
         $this->collection->insertOne(['name' => 'NoScore']);
 
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->exists('score'))
+            ->where(fn(Filter $f) => $f->exists('score'))
             ->execute()->toArray();
 
         self::assertCount(5, $docs);
 
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->exists('score', false))
+            ->where(fn(Filter $f) => $f->exists('score', false))
             ->execute()->toArray();
 
         self::assertCount(1, $docs);
@@ -153,10 +155,10 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_regex(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->regex('name', '^[A-C]', 'i'))
+            ->where(fn(Filter $f) => $f->regex('name', '^[A-C]', 'i'))
             ->execute()->toArray();
 
-        $names = array_map(fn ($d) => $d->name, $docs);
+        $names = array_map(fn($d) => $d->name, $docs);
         sort($names);
         self::assertSame(['Alice', 'Bob', 'Charlie'], $names);
     }
@@ -165,7 +167,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_or(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->or(
+            ->where(fn(Filter $f) => $f->or(
                 Filter::new()->eq('name', 'Omar'),
                 Filter::new()->eq('name', 'Alice'),
             ))
@@ -178,7 +180,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_and(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->and(
+            ->where(fn(Filter $f) => $f->and(
                 Filter::new()->eq('status', 'active'),
                 Filter::new()->gte('score', 90),
             ))
@@ -191,7 +193,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_nor(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->nor(
+            ->where(fn(Filter $f) => $f->nor(
                 Filter::new()->eq('status', 'active'),
                 Filter::new()->eq('status', 'suspended'),
             ))
@@ -205,7 +207,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_complex_conditions(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f
+            ->where(fn(Filter $f) => $f
                 ->eq('status', 'active')
                 ->gte('score', 90)
                 ->in('tags', ['php']))
@@ -219,7 +221,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_all_array_operator(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->all('tags', ['php', 'mongodb']))
+            ->where(fn(Filter $f) => $f->all('tags', ['php', 'mongodb']))
             ->execute()->toArray();
 
         self::assertCount(1, $docs);
@@ -230,7 +232,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_size(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->size('tags', 0))
+            ->where(fn(Filter $f) => $f->size('tags', 0))
             ->execute()->toArray();
 
         self::assertCount(1, $docs);
@@ -249,7 +251,7 @@ final class FilterIntegrationTest extends TestCase
         ]);
 
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->elemMatch('results', ['score' => ['$gte' => 80]]))
+            ->where(fn(Filter $f) => $f->elemMatch('results', ['score' => ['$gte' => 80]]))
             ->execute()->toArray();
 
         self::assertCount(1, $docs);
@@ -260,7 +262,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_type(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->type('age', 'int'))
+            ->where(fn(Filter $f) => $f->type('age', 'int'))
             ->execute()->toArray();
 
         self::assertCount(5, $docs);
@@ -270,7 +272,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_not(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->not('age', ['$gte' => 35]))
+            ->where(fn(Filter $f) => $f->not('age', ['$gte' => 35]))
             ->execute()->toArray();
 
         self::assertCount(3, $docs);
@@ -280,7 +282,7 @@ final class FilterIntegrationTest extends TestCase
     public function it_filters_with_raw(): void
     {
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->raw(['age' => ['$mod' => [5, 0]]]))
+            ->where(fn(Filter $f) => $f->raw(['age' => ['$mod' => [5, 0]]]))
             ->execute()->toArray();
 
         // 30, 25, 35, 40 are divisible by 5
@@ -294,7 +296,7 @@ final class FilterIntegrationTest extends TestCase
         $this->collection->createIndex(['name' => 'text']);
 
         $docs = $this->collection->find()
-            ->where(fn (Filter $f) => $f->text('Omar'))
+            ->where(fn(Filter $f) => $f->text('Omar'))
             ->execute()->toArray();
 
         self::assertCount(1, $docs);

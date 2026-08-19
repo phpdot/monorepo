@@ -1,0 +1,9 @@
+{
+    "buttons": {
+        "save": "Save",
+        "confirm": {
+            "title": "Are you sure?"
+        }
+    },
+    "already.dotted": "Mixed depth in one file"
+}

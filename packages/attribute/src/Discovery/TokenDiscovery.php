@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Attribute\Discovery;
 
+use FilesystemIterator;
 use PhpToken;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
@@ -40,7 +41,10 @@ final class TokenDiscovery
             }
 
             $iterator = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($directory),
+                new RecursiveDirectoryIterator(
+                    $directory,
+                    FilesystemIterator::SKIP_DOTS | FilesystemIterator::FOLLOW_SYMLINKS,
+                ),
             );
 
             /**

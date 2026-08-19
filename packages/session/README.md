@@ -75,6 +75,10 @@ The session issues and verifies CSRF tokens, and supports `invalidate()` (new id
 tests), and `NullHandler` all implement `PHPdot\Contracts\Session\SessionHandlerInterface`; `JsonSerializer`
 and `PhpSerializer` handle payload encoding. Any of them is a drop-in.
 
+`FileHandler` creates its directory `0700` and session files `0600` — session files hold authenticated
+identity, so nothing is ever group- or world-readable, including under the default `savePath` in the
+shared `/tmp`. On multi-user hosts prefer a directory owned by the application user anyway.
+
 ## Architecture
 
 `SessionMiddleware` resolves the session for the request through `SessionManager`, which loads and saves

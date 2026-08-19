@@ -55,7 +55,7 @@ final class Bun
      *
      * @return int
      */
-    public function install(array $packages, bool $dev = false, ?string $cwd = null): int
+    public function install(array $packages, bool $dev = false, null|string $cwd = null): int
     {
         $args = $dev ? ['add', '--dev', ...$packages] : ['add', ...$packages];
 
@@ -70,7 +70,7 @@ final class Bun
      *
      * @return int
      */
-    public function remove(array $packages, ?string $cwd = null): int
+    public function remove(array $packages, null|string $cwd = null): int
     {
         return $this->passthrough(['remove', ...$packages], $this->workingDir($cwd));
     }
@@ -83,7 +83,7 @@ final class Bun
      *
      * @return int
      */
-    public function view(string $package, ?string $cwd = null): int
+    public function view(string $package, null|string $cwd = null): int
     {
         return $this->passthrough(['pm', 'view', $package], $this->workingDir($cwd));
     }
@@ -97,7 +97,7 @@ final class Bun
      *
      * @return int
      */
-    public function run(string $script, array $args = [], ?string $cwd = null): int
+    public function run(string $script, array $args = [], null|string $cwd = null): int
     {
         return $this->passthrough(['run', $script, ...$args], $this->workingDir($cwd));
     }
@@ -111,7 +111,7 @@ final class Bun
      *
      * @return int
      */
-    public function x(string $tool, array $args = [], ?string $cwd = null): int
+    public function x(string $tool, array $args = [], null|string $cwd = null): int
     {
         return $this->passthrough(['x', $tool, ...$args], $this->workingDir($cwd));
     }
@@ -127,7 +127,7 @@ final class Bun
      *
      * @return int
      */
-    public function build(string|array $entrypoints, ?callable $configure = null, ?string $cwd = null): int
+    public function build(string|array $entrypoints, null|callable $configure = null, null|string $cwd = null): int
     {
         $spec = (new BuildSpec())
             ->outDir('public/build')
@@ -153,7 +153,7 @@ final class Bun
      *
      * @return int
      */
-    public function watch(string|array $entrypoints, ?callable $configure = null, ?string $cwd = null): int
+    public function watch(string|array $entrypoints, null|callable $configure = null, null|string $cwd = null): int
     {
         $spec = (new BuildSpec())
             ->outDir('public/build')
@@ -182,7 +182,7 @@ final class Bun
      *
      * @return int
      */
-    public function buildWith(array $entrypoints, BuildOptions $options, ?string $cwd = null): int
+    public function buildWith(array $entrypoints, BuildOptions $options, null|string $cwd = null): int
     {
         $outDir = $options->outDir;
         $explicitMetafile = $options->metafile;
@@ -225,7 +225,7 @@ final class Bun
      *
      * @return ?string
      */
-    private function workingDir(?string $cwd): ?string
+    private function workingDir(null|string $cwd): null|string
     {
         return $cwd ?? $this->config->workingDir;
     }
@@ -251,7 +251,7 @@ final class Bun
      *
      * @return string
      */
-    private function underCwd(?string $cwd, string $path): string
+    private function underCwd(null|string $cwd, string $path): string
     {
         if ($cwd === null || str_starts_with($path, '/') || preg_match('#^[A-Za-z]:[\\\\/]#', $path) === 1) {
             return $path;
@@ -268,7 +268,7 @@ final class Bun
      *
      * @return BuildOptions
      */
-    private function configure(BuildSpec $spec, ?callable $configure): BuildOptions
+    private function configure(BuildSpec $spec, null|callable $configure): BuildOptions
     {
         if ($configure !== null) {
             $spec = $configure($spec);
@@ -285,7 +285,7 @@ final class Bun
      *
      * @return int
      */
-    private function passthrough(array $args, ?string $cwd): int
+    private function passthrough(array $args, null|string $cwd): int
     {
         return $this->process->passthrough($this->resolver->resolve(), $args, $cwd);
     }

@@ -20,8 +20,8 @@ final class ClassDiscovery
      * @param ?TokenDiscovery $tokenDiscovery
      */
     public function __construct(
-        private readonly ?ComposerDiscovery $composerDiscovery = null,
-        private readonly ?TokenDiscovery $tokenDiscovery = null,
+        private readonly null|ComposerDiscovery $composerDiscovery = null,
+        private readonly null|TokenDiscovery $tokenDiscovery = null,
     ) {}
 
     /**

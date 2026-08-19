@@ -3,8 +3,9 @@
 declare(strict_types=1);
 
 /**
- * Base class for all rules. Provides immutable `withError()` and a default
- * `params()` carrying the field name. Subclasses implement `passes()`.
+ * Base class for all rules. Provides immutable `withError()`, a default
+ * `params()` carrying the field name, and `errorParams()` holding whatever the
+ * call site passed. Subclasses implement `passes()`.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -19,7 +20,12 @@ use PHPdot\Validator\Rule\ClosureRule;
 
 abstract class Rule implements RuleInterface
 {
-    private ?ErrorCodeInterface $errorCode = null;
+    private null|ErrorCodeInterface $errorCode = null;
+
+    /**
+     * @var array<string, mixed> Extra ICU params supplied at the call site
+     */
+    private array $errorParams = [];
 
     /**
      * Build an ad-hoc rule from a closure that returns whether the value passes.
@@ -53,15 +59,19 @@ abstract class Rule implements RuleInterface
         return is_string($value) && trim($value) === '';
     }
 
-    final public function withError(ErrorCodeInterface $code): static
+    /**
+     * @param array<string, mixed> $params ICU params for the message, merged into `params()`
+     */
+    final public function withError(ErrorCodeInterface $code, array $params = []): static
     {
         $clone = clone $this;
         $clone->errorCode = $code;
+        $clone->errorParams = $params;
 
         return $clone;
     }
 
-    final public function code(): ?ErrorCodeInterface
+    final public function code(): null|ErrorCodeInterface
     {
         return $this->errorCode;
     }
@@ -74,5 +84,18 @@ abstract class Rule implements RuleInterface
     public function params(ValidationContext $context): array
     {
         return ['field' => $context->field()];
+    }
+
+    /**
+     * What `withError()` was given, merged over `params()` by the validator.
+     *
+     * Kept out of `params()`: a subclass spreads it FIRST, so anything the base
+     * added there would lose to the rule's own.
+     *
+     * @return array<string, mixed>
+     */
+    final public function errorParams(): array
+    {
+        return $this->errorParams;
     }
 }

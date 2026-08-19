@@ -5,25 +5,29 @@ declare(strict_types=1);
 namespace PHPdot\Validator\Tests\Unit;
 
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ValidationContextTest extends TestCase
 {
-    public function test_field_returns_field_name(): void
+    #[Test]
+    public function fieldReturnsFieldName(): void
     {
         $context = new ValidationContext('email', ['email' => 'a@b.com']);
 
         self::assertSame('email', $context->field());
     }
 
-    public function test_value_returns_field_value(): void
+    #[Test]
+    public function valueReturnsFieldValue(): void
     {
         $context = new ValidationContext('email', ['email' => 'a@b.com']);
 
         self::assertSame('a@b.com', $context->value('email'));
     }
 
-    public function test_value_returns_default_for_missing_field(): void
+    #[Test]
+    public function valueReturnsDefaultForMissingField(): void
     {
         $context = new ValidationContext('email', []);
 
@@ -31,7 +35,8 @@ final class ValidationContextTest extends TestCase
         self::assertSame('fallback', $context->value('email', 'fallback'));
     }
 
-    public function test_value_supports_dot_notation(): void
+    #[Test]
+    public function valueSupportsDotNotation(): void
     {
         $context = new ValidationContext('city', [
             'address' => ['city' => 'Cairo', 'zip' => '11511'],
@@ -42,28 +47,32 @@ final class ValidationContextTest extends TestCase
         self::assertNull($context->value('address.country'));
     }
 
-    public function test_value_returns_default_when_dot_path_traverses_non_array(): void
+    #[Test]
+    public function valueReturnsDefaultWhenDotPathTraversesNonArray(): void
     {
         $context = new ValidationContext('name', ['name' => 'Omar']);
 
         self::assertSame('default', $context->value('name.first', 'default'));
     }
 
-    public function test_has_returns_true_for_existing_field(): void
+    #[Test]
+    public function hasReturnsTrueForExistingField(): void
     {
         $context = new ValidationContext('email', ['email' => 'a@b.com']);
 
         self::assertTrue($context->has('email'));
     }
 
-    public function test_has_returns_false_for_missing_field(): void
+    #[Test]
+    public function hasReturnsFalseForMissingField(): void
     {
         $context = new ValidationContext('email', []);
 
         self::assertFalse($context->has('email'));
     }
 
-    public function test_has_supports_dot_notation(): void
+    #[Test]
+    public function hasSupportsDotNotation(): void
     {
         $context = new ValidationContext('city', [
             'address' => ['city' => 'Cairo'],
@@ -73,7 +82,8 @@ final class ValidationContextTest extends TestCase
         self::assertFalse($context->has('address.country'));
     }
 
-    public function test_all_returns_full_payload(): void
+    #[Test]
+    public function allReturnsFullPayload(): void
     {
         $data = ['email' => 'a@b.com', 'age' => 30];
         $context = new ValidationContext('email', $data);
@@ -81,7 +91,8 @@ final class ValidationContextTest extends TestCase
         self::assertSame($data, $context->all());
     }
 
-    public function test_null_field_value_is_returned_as_null(): void
+    #[Test]
+    public function nullFieldValueIsReturnedAsNull(): void
     {
         $context = new ValidationContext('middle_name', ['middle_name' => null]);
 

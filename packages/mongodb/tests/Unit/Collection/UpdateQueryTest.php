@@ -45,7 +45,7 @@ final class UpdateQueryTest extends TestCase
     public function it_builds_filter_from_callback(): void
     {
         $query = $this->createQuery();
-        $query->where(fn (Filter $f) => $f->eq('status', 'inactive')->lt('last_login', 100));
+        $query->where(fn(Filter $f) => $f->eq('status', 'inactive')->lt('last_login', 100));
 
         $filter = $query->getFilter();
         self::assertSame(['$eq' => 'inactive'], $filter['status']);

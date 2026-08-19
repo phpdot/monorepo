@@ -98,7 +98,7 @@ final class Registry
      *
      * @return ?ClassAttributes
      */
-    public function findByClass(string $className, bool $includeParents = false): ?ClassAttributes
+    public function findByClass(string $className, bool $includeParents = false): null|ClassAttributes
     {
         $classAttributes = $this->map->getClass($className);
 
@@ -163,7 +163,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    public function findClassAttributes(?string $attributeClass = null): array
+    public function findClassAttributes(null|string $attributeClass = null): array
     {
         return $this->findByTarget($attributeClass, TargetType::CLASS_TYPE);
     }
@@ -185,7 +185,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    public function findConstantAttributes(?string $attributeClass = null): array
+    public function findConstantAttributes(null|string $attributeClass = null): array
     {
         return $this->findByTarget($attributeClass, TargetType::CONSTANT);
     }
@@ -257,7 +257,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    public function findMethodAttributes(?string $attributeClass = null): array
+    public function findMethodAttributes(null|string $attributeClass = null): array
     {
         return $this->findByTarget($attributeClass, TargetType::METHOD);
     }
@@ -269,7 +269,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    public function findParameterAttributes(?string $attributeClass = null): array
+    public function findParameterAttributes(null|string $attributeClass = null): array
     {
         return $this->findByTarget($attributeClass, TargetType::PARAMETER);
     }
@@ -281,7 +281,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    public function findPropertyAttributes(?string $attributeClass = null): array
+    public function findPropertyAttributes(null|string $attributeClass = null): array
     {
         return $this->findByTarget($attributeClass, TargetType::PROPERTY);
     }
@@ -372,7 +372,7 @@ final class Registry
      *
      * @return list<AttributeResult>
      */
-    private function findByTarget(?string $attributeClass, TargetType $target): array
+    private function findByTarget(null|string $attributeClass, TargetType $target): array
     {
         $results = [];
 

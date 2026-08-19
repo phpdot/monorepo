@@ -18,7 +18,7 @@ final class CapturingRule extends Rule
 
     public mixed $lastValue = null;
 
-    public ?ValidationContext $lastContext = null;
+    public null|ValidationContext $lastContext = null;
 
     /**
      * @param array<string, mixed> $extraParams

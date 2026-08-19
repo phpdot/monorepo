@@ -11,6 +11,7 @@ use PHPdot\Validator\Rule\DaysBetween;
 use PHPdot\Validator\Rule\Required;
 use PHPdot\Validator\Tests\Stubs\TestErrorCode;
 use PHPdot\Validator\Validator;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class DateRangeTest extends TestCase
@@ -42,7 +43,8 @@ final class DateRangeTest extends TestCase
         ];
     }
 
-    public function test_valid_range_within_30_days_passes(): void
+    #[Test]
+    public function validRangeWithin30DaysPasses(): void
     {
         $bag = $this->validator->validate([
             'start_date' => '2024-04-01',
@@ -52,7 +54,8 @@ final class DateRangeTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_end_before_start_fails_with_correct_code(): void
+    #[Test]
+    public function endBeforeStartFailsWithCorrectCode(): void
     {
         $bag = $this->validator->validate([
             'start_date' => '2024-04-15',
@@ -65,7 +68,8 @@ final class DateRangeTest extends TestCase
         self::assertSame(TestErrorCode::EndDateBeforeStart->value, $endErrors[0]->code);
     }
 
-    public function test_range_exceeding_30_days_fails_with_range_too_long_code(): void
+    #[Test]
+    public function rangeExceeding30DaysFailsWithRangeTooLongCode(): void
     {
         $bag = $this->validator->validate([
             'start_date' => '2024-04-01',
@@ -78,7 +82,8 @@ final class DateRangeTest extends TestCase
         self::assertContains(TestErrorCode::DateRangeTooLong->value, $codes);
     }
 
-    public function test_message_contains_max_days_param(): void
+    #[Test]
+    public function messageContainsMaxDaysParam(): void
     {
         $bag = $this->validator->validate([
             'start_date' => '2024-04-01',
@@ -97,7 +102,8 @@ final class DateRangeTest extends TestCase
         self::assertSame('end_date', $entry->params['end']);
     }
 
-    public function test_missing_start_date_fails_required(): void
+    #[Test]
+    public function missingStartDateFailsRequired(): void
     {
         $bag = $this->validator->validate([
             'end_date' => '2024-04-15',
@@ -109,7 +115,8 @@ final class DateRangeTest extends TestCase
         self::assertSame(TestErrorCode::StartDateInvalid->value, $startErrors[0]->code);
     }
 
-    public function test_invalid_date_string_fails(): void
+    #[Test]
+    public function invalidDateStringFails(): void
     {
         $bag = $this->validator->validate([
             'start_date' => 'not a date',

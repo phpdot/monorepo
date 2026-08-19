@@ -27,13 +27,13 @@ final class FakeProcessRunner implements ProcessRunnerInterface
      */
     public function __construct(
         array $queue = [],
-        private readonly ?ProcessResult $default = null,
+        private readonly null|ProcessResult $default = null,
         private readonly int $passthroughExit = 0,
     ) {
         $this->queue = $queue;
     }
 
-    public function run(string $executable, array $args = [], ?string $cwd = null): ProcessResult
+    public function run(string $executable, array $args = [], null|string $cwd = null): ProcessResult
     {
         $this->calls[] = ['executable' => $executable, 'args' => $args, 'cwd' => $cwd];
 
@@ -45,7 +45,7 @@ final class FakeProcessRunner implements ProcessRunnerInterface
         return $this->default ?? new ProcessResult(0, '', '');
     }
 
-    public function passthrough(string $executable, array $args = [], ?string $cwd = null): int
+    public function passthrough(string $executable, array $args = [], null|string $cwd = null): int
     {
         $this->passthroughCalls[] = ['executable' => $executable, 'args' => $args, 'cwd' => $cwd];
 

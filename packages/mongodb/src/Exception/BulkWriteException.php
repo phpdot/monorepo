@@ -15,7 +15,7 @@ use MongoDB\BulkWriteResult;
 
 final class BulkWriteException extends WriteException
 {
-    private ?BulkWriteResult $partialResult = null;
+    private null|BulkWriteResult $partialResult = null;
 
     /**
      * Set the partial result from the bulk write operation.
@@ -34,7 +34,7 @@ final class BulkWriteException extends WriteException
      *
      * @return ?BulkWriteResult
      */
-    public function getPartialResult(): ?BulkWriteResult
+    public function getPartialResult(): null|BulkWriteResult
     {
         return $this->partialResult;
     }

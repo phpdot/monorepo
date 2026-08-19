@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PHPdot\Console\Tests\Unit;
 
-use InvalidArgumentException;
 use PHPdot\Console\Application;
+use PHPdot\Console\Exception\ConsoleException;
 use PHPdot\Console\Tests\Fixtures\GreetCommand;
 use PHPdot\Console\Tests\Fixtures\MathAddCommand;
 use PHPUnit\Framework\Attributes\Test;
@@ -62,7 +62,7 @@ final class CommandModificationTest extends TestCase
     {
         $app = new Application();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConsoleException::class);
         $this->expectExceptionMessage('Cannot alias unknown command "missing"');
 
         $app->alias('missing', 'm');
@@ -74,7 +74,7 @@ final class CommandModificationTest extends TestCase
         $app = new Application();
         $app->register([GreetCommand::class, MathAddCommand::class]);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConsoleException::class);
         $this->expectExceptionMessage('"math:add" already exists');
 
         $app->alias('greet', 'math:add');
@@ -112,7 +112,7 @@ final class CommandModificationTest extends TestCase
     {
         $app = new Application();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConsoleException::class);
 
         $app->rename('missing', 'foo');
     }
@@ -123,7 +123,7 @@ final class CommandModificationTest extends TestCase
         $app = new Application();
         $app->register([GreetCommand::class, MathAddCommand::class]);
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConsoleException::class);
         $this->expectExceptionMessage('"math:add" already exists');
 
         $app->rename('greet', 'math:add');
@@ -173,7 +173,7 @@ final class CommandModificationTest extends TestCase
     {
         $app = new Application();
 
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(ConsoleException::class);
 
         $app->override('missing', description: 'foo');
     }

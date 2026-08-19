@@ -8,12 +8,14 @@ use MongoDB\BSON\Decimal128;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
 use PHPdot\MongoDB\Collection\Collection;
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Database\Database;
 use PHPdot\MongoDB\Document\Document;
+use PHPdot\MongoDB\MongoConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class DocumentIntegrationTest extends TestCase
 {
     use RequiresMongo;

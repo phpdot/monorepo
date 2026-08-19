@@ -236,10 +236,10 @@ final class ClassAttributesTest extends TestCase
     private function createResult(
         string $attribute,
         TargetType $target,
-        ?string $method = null,
-        ?string $property = null,
-        ?string $parameter = null,
-        ?string $constant = null,
+        null|string $method = null,
+        null|string $property = null,
+        null|string $parameter = null,
+        null|string $constant = null,
     ): AttributeResult {
         return new AttributeResult(
             attribute: $attribute,

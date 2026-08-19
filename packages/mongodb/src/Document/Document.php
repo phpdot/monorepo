@@ -90,7 +90,7 @@ final class Document implements ArrayAccess, JsonSerializable
      *
      * @return ?ObjectId
      */
-    public function id(): ?ObjectId
+    public function id(): null|ObjectId
     {
         $id = $this->data['_id'] ?? null;
 

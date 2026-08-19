@@ -186,7 +186,7 @@ final class EnvEditor
      *
      * @return string|null The key name, or null if the line is not a key-value pair.
      */
-    private function extractKey(string $line): ?string
+    private function extractKey(string $line): null|string
     {
         $trimmed = ltrim($line);
 

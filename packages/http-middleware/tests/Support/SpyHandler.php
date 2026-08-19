@@ -20,7 +20,7 @@ use Psr\Http\Server\RequestHandlerInterface;
 
 final class SpyHandler implements RequestHandlerInterface
 {
-    public ?ServerRequestInterface $received = null;
+    public null|ServerRequestInterface $received = null;
 
     public function __construct(
         private readonly ResponseFactoryInterface $responses,

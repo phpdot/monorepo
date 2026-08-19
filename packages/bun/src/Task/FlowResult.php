@@ -43,7 +43,7 @@ final readonly class FlowResult
      *
      * @return ?StepResult
      */
-    public function firstFailure(): ?StepResult
+    public function firstFailure(): null|StepResult
     {
         foreach ($this->steps as $step) {
             if ($step->executed && $step->exitCode !== 0) {

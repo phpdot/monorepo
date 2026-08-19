@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Attribute\Cache;
 
+use PHPdot\Attribute\Exception\AttributeException;
 use PHPdot\Attribute\Result\AttributeMap;
 
 final class FileCache
@@ -51,7 +52,7 @@ final class FileCache
      *
      * @return ?AttributeMap
      */
-    public function read(): ?AttributeMap
+    public function read(): null|AttributeMap
     {
         if (!file_exists($this->path)) {
             return null;
@@ -77,7 +78,8 @@ final class FileCache
          *     }>,
          *     generatedAt: int,
          *     directories: list<string>,
-         *     filter: list<string>
+         *     filter: list<string>,
+         *     visibilityFilter?: int
          * } $data
          */
         $data = require $this->path;
@@ -88,7 +90,14 @@ final class FileCache
     /**
      * Persist the attribute map to the cache file.
      *
+     * Written to a temporary path and renamed into place: the cache file is
+     * require()d back, so a partial write must never be observable — a
+     * truncated file would be a parse error at every subsequent boot.
+     * Failures throw instead of silently dropping the map.
+     *
      * @param AttributeMap $map
+     *
+     * @throws AttributeException If the directory or file cannot be written.
      *
      * @return void
      */
@@ -96,12 +105,26 @@ final class FileCache
     {
         $directory = dirname($this->path);
 
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
+        if (!is_dir($directory) && !@mkdir($directory, 0o755, true) && !is_dir($directory)) {
+            throw new AttributeException(
+                \sprintf('Unable to create attribute cache directory: %s', $directory),
+            );
         }
 
         $content = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($map->toCache(), true) . ";\n";
+        $tempPath = $this->path . '.' . uniqid('', true) . '.tmp';
 
-        file_put_contents($this->path, $content);
+        if (@file_put_contents($tempPath, $content) === false) {
+            throw new AttributeException(
+                \sprintf('Unable to write attribute cache file: %s', $this->path),
+            );
+        }
+
+        if (!@rename($tempPath, $this->path)) {
+            @unlink($tempPath);
+            throw new AttributeException(
+                \sprintf('Unable to write attribute cache file: %s', $this->path),
+            );
+        }
     }
 }

@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode;
 
-use InvalidArgumentException;
+use PHPdot\QrCode\Exception\InvalidOptionException;
 
 final readonly class Color
 {
@@ -76,7 +76,7 @@ final readonly class Color
      *
      * @param string $hex
      *
-     * @throws InvalidArgumentException if the string is not a valid hex color
+     * @throws InvalidOptionException if the string is not a valid hex color
      *
      * @return Color
      */
@@ -88,11 +88,11 @@ final readonly class Color
             3 => $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2] . 'ff',
             6 => $hex . 'ff',
             8 => $hex,
-            default => throw new InvalidArgumentException("Invalid hex color: '{$hex}'."),
+            default => throw new InvalidOptionException("Invalid hex color: '{$hex}'."),
         };
 
         if (ctype_xdigit($expanded) === false) {
-            throw new InvalidArgumentException("Invalid hex color: '{$hex}'.");
+            throw new InvalidOptionException("Invalid hex color: '{$hex}'.");
         }
 
         return new self(
@@ -177,7 +177,7 @@ final readonly class Color
     private function assertChannel(int $value, string $name): void
     {
         if ($value < 0 || $value > 255) {
-            throw new InvalidArgumentException(
+            throw new InvalidOptionException(
                 "Color channel '{$name}' must be between 0 and 255, got {$value}.",
             );
         }

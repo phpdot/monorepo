@@ -19,7 +19,7 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode;
 
-use InvalidArgumentException;
+use PHPdot\QrCode\Exception\InvalidOptionException;
 
 final readonly class RenderOptions
 {
@@ -38,11 +38,11 @@ final readonly class RenderOptions
         public Color $background = new Color(255, 255, 255),
     ) {
         if ($size < 1) {
-            throw new InvalidArgumentException("Render size must be at least 1 pixel, got {$size}.");
+            throw new InvalidOptionException("Render size must be at least 1 pixel, got {$size}.");
         }
 
         if ($margin < 0) {
-            throw new InvalidArgumentException("Render margin cannot be negative, got {$margin}.");
+            throw new InvalidOptionException("Render margin cannot be negative, got {$margin}.");
         }
     }
 

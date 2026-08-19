@@ -36,7 +36,7 @@ final class TraceLogWriterTest extends TestCase
         @rmdir($this->dir);
     }
 
-    private function writer(?EncryptorInterface $encryptor = null): TraceLogWriter
+    private function writer(null|EncryptorInterface $encryptor = null): TraceLogWriter
     {
         return new TraceLogWriter(new ChannelManager($this->dir), $encryptor);
     }

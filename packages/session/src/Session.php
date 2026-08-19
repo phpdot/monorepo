@@ -41,7 +41,7 @@ final class Session implements SessionInterface
      */
     private array $flashOld = [];
 
-    private ?string $token = null;
+    private null|string $token = null;
 
     /**
      * Hold one session: its id and creation/last-activity timestamps.

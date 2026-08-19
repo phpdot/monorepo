@@ -25,7 +25,7 @@ final class Database
      */
     public function __construct(
         private readonly MongoConnection $connection,
-        private readonly ?QueryLogger $logger = null,
+        private readonly null|QueryLogger $logger = null,
     ) {}
 
     /**

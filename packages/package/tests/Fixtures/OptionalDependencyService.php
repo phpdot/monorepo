@@ -11,6 +11,6 @@ final class OptionalDependencyService
 {
     public function __construct(
         public readonly SimpleService $service,
-        public readonly ?SampleInterface $optional = null,
+        public readonly null|SampleInterface $optional = null,
     ) {}
 }

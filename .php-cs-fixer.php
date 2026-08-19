@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 $finder = PhpCsFixer\Finder::create()
-    ->in(glob(__DIR__ . '/packages/*/src'))
+    ->in([...glob(__DIR__ . '/packages/*/src'), ...glob(__DIR__ . '/packages/*/tests')])
+    ->exclude('Psr7')
     ->name('*.php');
 
 return (new PhpCsFixer\Config())
@@ -15,6 +16,7 @@ return (new PhpCsFixer\Config())
         'strict_param' => true,
         'declare_strict_types' => true,
         'no_unused_imports' => true,
+        'nullable_type_declaration' => ['syntax' => 'union'],
         'ordered_imports' => ['sort_algorithm' => 'alpha'],
         'single_line_empty_body' => true,
         'phpdoc_order' => true,

@@ -29,8 +29,8 @@ lookup — no parsing, no casting, no I/O per request.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
+| `ext-mbstring` | `*` |
 | Composer dependencies | none — pure PHP |
-| PHP extensions | none beyond the standard library |
 
 ## Installation
 

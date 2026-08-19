@@ -141,7 +141,7 @@ final class ShowCommand extends Command
         $table->setHeaders(['DTO', 'Config file']);
 
         foreach ($configs as $class => $name) {
-            $table->addRow([$class, sprintf('config/%s.php', $name)]);
+            $table->addRow([$class, sprintf('config/%s.php', str_replace('.', '/', $name))]);
         }
 
         $table->render();

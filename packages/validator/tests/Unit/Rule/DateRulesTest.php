@@ -15,11 +15,13 @@ use PHPdot\Validator\Rule\DateEquals;
 use PHPdot\Validator\Rule\DateFormat;
 use PHPdot\Validator\Rule\DaysBetween;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class DateRulesTest extends TestCase
 {
-    public function test_date_accepts_iso_string(): void
+    #[Test]
+    public function dateAcceptsIsoString(): void
     {
         $rule = new Date();
         $context = new ValidationContext('start', []);
@@ -29,7 +31,8 @@ final class DateRulesTest extends TestCase
         self::assertTrue($rule->passes('next monday', $context));
     }
 
-    public function test_date_accepts_datetime_instance(): void
+    #[Test]
+    public function dateAcceptsDatetimeInstance(): void
     {
         $rule = new Date();
         $context = new ValidationContext('start', []);
@@ -37,7 +40,8 @@ final class DateRulesTest extends TestCase
         self::assertTrue($rule->passes(new DateTimeImmutable(), $context));
     }
 
-    public function test_date_rejects_invalid_strings(): void
+    #[Test]
+    public function dateRejectsInvalidStrings(): void
     {
         $rule = new Date();
         $context = new ValidationContext('start', []);
@@ -47,7 +51,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_date_format_strict(): void
+    #[Test]
+    public function dateFormatStrict(): void
     {
         $rule = new DateFormat('Y-m-d');
         $context = new ValidationContext('d', []);
@@ -58,7 +63,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('15/04/2024', $context));
     }
 
-    public function test_date_equals(): void
+    #[Test]
+    public function dateEquals(): void
     {
         $rule = new DateEquals('2024-04-15');
         $context = new ValidationContext('d', []);
@@ -68,7 +74,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-16', $context));
     }
 
-    public function test_date_equals_with_field_reference(): void
+    #[Test]
+    public function dateEqualsWithFieldReference(): void
     {
         $rule = new DateEquals('reference');
         $context = new ValidationContext('d', [
@@ -79,7 +86,8 @@ final class DateRulesTest extends TestCase
         self::assertTrue($rule->passes('2024-04-15', $context));
     }
 
-    public function test_after_with_literal(): void
+    #[Test]
+    public function afterWithLiteral(): void
     {
         $rule = new After('2024-04-15');
         $context = new ValidationContext('d', []);
@@ -89,7 +97,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-14', $context));
     }
 
-    public function test_after_with_field_reference(): void
+    #[Test]
+    public function afterWithFieldReference(): void
     {
         $rule = new After('start_date');
         $context = new ValidationContext('end_date', [
@@ -106,7 +115,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-15', $context2));
     }
 
-    public function test_after_or_equal(): void
+    #[Test]
+    public function afterOrEqual(): void
     {
         $rule = new AfterOrEqual('start_date');
         $context = new ValidationContext('end_date', [
@@ -118,7 +128,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-14', $context));
     }
 
-    public function test_before(): void
+    #[Test]
+    public function before(): void
     {
         $rule = new Before('end_date');
         $context = new ValidationContext('start_date', [
@@ -130,7 +141,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-16', $context));
     }
 
-    public function test_before_or_equal(): void
+    #[Test]
+    public function beforeOrEqual(): void
     {
         $rule = new BeforeOrEqual('end_date');
         $context = new ValidationContext('start_date', [
@@ -142,7 +154,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-16', $context));
     }
 
-    public function test_date_between(): void
+    #[Test]
+    public function dateBetween(): void
     {
         $rule = new DateBetween('2024-04-01', '2024-04-30');
         $context = new ValidationContext('d', []);
@@ -154,7 +167,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-05-01', $context));
     }
 
-    public function test_days_between_passes_within_max(): void
+    #[Test]
+    public function daysBetweenPassesWithinMax(): void
     {
         $rule = new DaysBetween('start_date', 'end_date', max: 30);
         $context = new ValidationContext('end_date', [
@@ -165,7 +179,8 @@ final class DateRulesTest extends TestCase
         self::assertTrue($rule->passes('2024-04-30', $context));
     }
 
-    public function test_days_between_fails_when_exceeded(): void
+    #[Test]
+    public function daysBetweenFailsWhenExceeded(): void
     {
         $rule = new DaysBetween('start_date', 'end_date', max: 30);
         $context = new ValidationContext('end_date', [
@@ -176,7 +191,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-05-15', $context));
     }
 
-    public function test_days_between_fails_when_either_field_missing(): void
+    #[Test]
+    public function daysBetweenFailsWhenEitherFieldMissing(): void
     {
         $rule = new DaysBetween('start_date', 'end_date', max: 30);
         $context = new ValidationContext('end_date', [
@@ -186,7 +202,8 @@ final class DateRulesTest extends TestCase
         self::assertFalse($rule->passes('2024-04-30', $context));
     }
 
-    public function test_days_between_params_include_all_metadata(): void
+    #[Test]
+    public function daysBetweenParamsIncludeAllMetadata(): void
     {
         $rule = new DaysBetween('start_date', 'end_date', max: 30);
         $context = new ValidationContext('end_date', []);
@@ -202,7 +219,8 @@ final class DateRulesTest extends TestCase
         );
     }
 
-    public function test_days_between_works_in_either_direction(): void
+    #[Test]
+    public function daysBetweenWorksInEitherDirection(): void
     {
         $rule = new DaysBetween('start_date', 'end_date', max: 30);
         $context = new ValidationContext('end_date', [

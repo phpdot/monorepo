@@ -7,6 +7,7 @@ namespace PHPdot\Template\Tests\Integration;
 use PHPdot\Package\Manifest;
 use PHPdot\Package\PackageInfo;
 use PHPdot\Template\EngineFactory;
+use PHPdot\Template\HtmlFormatter;
 use PHPdot\Template\TemplateConfig;
 use PHPdot\Template\Tests\Stubs\ArrayContainer;
 use PHPdot\Template\Tests\Stubs\GreetingExtension;
@@ -58,7 +59,7 @@ final class EndToEndTest extends TestCase
         );
         $manifest = new Manifest(['acme/greet' => $info], '2026-04-22T00:00:00+00:00');
 
-        $view = new View(new EngineFactory($config, $manifest, $container));
+        $view = new View(new EngineFactory($config, $manifest, $container), new HtmlFormatter($config));
 
         self::assertSame("hello, world\n", $view->render('greet.twig', ['name' => 'world']));
     }
@@ -91,7 +92,7 @@ final class EndToEndTest extends TestCase
     {
         $manifest = new Manifest([], '2026-04-22T00:00:00+00:00');
 
-        return new View(new EngineFactory($config, $manifest, new ArrayContainer()));
+        return new View(new EngineFactory($config, $manifest, new ArrayContainer()), new HtmlFormatter($config));
     }
 
     /**

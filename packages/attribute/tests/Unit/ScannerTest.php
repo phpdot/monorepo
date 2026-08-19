@@ -166,6 +166,48 @@ final class ScannerTest extends TestCase
     }
 
     #[Test]
+    public function cacheForDifferentFilterIsNotReused(): void
+    {
+        $cache = new FileCache($this->cachePath);
+        $manager = new Scanner(cache: $cache);
+        $manager->scanClasses([AnnotatedController::class], filter: [Route::class]);
+
+        $manager2 = new Scanner(cache: $cache);
+        $registry = $manager2->scanClasses([AnnotatedService::class]);
+
+        self::assertNotNull($registry->findByClass(AnnotatedService::class));
+        self::assertNull($registry->findByClass(AnnotatedController::class));
+    }
+
+    #[Test]
+    public function cacheForDifferentDirectoriesIsNotReused(): void
+    {
+        $fixturesDir = __DIR__ . '/../Fixtures/Classes';
+        $cache = new FileCache($this->cachePath);
+        $manager = new Scanner(cache: $cache);
+        $manager->scan([$fixturesDir]);
+
+        $manager2 = new Scanner(cache: $cache);
+        $registry = $manager2->scanClasses([AnnotatedService::class]);
+
+        self::assertNotNull($registry->findByClass(AnnotatedService::class));
+    }
+
+    #[Test]
+    public function cacheForSameConfigurationIsReused(): void
+    {
+        $cache = new FileCache($this->cachePath);
+        $manager = new Scanner(cache: $cache);
+        $manager->scanClasses([AnnotatedController::class], filter: [Route::class]);
+        $generatedAt = filemtime($this->cachePath);
+
+        $manager2 = new Scanner(cache: $cache);
+        $manager2->scanClasses([AnnotatedController::class], filter: [Route::class]);
+
+        self::assertSame($generatedAt, filemtime($this->cachePath));
+    }
+
+    #[Test]
     public function clearCacheDeletesFile(): void
     {
         $cache = new FileCache($this->cachePath);

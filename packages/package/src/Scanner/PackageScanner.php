@@ -170,7 +170,7 @@ final class PackageScanner
      *
      * @return ?ScannedClass
      */
-    private function scanClass(string $class, string $package): ?ScannedClass
+    private function scanClass(string $class, string $package): null|ScannedClass
     {
         $ref = new ReflectionClass($class);
 
@@ -218,7 +218,7 @@ final class PackageScanner
      *
      * @return ?Scope
      */
-    private function resolveScope(ReflectionClass $ref): ?Scope
+    private function resolveScope(ReflectionClass $ref): null|Scope
     {
         if ($ref->getAttributes(Singleton::class) !== []) {
             return Scope::SINGLETON;
@@ -297,7 +297,7 @@ final class PackageScanner
      *
      * @return class-string|null
      */
-    private function resolvableClass(?ReflectionType $type): ?string
+    private function resolvableClass(null|ReflectionType $type): null|string
     {
         if ($type instanceof ReflectionIntersectionType) {
             foreach ($type->getTypes() as $member) {
@@ -348,19 +348,32 @@ final class PackageScanner
         }
 
         $descriptions = [];
+        $current = null;
 
-        preg_match_all(
-            '/@param\s+.+?\s+\$(\w+)\s+(.+)/m',
-            $doc,
-            $matches,
-            PREG_SET_ORDER,
-        );
+        $lines = preg_split('/\R/', $doc);
 
-        foreach ($matches as $match) {
-            $descriptions[$match[1]] = trim($match[2]);
+        foreach ($lines === false ? [] : $lines as $line) {
+            $clean = trim($line, " \t/*");
+
+            if (preg_match('/^@param\s+(.*?)\s*\$(\w+)\s*(.*)$/', $clean, $match) === 1) {
+                $current = $match[2];
+                $descriptions[$current] = trim($match[3]);
+
+                continue;
+            }
+
+            if ($clean === '' || str_starts_with($clean, '@')) {
+                $current = null;
+
+                continue;
+            }
+
+            if ($current !== null) {
+                $descriptions[$current] .= ($descriptions[$current] === '' ? '' : ' ') . $clean;
+            }
         }
 
-        return $descriptions;
+        return array_filter($descriptions, static fn(string $text): bool => $text !== '');
     }
 
     /**
@@ -431,7 +444,7 @@ final class PackageScanner
      *
      * @return ?string
      */
-    private function resolveClassName(string $file, string $baseDir, string $namespace): ?string
+    private function resolveClassName(string $file, string $baseDir, string $namespace): null|string
     {
         $relative = str_replace($baseDir . DIRECTORY_SEPARATOR, '', $file);
         $relative = str_replace(DIRECTORY_SEPARATOR, '\\', $relative);

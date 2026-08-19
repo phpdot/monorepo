@@ -14,11 +14,13 @@ use PHPdot\Validator\Rule\RequiredWith;
 use PHPdot\Validator\Rule\RequiredWithout;
 use PHPdot\Validator\Rule\Sometimes;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class PresenceRulesTest extends TestCase
 {
-    public function test_required_passes_for_non_empty_value(): void
+    #[Test]
+    public function requiredPassesForNonEmptyValue(): void
     {
         $rule = new Required();
         $context = new ValidationContext('email', ['email' => 'a@b.com']);
@@ -26,7 +28,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes('a@b.com', $context));
     }
 
-    public function test_required_fails_for_missing_field(): void
+    #[Test]
+    public function requiredFailsForMissingField(): void
     {
         $rule = new Required();
         $context = new ValidationContext('email', []);
@@ -34,7 +37,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_fails_for_null(): void
+    #[Test]
+    public function requiredFailsForNull(): void
     {
         $rule = new Required();
         $context = new ValidationContext('email', ['email' => null]);
@@ -42,7 +46,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_fails_for_empty_string(): void
+    #[Test]
+    public function requiredFailsForEmptyString(): void
     {
         $rule = new Required();
         $context = new ValidationContext('email', ['email' => '']);
@@ -50,7 +55,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes('', $context));
     }
 
-    public function test_required_fails_for_whitespace_only_string(): void
+    #[Test]
+    public function requiredFailsForWhitespaceOnlyString(): void
     {
         $rule = new Required();
         $context = new ValidationContext('username', ['username' => '   ']);
@@ -59,7 +65,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes("\t\n ", $context));
     }
 
-    public function test_required_fails_for_empty_array(): void
+    #[Test]
+    public function requiredFailsForEmptyArray(): void
     {
         $rule = new Required();
         $context = new ValidationContext('roles', ['roles' => []]);
@@ -67,7 +74,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes([], $context));
     }
 
-    public function test_required_passes_for_zero_and_false(): void
+    #[Test]
+    public function requiredPassesForZeroAndFalse(): void
     {
         $rule = new Required();
 
@@ -76,7 +84,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(false, new ValidationContext('a', ['a' => false])));
     }
 
-    public function test_filled_passes_when_field_absent(): void
+    #[Test]
+    public function filledPassesWhenFieldAbsent(): void
     {
         $rule = new Filled();
         $context = new ValidationContext('phone', []);
@@ -84,7 +93,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $context));
     }
 
-    public function test_filled_fails_when_present_but_empty(): void
+    #[Test]
+    public function filledFailsWhenPresentButEmpty(): void
     {
         $rule = new Filled();
         $context = new ValidationContext('phone', ['phone' => '']);
@@ -92,7 +102,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes('', $context));
     }
 
-    public function test_filled_passes_when_present_and_non_empty(): void
+    #[Test]
+    public function filledPassesWhenPresentAndNonEmpty(): void
     {
         $rule = new Filled();
         $context = new ValidationContext('phone', ['phone' => '123']);
@@ -100,7 +111,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes('123', $context));
     }
 
-    public function test_present_passes_for_present_field_even_if_empty(): void
+    #[Test]
+    public function presentPassesForPresentFieldEvenIfEmpty(): void
     {
         $rule = new Present();
 
@@ -109,7 +121,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes([], new ValidationContext('a', ['a' => []])));
     }
 
-    public function test_present_fails_for_missing_field(): void
+    #[Test]
+    public function presentFailsForMissingField(): void
     {
         $rule = new Present();
         $context = new ValidationContext('a', []);
@@ -117,7 +130,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_if_required_when_other_matches(): void
+    #[Test]
+    public function requiredIfRequiredWhenOtherMatches(): void
     {
         $rule = new RequiredIf('type', ['business']);
         $context = new ValidationContext('vat_id', ['type' => 'business']);
@@ -125,7 +139,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_if_optional_when_other_does_not_match(): void
+    #[Test]
+    public function requiredIfOptionalWhenOtherDoesNotMatch(): void
     {
         $rule = new RequiredIf('type', ['business']);
         $context = new ValidationContext('vat_id', ['type' => 'personal']);
@@ -133,7 +148,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $context));
     }
 
-    public function test_required_if_passes_when_required_and_filled(): void
+    #[Test]
+    public function requiredIfPassesWhenRequiredAndFilled(): void
     {
         $rule = new RequiredIf('type', ['business']);
         $context = new ValidationContext('vat_id', ['type' => 'business', 'vat_id' => 'EG123']);
@@ -141,7 +157,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes('EG123', $context));
     }
 
-    public function test_required_if_params_include_other_and_values(): void
+    #[Test]
+    public function requiredIfParamsIncludeOtherAndValues(): void
     {
         $rule = new RequiredIf('type', ['business', 'enterprise']);
         $context = new ValidationContext('vat_id', []);
@@ -152,7 +169,8 @@ final class PresenceRulesTest extends TestCase
         );
     }
 
-    public function test_required_unless_required_when_other_does_not_match(): void
+    #[Test]
+    public function requiredUnlessRequiredWhenOtherDoesNotMatch(): void
     {
         $rule = new RequiredUnless('account_type', ['guest']);
         $context = new ValidationContext('email', ['account_type' => 'user']);
@@ -160,7 +178,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_unless_optional_when_other_matches(): void
+    #[Test]
+    public function requiredUnlessOptionalWhenOtherMatches(): void
     {
         $rule = new RequiredUnless('account_type', ['guest']);
         $context = new ValidationContext('email', ['account_type' => 'guest']);
@@ -168,7 +187,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $context));
     }
 
-    public function test_required_with_required_when_any_other_present(): void
+    #[Test]
+    public function requiredWithRequiredWhenAnyOtherPresent(): void
     {
         $rule = new RequiredWith('first_name', 'last_name');
         $context = new ValidationContext('full_name', ['first_name' => 'Omar']);
@@ -176,7 +196,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_with_optional_when_all_others_absent(): void
+    #[Test]
+    public function requiredWithOptionalWhenAllOthersAbsent(): void
     {
         $rule = new RequiredWith('first_name', 'last_name');
         $context = new ValidationContext('full_name', []);
@@ -184,7 +205,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $context));
     }
 
-    public function test_required_without_required_when_any_other_missing(): void
+    #[Test]
+    public function requiredWithoutRequiredWhenAnyOtherMissing(): void
     {
         $rule = new RequiredWithout('email', 'phone');
         $context = new ValidationContext('username', ['email' => 'a@b.com']);
@@ -192,7 +214,8 @@ final class PresenceRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $context));
     }
 
-    public function test_required_without_optional_when_all_others_present(): void
+    #[Test]
+    public function requiredWithoutOptionalWhenAllOthersPresent(): void
     {
         $rule = new RequiredWithout('email', 'phone');
         $context = new ValidationContext('username', [
@@ -203,7 +226,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $context));
     }
 
-    public function test_sometimes_always_passes(): void
+    #[Test]
+    public function sometimesAlwaysPasses(): void
     {
         $rule = new Sometimes();
 
@@ -211,7 +235,8 @@ final class PresenceRulesTest extends TestCase
         self::assertTrue($rule->passes('x', new ValidationContext('a', ['a' => 'x'])));
     }
 
-    public function test_nullable_always_passes(): void
+    #[Test]
+    public function nullableAlwaysPasses(): void
     {
         $rule = new Nullable();
 

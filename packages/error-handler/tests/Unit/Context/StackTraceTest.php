@@ -61,7 +61,7 @@ final class StackTraceTest extends TestCase
         self::assertNotEmpty($snippet);
 
         // The error line should be in the snippet
-        $highlightedLines = array_filter($snippet, static fn ($l) => $l->isHighlighted);
+        $highlightedLines = array_filter($snippet, static fn($l) => $l->isHighlighted);
         self::assertCount(1, $highlightedLines);
 
         $highlighted = array_values($highlightedLines)[0];
@@ -75,7 +75,7 @@ final class StackTraceTest extends TestCase
         $trace = StackTrace::fromException($exception, contextLines: 9);
 
         $snippet = $trace->frames[0]->codeSnippet;
-        $highlightedCount = count(array_filter($snippet, static fn ($l) => $l->isHighlighted));
+        $highlightedCount = count(array_filter($snippet, static fn($l) => $l->isHighlighted));
 
         self::assertSame(1, $highlightedCount);
     }
@@ -253,7 +253,7 @@ final class StackTraceTest extends TestCase
         $tmpFile = tempnam(sys_get_temp_dir(), 'test_');
         self::assertNotFalse($tmpFile);
         // Create a file with 30 lines
-        $content = implode("\n", array_map(static fn ($i) => "line $i", range(1, 30)));
+        $content = implode("\n", array_map(static fn($i) => "line $i", range(1, 30)));
         file_put_contents($tmpFile, $content);
 
         try {

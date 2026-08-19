@@ -26,7 +26,7 @@ interface ScopeManagerInterface
      *
      * @return ?SpanInterface
      */
-    public function current(): ?SpanInterface;
+    public function current(): null|SpanInterface;
 
     /**
      * Push any span as the new current span on the per-coroutine stack.

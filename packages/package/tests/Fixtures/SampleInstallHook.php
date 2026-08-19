@@ -10,7 +10,7 @@ use PHPdot\Package\Contract\InstallHandler;
 #[InstallHook]
 final class SampleInstallHook implements InstallHandler
 {
-    public static function install(string $projectRoot, string $configDir): ?string
+    public static function install(string $projectRoot, string $configDir): null|string
     {
         return null;
     }

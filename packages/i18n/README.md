@@ -43,7 +43,7 @@ use PHPdot\I18n\Loader\PhpArrayLoader;
 $config = new I18nConfig(
     default: 'en',
     supported: ['en', 'ar', 'fr'],
-    path: '/app/lang',
+    paths: ['/app/lang'],
 );
 
 $translator = new Translator(
@@ -58,19 +58,26 @@ echo $translator->translate('messages.welcome', ['name' => 'Omar']);
 
 ### Translation files
 
-Keys are prefixed by filename, so `lang/en/messages.php` gives `messages.welcome`:
+Keys are prefixed by filename, so `lang/en/messages.php` gives `messages.welcome`. Nesting flattens
+onto that with dots, so group however reads best — the two `save` keys below are identical:
 
 ```php
 // lang/en/messages.php
 return [
     'welcome' => 'Welcome, {name}!',
     'items' => '{count, plural, one {# item} other {# items}}',
+    'buttons' => [
+        'save' => 'Save',       // messages.buttons.save
+    ],
+    'buttons.save' => 'Save',   // the same key, written flat
 ];
 ```
 
-`JsonLoader` reads the same shape from `.json` files; `ChainLoader` layers several loaders so later
-sources (e.g. database overrides) win. Every template is ICU MessageFormat — interpolation,
-`plural`, and `select` all share one syntax — and `ICUValidator` can check a template before it ships.
+Every configured path is scanned, in order, and a later one wins a duplicate key — which is how an
+app overrides a catalog it ships with. `JsonLoader` reads the same shape from `.json` files;
+`ChainLoader` layers loaders of *different* kinds (say PHP files plus database overrides). Every
+template is ICU MessageFormat — interpolation, `plural`, and `select` all share one syntax — and
+`ICUValidator` can check a template before it ships.
 
 ## Architecture
 

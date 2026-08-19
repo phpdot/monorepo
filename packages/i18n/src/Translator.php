@@ -277,7 +277,7 @@ final class Translator implements MessageTranslatorInterface
      *
      * @return void
      */
-    public function clearCache(?string $language = null): void
+    public function clearCache(null|string $language = null): void
     {
         if ($language !== null) {
             $this->cache->delete('i18n.' . $language);
@@ -362,7 +362,7 @@ final class Translator implements MessageTranslatorInterface
      *
      * @return ?string
      */
-    private function getTemplate(string $key): ?string
+    private function getTemplate(string $key): null|string
     {
         $translations = $this->loadTranslations($this->language);
 

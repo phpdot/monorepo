@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Bun\Tests\Unit\Manifest;
 
+use PHPdot\Bun\Manifest\AmbiguousEntryException;
 use PHPdot\Bun\Manifest\Manifest;
 use PHPdot\Bun\Manifest\ManifestEntryNotFoundException;
 use PHPdot\Bun\Manifest\ManifestNotReadableException;
@@ -138,6 +139,58 @@ final class ManifestTest extends TestCase
         unlink($verbose);
         unlink($target);
         @rmdir(dirname($target));
+    }
+
+    public function testResolvesTheSoleEntryWhenNoneIsNamed(): void
+    {
+        $this->write([
+            './js/app-74g4yfem.js' => ['entryPoint' => 'resources/js/app.ts'],
+            './css/app-3261p4x3.css' => ['entryPoint' => 'resources/js/app.ts'],
+            './js/chunk-0ewgenf0.js' => [], // shared chunk: no entryPoint, not an entry
+        ]);
+
+        $manifest = new Manifest($this->metafile, '/build');
+
+        self::assertSame(['resources/js/app.ts'], $manifest->entries());
+        self::assertSame('resources/js/app.ts', $manifest->sole());
+        self::assertSame('/build/js/app-74g4yfem.js', $manifest->js());
+        self::assertSame('/build/css/app-3261p4x3.css', $manifest->css());
+        self::assertSame('/build/js/app-74g4yfem.js', $manifest->asset(null, 'js'));
+    }
+
+    public function testSeveralEntriesRefuseToGuessAndListTheChoices(): void
+    {
+        $this->write([
+            './admin-aaa.js' => ['entryPoint' => 'resources/js/admin.ts'],
+            './site-bbb.js' => ['entryPoint' => 'resources/js/site.ts'],
+        ]);
+
+        $manifest = new Manifest($this->metafile, '/build');
+
+        try {
+            $manifest->js();
+            self::fail('Expected AmbiguousEntryException.');
+        } catch (AmbiguousEntryException $e) {
+            self::assertStringContainsString('resources/js/admin.ts', $e->getMessage());
+            self::assertStringContainsString('resources/js/site.ts', $e->getMessage());
+        }
+
+        // Naming one still works — ambiguity is only a problem when nothing is named.
+        self::assertSame('/build/admin-aaa.js', $manifest->js('resources/js/admin.ts'));
+    }
+
+    public function testNoEntriesReportsAnEmptyBuild(): void
+    {
+        $this->write(['./chunk-only.js' => []]);
+
+        $manifest = new Manifest($this->metafile, '/build');
+
+        self::assertSame([], $manifest->entries());
+
+        $this->expectException(AmbiguousEntryException::class);
+        $this->expectExceptionMessageMatches('/lists no entrypoints/');
+
+        $manifest->css();
     }
 
     public function testCompileReturnsFalseWhenMetafileIsUnreadable(): void

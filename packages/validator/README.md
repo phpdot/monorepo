@@ -19,6 +19,7 @@ the factory threads any registered message translator into the bag automatically
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
+| `ext-mbstring` | `*` |
 | `phpdot/error` | `^0.1` |
 
 `phpdot/container` is a dev-only suggestion for auto-wiring `ValidatorFactory`.
@@ -60,6 +61,27 @@ if ($errors->hasErrors()) {
 
 `$errors` is a `phpdot/error` `ErrorBag` — the same value your controllers, services, and responders
 already handle.
+
+### Message params
+
+Every rule contributes ICU arguments to the message it triggers: `{field}` always, plus its own bounds
+— `Min` gives `{min}`, `Between` gives both. So a translation names the limit instead of repeating it:
+
+```php
+'username_too_short' => 'The username must be at least {min} characters.',
+```
+
+`withError()` takes them explicitly, and they **override** the rule's own. State them there when the
+message should not depend on which key a rule happens to expose — or when the rule cannot describe
+itself at all, a closure above all:
+
+```php
+(new ClosureRule($check))->withError(UserErrorCode::PrefixInvalid, ['min' => 1, 'max' => 4]),
+(new Between(1, 999))->withError(UserErrorCode::CodeRange, ['min' => 1, 'max' => 999]),
+```
+
+Since they win, the same constant belongs on both sides — `new Between(1, self::CODE_MAX)` with
+`['max' => self::CODE_MAX]` — or the message will announce a limit the rule doesn't enforce.
 
 ### Auto-wired with DI
 

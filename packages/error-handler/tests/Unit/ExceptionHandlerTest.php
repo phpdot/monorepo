@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace PHPdot\ErrorHandler\Tests\Unit;
 
-use PHPdot\Http\Message\ServerRequest;
-use PHPdot\ErrorHandler\Context\ContextTab;
 use PHPdot\ErrorHandler\Context\ErrorContext;
 use PHPdot\ErrorHandler\Contract\ContextProviderInterface;
 use PHPdot\ErrorHandler\Contract\RendererInterface;
@@ -15,12 +13,12 @@ use PHPdot\ErrorHandler\Renderer\HtmlDevRenderer;
 use PHPdot\ErrorHandler\Renderer\HtmlProdRenderer;
 use PHPdot\ErrorHandler\Renderer\JsonRenderer;
 use PHPdot\ErrorHandler\Solution\Solution;
+use PHPdot\Http\Message\ServerRequest;
+use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\TestCase;
 
 final class ExceptionHandlerTest extends TestCase
 {
@@ -352,8 +350,11 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'TestTab'; }
-            public function collect(\Throwable $exception, ?ServerRequestInterface $request): array
+            public function getLabel(): string
+            {
+                return 'TestTab';
+            }
+            public function collect(\Throwable $exception, null|ServerRequestInterface $request): array
             {
                 return ['key' => 'value'];
             }
@@ -386,8 +387,11 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Empty'; }
-            public function collect(\Throwable $exception, ?ServerRequestInterface $request): array
+            public function getLabel(): string
+            {
+                return 'Empty';
+            }
+            public function collect(\Throwable $exception, null|ServerRequestInterface $request): array
             {
                 return [];
             }
@@ -418,8 +422,11 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Broken'; }
-            public function collect(\Throwable $exception, ?ServerRequestInterface $request): array
+            public function getLabel(): string
+            {
+                return 'Broken';
+            }
+            public function collect(\Throwable $exception, null|ServerRequestInterface $request): array
             {
                 throw new \RuntimeException('Provider crashed');
             }
@@ -439,7 +446,10 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [new Solution(title: 'Fix this', description: 'Do that')];
@@ -472,7 +482,10 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return false; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return false;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [new Solution(title: 'Unreachable', description: 'Never')];
@@ -504,8 +517,14 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { throw new \RuntimeException('boom'); }
-            public function getSolutions(\Throwable $exception): array { return []; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                throw new \RuntimeException('boom');
+            }
+            public function getSolutions(\Throwable $exception): array
+            {
+                return [];
+            }
         };
 
         $handler->addSolutionProvider($provider);
@@ -523,8 +542,9 @@ final class ExceptionHandlerTest extends TestCase
             ->with(
                 LogLevel::ERROR,
                 'Server error',
-                self::callback(static fn (array $ctx): bool =>
-                    $ctx['status_code'] === 500 && $ctx['exception'] instanceof \Throwable
+                self::callback(
+                    static fn(array $ctx): bool =>
+                    $ctx['status_code'] === 500 && $ctx['exception'] instanceof \Throwable,
                 ),
             );
 
@@ -618,7 +638,10 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider1 = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [new Solution(title: 'Solution 1', description: 'First')];
@@ -626,7 +649,10 @@ final class ExceptionHandlerTest extends TestCase
         };
 
         $provider2 = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [
@@ -662,13 +688,25 @@ final class ExceptionHandlerTest extends TestCase
         $handler = $this->makeHandler(environment: 'development');
 
         $provider1 = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Tab1'; }
-            public function collect(\Throwable $e, ?ServerRequestInterface $r): array { return ['a' => 1]; }
+            public function getLabel(): string
+            {
+                return 'Tab1';
+            }
+            public function collect(\Throwable $e, null|ServerRequestInterface $r): array
+            {
+                return ['a' => 1];
+            }
         };
 
         $provider2 = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Tab2'; }
-            public function collect(\Throwable $e, ?ServerRequestInterface $r): array { return ['b' => 2]; }
+            public function getLabel(): string
+            {
+                return 'Tab2';
+            }
+            public function collect(\Throwable $e, null|ServerRequestInterface $r): array
+            {
+                return ['b' => 2];
+            }
         };
 
         $handler->addContextProvider($provider1);

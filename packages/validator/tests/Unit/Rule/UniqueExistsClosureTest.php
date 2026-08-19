@@ -9,11 +9,13 @@ use PHPdot\Validator\Rule\ClosureRule;
 use PHPdot\Validator\Rule\Exists;
 use PHPdot\Validator\Rule\Unique;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class UniqueExistsClosureTest extends TestCase
 {
-    public function test_unique_passes_when_resolver_says_no(): void
+    #[Test]
+    public function uniquePassesWhenResolverSaysNo(): void
     {
         $rule = new Unique(fn(mixed $v): bool => false);
         $context = new ValidationContext('email', []);
@@ -21,7 +23,8 @@ final class UniqueExistsClosureTest extends TestCase
         self::assertTrue($rule->passes('a@b.com', $context));
     }
 
-    public function test_unique_fails_when_resolver_says_yes(): void
+    #[Test]
+    public function uniqueFailsWhenResolverSaysYes(): void
     {
         $rule = new Unique(fn(mixed $v): bool => true);
         $context = new ValidationContext('email', []);
@@ -29,7 +32,8 @@ final class UniqueExistsClosureTest extends TestCase
         self::assertFalse($rule->passes('a@b.com', $context));
     }
 
-    public function test_unique_resolver_receives_value_and_context(): void
+    #[Test]
+    public function uniqueResolverReceivesValueAndContext(): void
     {
         $captured = ['value' => null, 'field' => null];
 
@@ -46,21 +50,24 @@ final class UniqueExistsClosureTest extends TestCase
         self::assertSame('email', $captured['field']);
     }
 
-    public function test_exists_passes_when_resolver_says_yes(): void
+    #[Test]
+    public function existsPassesWhenResolverSaysYes(): void
     {
         $rule = new Exists(fn(mixed $v): bool => true);
 
         self::assertTrue($rule->passes(42, new ValidationContext('org_id', [])));
     }
 
-    public function test_exists_fails_when_resolver_says_no(): void
+    #[Test]
+    public function existsFailsWhenResolverSaysNo(): void
     {
         $rule = new Exists(fn(mixed $v): bool => false);
 
         self::assertFalse($rule->passes(42, new ValidationContext('org_id', [])));
     }
 
-    public function test_closure_factory_creates_closure_rule(): void
+    #[Test]
+    public function closureFactoryCreatesClosureRule(): void
     {
         $rule = Rule::closure(static fn(mixed $v): bool => $v === 'expected');
 
@@ -69,7 +76,8 @@ final class UniqueExistsClosureTest extends TestCase
         self::assertFalse($rule->passes('other', new ValidationContext('a', [])));
     }
 
-    public function test_closure_can_read_other_fields_via_context(): void
+    #[Test]
+    public function closureCanReadOtherFieldsViaContext(): void
     {
         $rule = Rule::closure(function (mixed $value, ValidationContext $ctx): bool {
             $start = (string) $ctx->value('start_date');

@@ -29,7 +29,7 @@ final readonly class ClassAttributes
         public string $class,
         public StructureType $structureType,
         public array $implements,
-        public ?string $extends,
+        public null|string $extends,
         public array $results,
     ) {}
 
@@ -65,7 +65,7 @@ final readonly class ClassAttributes
      *
      * @return list<AttributeResult>
      */
-    public function constantAttributes(?string $constant = null): array
+    public function constantAttributes(null|string $constant = null): array
     {
         return array_values(
             array_filter(
@@ -83,7 +83,7 @@ final readonly class ClassAttributes
      *
      * @return ?AttributeResult
      */
-    public function get(string $attributeClass): ?AttributeResult
+    public function get(string $attributeClass): null|AttributeResult
     {
         foreach ($this->results as $result) {
             if ($result->attribute === $attributeClass) {
@@ -119,7 +119,7 @@ final readonly class ClassAttributes
      *
      * @return list<AttributeResult>
      */
-    public function methodAttributes(?string $method = null): array
+    public function methodAttributes(null|string $method = null): array
     {
         return array_values(
             array_filter(
@@ -138,7 +138,7 @@ final readonly class ClassAttributes
      *
      * @return list<AttributeResult>
      */
-    public function parameterAttributes(?string $method = null, ?string $parameter = null): array
+    public function parameterAttributes(null|string $method = null, null|string $parameter = null): array
     {
         return array_values(
             array_filter(
@@ -157,7 +157,7 @@ final readonly class ClassAttributes
      *
      * @return list<AttributeResult>
      */
-    public function propertyAttributes(?string $property = null): array
+    public function propertyAttributes(null|string $property = null): array
     {
         return array_values(
             array_filter(

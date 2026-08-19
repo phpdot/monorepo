@@ -24,7 +24,7 @@ Each Swoole coroutine gets its own isolated service scope via `Coroutine::getCon
 | ext-swoole | `>= 6.2` |
 | `phpdot/container` | `^0.1` |
 | `phpdot/contracts` | `^0.1` |
-| `psr/container` | `^1.1 \|\| ^2.0` |
+| `psr/container` | `^2.0` |
 | `psr/http-message` | `^2.0` |
 | `psr/http-server-handler` | `^1.0` |
 

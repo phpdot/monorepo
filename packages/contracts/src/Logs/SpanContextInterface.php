@@ -37,7 +37,7 @@ interface SpanContextInterface
      *
      * @return ?string
      */
-    public function parentSpanId(): ?string;
+    public function parentSpanId(): null|string;
 
     /**
      * The W3C sampled flag (bit 0 of trace-flags): whether this trace is recorded.

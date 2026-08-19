@@ -19,6 +19,7 @@ use PHPdot\Validator\Rule\ProhibitedUnless;
 use PHPdot\Validator\Rule\Uppercase;
 use PHPdot\Validator\Tests\Stubs\TestRole;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class NewRulesTest extends TestCase
@@ -31,20 +32,23 @@ final class NewRulesTest extends TestCase
 
     // --- Enum ---
 
-    public function test_enum_passes_for_valid_case(): void
+    #[Test]
+    public function enumPassesForValidCase(): void
     {
         $rule = new Enum(TestRole::class);
         self::assertTrue($rule->passes('admin', $this->ctx('role', ['role' => 'admin'])));
         self::assertTrue($rule->passes('viewer', $this->ctx('role', ['role' => 'viewer'])));
     }
 
-    public function test_enum_fails_for_invalid_case(): void
+    #[Test]
+    public function enumFailsForInvalidCase(): void
     {
         $rule = new Enum(TestRole::class);
         self::assertFalse($rule->passes('superuser', $this->ctx('role', ['role' => 'superuser'])));
     }
 
-    public function test_enum_fails_for_non_scalar(): void
+    #[Test]
+    public function enumFailsForNonScalar(): void
     {
         $rule = new Enum(TestRole::class);
         self::assertFalse($rule->passes(['admin'], $this->ctx('role', ['role' => ['admin']])));
@@ -53,20 +57,23 @@ final class NewRulesTest extends TestCase
 
     // --- Distinct ---
 
-    public function test_distinct_passes_for_unique_array(): void
+    #[Test]
+    public function distinctPassesForUniqueArray(): void
     {
         $rule = new Distinct();
         self::assertTrue($rule->passes(['a', 'b', 'c'], $this->ctx('tags', ['tags' => ['a', 'b', 'c']])));
         self::assertTrue($rule->passes([], $this->ctx('tags', ['tags' => []])));
     }
 
-    public function test_distinct_fails_for_duplicates(): void
+    #[Test]
+    public function distinctFailsForDuplicates(): void
     {
         $rule = new Distinct();
         self::assertFalse($rule->passes(['a', 'b', 'a'], $this->ctx('tags', ['tags' => ['a', 'b', 'a']])));
     }
 
-    public function test_distinct_fails_for_non_array(): void
+    #[Test]
+    public function distinctFailsForNonArray(): void
     {
         $rule = new Distinct();
         self::assertFalse($rule->passes('not-an-array', $this->ctx('tags', ['tags' => 'not-an-array'])));
@@ -74,7 +81,8 @@ final class NewRulesTest extends TestCase
 
     // --- Lowercase / Uppercase / Ascii ---
 
-    public function test_lowercase(): void
+    #[Test]
+    public function lowercase(): void
     {
         $rule = new Lowercase();
         self::assertTrue($rule->passes('hello', $this->ctx('s', ['s' => 'hello'])));
@@ -83,14 +91,16 @@ final class NewRulesTest extends TestCase
         self::assertFalse($rule->passes(123, $this->ctx('s', ['s' => 123])));
     }
 
-    public function test_uppercase(): void
+    #[Test]
+    public function uppercase(): void
     {
         $rule = new Uppercase();
         self::assertTrue($rule->passes('HELLO', $this->ctx('s', ['s' => 'HELLO'])));
         self::assertFalse($rule->passes('Hello', $this->ctx('s', ['s' => 'Hello'])));
     }
 
-    public function test_ascii(): void
+    #[Test]
+    public function ascii(): void
     {
         $rule = new Ascii();
         self::assertTrue($rule->passes('hello', $this->ctx('s', ['s' => 'hello'])));
@@ -101,7 +111,8 @@ final class NewRulesTest extends TestCase
 
     // --- Digits / DigitsBetween ---
 
-    public function test_digits_exact_length(): void
+    #[Test]
+    public function digitsExactLength(): void
     {
         $rule = new Digits(4);
         self::assertTrue($rule->passes('1234', $this->ctx('otp', ['otp' => '1234'])));
@@ -111,7 +122,8 @@ final class NewRulesTest extends TestCase
         self::assertFalse($rule->passes('12a4', $this->ctx('otp', ['otp' => '12a4'])));
     }
 
-    public function test_digits_between_inclusive_range(): void
+    #[Test]
+    public function digitsBetweenInclusiveRange(): void
     {
         $rule = new DigitsBetween(2, 4);
         self::assertTrue($rule->passes('12', $this->ctx('n', ['n' => '12'])));
@@ -124,26 +136,30 @@ final class NewRulesTest extends TestCase
 
     // --- Prohibited family ---
 
-    public function test_prohibited_passes_when_field_absent(): void
+    #[Test]
+    public function prohibitedPassesWhenFieldAbsent(): void
     {
         $rule = new Prohibited();
         self::assertTrue($rule->passes(null, $this->ctx('promo_code', [])));
     }
 
-    public function test_prohibited_passes_when_field_empty(): void
+    #[Test]
+    public function prohibitedPassesWhenFieldEmpty(): void
     {
         $rule = new Prohibited();
         self::assertTrue($rule->passes('', $this->ctx('promo_code', ['promo_code' => ''])));
         self::assertTrue($rule->passes(null, $this->ctx('promo_code', ['promo_code' => null])));
     }
 
-    public function test_prohibited_fails_when_field_has_value(): void
+    #[Test]
+    public function prohibitedFailsWhenFieldHasValue(): void
     {
         $rule = new Prohibited();
         self::assertFalse($rule->passes('SAVE10', $this->ctx('promo_code', ['promo_code' => 'SAVE10'])));
     }
 
-    public function test_prohibited_if_only_when_other_matches(): void
+    #[Test]
+    public function prohibitedIfOnlyWhenOtherMatches(): void
     {
         $rule = new ProhibitedIf('plan', ['free']);
         // plan = paid → unrestricted
@@ -154,7 +170,8 @@ final class NewRulesTest extends TestCase
         self::assertTrue($rule->passes('', $this->ctx('promo_code', ['plan' => 'free', 'promo_code' => ''])));
     }
 
-    public function test_prohibited_unless_other_matches(): void
+    #[Test]
+    public function prohibitedUnlessOtherMatches(): void
     {
         $rule = new ProhibitedUnless('role', ['admin']);
         // role = admin → unrestricted
@@ -167,20 +184,23 @@ final class NewRulesTest extends TestCase
 
     // --- Missing family ---
 
-    public function test_missing_passes_when_absent(): void
+    #[Test]
+    public function missingPassesWhenAbsent(): void
     {
         $rule = new Missing();
         self::assertTrue($rule->passes(null, $this->ctx('legacy_id', [])));
     }
 
-    public function test_missing_fails_when_present_even_if_empty(): void
+    #[Test]
+    public function missingFailsWhenPresentEvenIfEmpty(): void
     {
         $rule = new Missing();
         self::assertFalse($rule->passes(null, $this->ctx('legacy_id', ['legacy_id' => null])));
         self::assertFalse($rule->passes('', $this->ctx('legacy_id', ['legacy_id' => ''])));
     }
 
-    public function test_missing_if_only_when_other_matches(): void
+    #[Test]
+    public function missingIfOnlyWhenOtherMatches(): void
     {
         $rule = new MissingIf('source', ['api']);
         self::assertTrue($rule->passes(null, $this->ctx('csrf', ['source' => 'api'])));
@@ -188,7 +208,8 @@ final class NewRulesTest extends TestCase
         self::assertTrue($rule->passes(null, $this->ctx('csrf', ['source' => 'web', 'csrf' => 'token'])));
     }
 
-    public function test_missing_unless_other_matches(): void
+    #[Test]
+    public function missingUnlessOtherMatches(): void
     {
         $rule = new MissingUnless('mode', ['advanced']);
         // mode = advanced → unrestricted

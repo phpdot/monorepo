@@ -11,6 +11,7 @@ use PHPdot\Validator\Rule\Json;
 use PHPdot\Validator\Rule\Numeric;
 use PHPdot\Validator\Rule\StringType;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class TypeRulesTest extends TestCase
@@ -22,7 +23,8 @@ final class TypeRulesTest extends TestCase
         $this->context = new ValidationContext('field', []);
     }
 
-    public function test_string_type(): void
+    #[Test]
+    public function stringType(): void
     {
         $rule = new StringType();
 
@@ -33,7 +35,8 @@ final class TypeRulesTest extends TestCase
         self::assertFalse($rule->passes(['a'], $this->context));
     }
 
-    public function test_integer(): void
+    #[Test]
+    public function integer(): void
     {
         $rule = new Integer();
 
@@ -48,7 +51,8 @@ final class TypeRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $this->context));
     }
 
-    public function test_numeric(): void
+    #[Test]
+    public function numeric(): void
     {
         $rule = new Numeric();
 
@@ -62,7 +66,8 @@ final class TypeRulesTest extends TestCase
         self::assertFalse($rule->passes(true, $this->context));
     }
 
-    public function test_boolean(): void
+    #[Test]
+    public function boolean(): void
     {
         $rule = new Boolean();
 
@@ -80,7 +85,8 @@ final class TypeRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $this->context));
     }
 
-    public function test_array_type(): void
+    #[Test]
+    public function arrayType(): void
     {
         $rule = new ArrayType();
 
@@ -91,7 +97,8 @@ final class TypeRulesTest extends TestCase
         self::assertFalse($rule->passes(null, $this->context));
     }
 
-    public function test_json(): void
+    #[Test]
+    public function json(): void
     {
         $rule = new Json();
 

@@ -155,7 +155,7 @@ abstract class Command extends SymfonyCommand
      *
      * @return ?string
      */
-    protected function ask(InputInterface $input, OutputInterface $output, string $question, ?string $default = null): ?string
+    protected function ask(InputInterface $input, OutputInterface $output, string $question, null|string $default = null): null|string
     {
         $helper = $this->getQuestionHelper();
         $q = new Question($question . ' ', $default);
@@ -202,7 +202,7 @@ abstract class Command extends SymfonyCommand
      *
      * @return string
      */
-    protected function choice(InputInterface $input, OutputInterface $output, string $question, array $choices, ?string $default = null): string
+    protected function choice(InputInterface $input, OutputInterface $output, string $question, array $choices, null|string $default = null): string
     {
         $helper = $this->getQuestionHelper();
         $q = new ChoiceQuestion($question, $choices, $default);
@@ -248,7 +248,7 @@ abstract class Command extends SymfonyCommand
      *
      * @return ?string
      */
-    protected function secret(InputInterface $input, OutputInterface $output, string $question): ?string
+    protected function secret(InputInterface $input, OutputInterface $output, string $question): null|string
     {
         $helper = $this->getQuestionHelper();
         $q = new Question($question . ' ');
@@ -333,7 +333,7 @@ abstract class Command extends SymfonyCommand
      *
      * @return void
      */
-    protected function withProgress(OutputInterface $output, iterable $items, callable $callback, ?int $total = null): void
+    protected function withProgress(OutputInterface $output, iterable $items, callable $callback, null|int $total = null): void
     {
         $progressBar = new \Symfony\Component\Console\Helper\ProgressBar($output);
 

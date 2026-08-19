@@ -6,12 +6,14 @@ namespace PHPdot\MongoDB\Tests\Integration;
 
 use MongoDB\BSON\ObjectId;
 use PHPdot\MongoDB\Collection\Collection;
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Database\Database;
 use PHPdot\MongoDB\Document\Document;
+use PHPdot\MongoDB\MongoConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class CollectionCrudTest extends TestCase
 {
     use RequiresMongo;
@@ -253,7 +255,7 @@ final class CollectionCrudTest extends TestCase
         $this->seedUsers();
 
         $docs = $this->collection->find()
-            ->where(fn (\PHPdot\MongoDB\Filter\Filter $f) => $f
+            ->where(fn(\PHPdot\MongoDB\Filter\Filter $f) => $f
                 ->eq('status', 'active')
                 ->gte('age', 30))
             ->sort(['age' => 1])
@@ -353,7 +355,7 @@ final class CollectionCrudTest extends TestCase
         $this->seedUsers();
 
         $result = $this->collection->updateOne()
-            ->where(fn (\PHPdot\MongoDB\Filter\Filter $f) => $f->eq('name', 'Alice'))
+            ->where(fn(\PHPdot\MongoDB\Filter\Filter $f) => $f->eq('name', 'Alice'))
             ->update(['$inc' => ['age' => 1]])
             ->execute();
 
@@ -415,7 +417,7 @@ final class CollectionCrudTest extends TestCase
         $this->seedUsers();
 
         $result = $this->collection->updateMany()
-            ->where(fn (\PHPdot\MongoDB\Filter\Filter $f) => $f->gte('age', 30))
+            ->where(fn(\PHPdot\MongoDB\Filter\Filter $f) => $f->gte('age', 30))
             ->update(['$set' => ['senior' => true]])
             ->execute();
 
@@ -443,7 +445,7 @@ final class CollectionCrudTest extends TestCase
         $this->seedUsers();
 
         $result = $this->collection->deleteOne()
-            ->where(fn (\PHPdot\MongoDB\Filter\Filter $f) => $f->eq('status', 'inactive'))
+            ->where(fn(\PHPdot\MongoDB\Filter\Filter $f) => $f->eq('status', 'inactive'))
             ->execute();
 
         self::assertSame(1, $result->getDeletedCount());
@@ -480,7 +482,7 @@ final class CollectionCrudTest extends TestCase
         $this->seedUsers();
 
         $result = $this->collection->deleteMany()
-            ->where(fn (\PHPdot\MongoDB\Filter\Filter $f) => $f->gte('age', 30))
+            ->where(fn(\PHPdot\MongoDB\Filter\Filter $f) => $f->gte('age', 30))
             ->execute();
 
         self::assertSame(2, $result->getDeletedCount());

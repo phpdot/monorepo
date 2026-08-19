@@ -31,9 +31,11 @@ final readonly class View
      * Wrap the engine factory to render named templates to strings.
      *
      * @param EngineFactory $factory Provides the shared Twig Environment
+     * @param HtmlFormatter $formatter Formats rendered output; a no-op unless template.format is on
      */
     public function __construct(
         private EngineFactory $factory,
+        private HtmlFormatter $formatter,
     ) {}
 
     /**
@@ -51,7 +53,7 @@ final readonly class View
     public function render(string $template, array $context = []): string
     {
         try {
-            return $this->factory->environment()->render($template, $context);
+            return $this->formatter->format($this->factory->environment()->render($template, $context));
         } catch (LoaderError $e) {
             throw new TemplateNotFoundException($template, $e->getMessage(), $e);
         } catch (SyntaxError $e) {
@@ -79,7 +81,7 @@ final readonly class View
         try {
             $loaded = $this->factory->environment()->load($template);
 
-            return $loaded->renderBlock($block, $context);
+            return $this->formatter->format($loaded->renderBlock($block, $context));
         } catch (LoaderError $e) {
             throw new TemplateNotFoundException($template, $e->getMessage(), $e);
         } catch (SyntaxError $e) {

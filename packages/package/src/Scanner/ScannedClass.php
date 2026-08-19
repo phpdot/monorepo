@@ -29,10 +29,10 @@ final readonly class ScannedClass
      */
     public function __construct(
         public string $class,
-        public ?Scope $scope,
+        public null|Scope $scope,
         public array $params,
         public array $binds,
-        public ?string $configName,
+        public null|string $configName,
         public string $package,
         public array $paramDescriptions = [],
         public bool $installHook = false,

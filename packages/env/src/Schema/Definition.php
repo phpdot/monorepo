@@ -35,16 +35,16 @@ final readonly class Definition
      */
     public function __construct(
         public EnvType $type = EnvType::STRING,
-        public ?string $enum = null,
+        public null|string $enum = null,
         public bool $required = false,
         public bool $notEmpty = false,
         public mixed $default = null,
-        public ?string $description = null,
+        public null|string $description = null,
         public string $separator = ',',
         public int|float|null $min = null,
         public int|float|null $max = null,
-        public ?array $allowed = null,
-        public ?string $pattern = null,
+        public null|array $allowed = null,
+        public null|string $pattern = null,
         public bool $sensitive = false,
     ) {}
 }

@@ -26,8 +26,8 @@ final readonly class Frame
     public function __construct(
         public string $file,
         public int $line,
-        public ?string $class,
-        public ?string $function,
+        public null|string $class,
+        public null|string $function,
         public array $codeSnippet,
         public bool $isApplication,
     ) {}

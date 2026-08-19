@@ -11,6 +11,13 @@ declare(strict_types=1);
  * 4. Processes the request through the pipeline
  * 5. Saves the session and attaches the Set-Cookie header
  *
+ * Session state commits only when the handler produces a response. When it
+ * throws, no Set-Cookie header can reach the client, so destroying the old id
+ * or saving under a regenerated one would silently log the user out — the
+ * exception path therefore leaves stored session state and the client's
+ * cookie exactly as they were (a failed request is atomic, in-request writes
+ * included).
+ *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
  */
@@ -59,15 +66,13 @@ final class SessionMiddleware implements MiddlewareInterface
 
         $request = $request->withAttribute(self::ATTRIBUTE, $session);
 
-        try {
-            $response = $handler->handle($request);
-        } finally {
-            if ($session->isDestroyed() && $previousId !== null) {
-                $this->manager->destroy($previousId);
-            }
+        $response = $handler->handle($request);
 
-            $this->manager->save($session);
+        if ($session->isDestroyed() && $previousId !== null) {
+            $this->manager->destroy($previousId);
         }
+
+        $this->manager->save($session);
 
         return $response->withAddedHeader(
             'Set-Cookie',
@@ -82,7 +87,7 @@ final class SessionMiddleware implements MiddlewareInterface
      *
      * @return ?string
      */
-    private function readCookie(ServerRequestInterface $request): ?string
+    private function readCookie(ServerRequestInterface $request): null|string
     {
         $cookies = $request->getCookieParams();
         $name = $this->manager->getConfig()->name;

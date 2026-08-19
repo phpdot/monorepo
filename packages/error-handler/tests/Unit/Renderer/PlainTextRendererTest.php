@@ -212,8 +212,8 @@ final class PlainTextRendererTest extends TestCase
     private function makeFrame(
         string $file,
         int $line,
-        ?string $class,
-        ?string $function,
+        null|string $class,
+        null|string $function,
     ): Frame {
         return new Frame(
             file: $file,

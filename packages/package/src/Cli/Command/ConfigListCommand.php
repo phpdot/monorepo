@@ -55,7 +55,7 @@ final class ConfigListCommand extends Command
 
         foreach ($manifest->packages as $info) {
             foreach ($info->configs as $configName) {
-                $absolute = $configPath . '/' . $configName . '.php';
+                $absolute = $configPath . '/' . str_replace('.', '/', $configName) . '.php';
                 $relative = ltrim(str_replace($basePath, '', $absolute), '/');
 
                 $rows[] = [

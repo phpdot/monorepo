@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode\Tests\Unit;
 
-use InvalidArgumentException;
 use PHPdot\QrCode\Color;
+use PHPdot\QrCode\Exception\InvalidOptionException;
 use PHPdot\QrCode\RenderOptions;
 use PHPUnit\Framework\TestCase;
 
@@ -43,14 +43,14 @@ final class RenderOptionsTest extends TestCase
 
     public function test_zero_size_is_rejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         new RenderOptions(size: 0);
     }
 
     public function test_negative_margin_is_rejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         new RenderOptions(margin: -1);
     }

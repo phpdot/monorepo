@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace PHPdot\QrCode\Tests\Unit;
 
-use InvalidArgumentException;
 use PHPdot\QrCode\Color;
+use PHPdot\QrCode\Exception\InvalidOptionException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -21,14 +21,14 @@ final class ColorTest extends TestCase
 
     public function test_channels_are_validated(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         new Color(256, 0, 0);
     }
 
     public function test_negative_channel_is_rejected(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         new Color(0, -1, 0);
     }
@@ -57,14 +57,14 @@ final class ColorTest extends TestCase
 
     public function test_invalid_hex_length_throws(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         Color::fromHex('#1234');
     }
 
     public function test_invalid_hex_digits_throw(): void
     {
-        $this->expectException(InvalidArgumentException::class);
+        $this->expectException(InvalidOptionException::class);
 
         Color::fromHex('#zzzzzz');
     }

@@ -15,6 +15,7 @@ use PHPdot\Validator\Tests\Stubs\AlwaysPasses;
 use PHPdot\Validator\Tests\Stubs\CapturingRule;
 use PHPdot\Validator\Tests\Stubs\TestErrorCode;
 use PHPdot\Validator\Validator;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ValidatorTest extends TestCase
@@ -26,7 +27,8 @@ final class ValidatorTest extends TestCase
         $this->validator = new Validator(new ErrorBag());
     }
 
-    public function test_no_rules_produces_empty_bag(): void
+    #[Test]
+    public function noRulesProducesEmptyBag(): void
     {
         $bag = $this->validator->validate(['email' => 'a@b.com'], []);
 
@@ -34,7 +36,8 @@ final class ValidatorTest extends TestCase
         self::assertCount(0, $bag);
     }
 
-    public function test_passing_rule_does_not_add_error(): void
+    #[Test]
+    public function passingRuleDoesNotAddError(): void
     {
         $bag = $this->validator->validate(['email' => 'a@b.com'], [
             'email' => [(new AlwaysPasses())->withError(TestErrorCode::Generic)],
@@ -43,7 +46,8 @@ final class ValidatorTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_failing_rule_adds_error_with_field_context(): void
+    #[Test]
+    public function failingRuleAddsErrorWithFieldContext(): void
     {
         $bag = $this->validator->validate(['email' => 'a@b.com'], [
             'email' => [(new AlwaysFails())->withError(TestErrorCode::EmailInvalid)],
@@ -59,7 +63,8 @@ final class ValidatorTest extends TestCase
         self::assertSame('Please enter a valid email address.', $entry->message);
     }
 
-    public function test_failing_rule_carries_params_for_interpolation(): void
+    #[Test]
+    public function failingRuleCarriesParamsForInterpolation(): void
     {
         $rule = (new CapturingRule(['min' => 3, 'max' => 50]))
             ->withError(TestErrorCode::UsernameTooShort);
@@ -73,7 +78,38 @@ final class ValidatorTest extends TestCase
         self::assertSame(['field' => 'username', 'min' => 3, 'max' => 50], $entry->params);
     }
 
-    public function test_multiple_failing_rules_accumulate_errors(): void
+    #[Test]
+    public function withErrorParamsReachTheEntry(): void
+    {
+        // AlwaysFails has no params of its own — the call site is the only source.
+        $rule = (new AlwaysFails())->withError(TestErrorCode::UsernameTooShort, ['min' => 1, 'max' => 4]);
+
+        $bag = $this->validator->validate(['prefixes' => 'x'], [
+            'prefixes' => [$rule],
+        ]);
+
+        $entry = $bag->first();
+        self::assertNotNull($entry);
+        self::assertSame(['field' => 'prefixes', 'min' => 1, 'max' => 4], $entry->params);
+    }
+
+    #[Test]
+    public function withErrorParamsOverrideTheRulesOwn(): void
+    {
+        $rule = (new CapturingRule(['min' => 3, 'max' => 50]))
+            ->withError(TestErrorCode::UsernameTooShort, ['max' => 5]);
+
+        $bag = $this->validator->validate(['username' => 'ab'], [
+            'username' => [$rule],
+        ]);
+
+        $entry = $bag->first();
+        self::assertNotNull($entry);
+        self::assertSame(['field' => 'username', 'min' => 3, 'max' => 5], $entry->params);
+    }
+
+    #[Test]
+    public function multipleFailingRulesAccumulateErrors(): void
     {
         $bag = $this->validator->validate(['email' => 'bad'], [
             'email' => [
@@ -87,7 +123,8 @@ final class ValidatorTest extends TestCase
         self::assertSame(TestErrorCode::EmailInvalid->value, $bag->all()[1]->code);
     }
 
-    public function test_errors_for_multiple_fields_use_correct_context(): void
+    #[Test]
+    public function errorsForMultipleFieldsUseCorrectContext(): void
     {
         $bag = $this->validator->validate([
             'email' => 'bad',
@@ -101,7 +138,8 @@ final class ValidatorTest extends TestCase
         self::assertCount(1, $bag->forContext('username'));
     }
 
-    public function test_failing_rule_without_error_code_throws(): void
+    #[Test]
+    public function failingRuleWithoutErrorCodeThrows(): void
     {
         try {
             $this->validator->validate(['email' => 'bad'], [
@@ -114,7 +152,8 @@ final class ValidatorTest extends TestCase
         }
     }
 
-    public function test_passing_rule_without_error_code_does_not_throw(): void
+    #[Test]
+    public function passingRuleWithoutErrorCodeDoesNotThrow(): void
     {
         $bag = $this->validator->validate(['email' => 'a@b.com'], [
             'email' => [new AlwaysPasses()],
@@ -123,7 +162,8 @@ final class ValidatorTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_non_rule_in_list_throws(): void
+    #[Test]
+    public function nonRuleInListThrows(): void
     {
         try {
             // @phpstan-ignore-next-line — intentionally invalid input
@@ -137,7 +177,8 @@ final class ValidatorTest extends TestCase
         }
     }
 
-    public function test_sometimes_skips_chain_when_field_absent(): void
+    #[Test]
+    public function sometimesSkipsChainWhenFieldAbsent(): void
     {
         $bag = $this->validator->validate([], [
             'phone' => [
@@ -149,7 +190,8 @@ final class ValidatorTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_sometimes_does_not_skip_when_field_present(): void
+    #[Test]
+    public function sometimesDoesNotSkipWhenFieldPresent(): void
     {
         $bag = $this->validator->validate(['phone' => '123'], [
             'phone' => [
@@ -161,7 +203,8 @@ final class ValidatorTest extends TestCase
         self::assertTrue($bag->hasErrors());
     }
 
-    public function test_nullable_skips_chain_when_value_is_null(): void
+    #[Test]
+    public function nullableSkipsChainWhenValueIsNull(): void
     {
         $bag = $this->validator->validate(['phone' => null], [
             'phone' => [
@@ -173,7 +216,8 @@ final class ValidatorTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_nullable_does_not_skip_when_value_is_not_null(): void
+    #[Test]
+    public function nullableDoesNotSkipWhenValueIsNotNull(): void
     {
         $bag = $this->validator->validate(['phone' => '123'], [
             'phone' => [
@@ -185,7 +229,8 @@ final class ValidatorTest extends TestCase
         self::assertTrue($bag->hasErrors());
     }
 
-    public function test_validation_context_receives_full_payload(): void
+    #[Test]
+    public function validationContextReceivesFullPayload(): void
     {
         $rule = (new CapturingRule())->withError(TestErrorCode::Generic);
 
@@ -199,7 +244,8 @@ final class ValidatorTest extends TestCase
         self::assertSame(1, $rule->lastValue);
     }
 
-    public function test_bail_at_start_stops_chain_on_first_failure(): void
+    #[Test]
+    public function bailAtStartStopsChainOnFirstFailure(): void
     {
         $bag = $this->validator->validate(['x' => 1], [
             'x' => [
@@ -212,7 +258,8 @@ final class ValidatorTest extends TestCase
         self::assertCount(1, $bag);
     }
 
-    public function test_bail_at_end_stops_chain_on_first_failure(): void
+    #[Test]
+    public function bailAtEndStopsChainOnFirstFailure(): void
     {
         $bag = $this->validator->validate(['x' => 1], [
             'x' => [
@@ -225,7 +272,8 @@ final class ValidatorTest extends TestCase
         self::assertCount(1, $bag);
     }
 
-    public function test_bail_in_middle_is_position_independent(): void
+    #[Test]
+    public function bailInMiddleIsPositionIndependent(): void
     {
         $bag = $this->validator->validate(['x' => 1], [
             'x' => [
@@ -238,7 +286,8 @@ final class ValidatorTest extends TestCase
         self::assertCount(1, $bag);
     }
 
-    public function test_bail_does_not_stop_when_rules_pass(): void
+    #[Test]
+    public function bailDoesNotStopWhenRulesPass(): void
     {
         $bag = $this->validator->validate(['x' => 1], [
             'x' => [
@@ -251,7 +300,8 @@ final class ValidatorTest extends TestCase
         self::assertFalse($bag->hasErrors());
     }
 
-    public function test_without_bail_chain_runs_all_rules(): void
+    #[Test]
+    public function withoutBailChainRunsAllRules(): void
     {
         $bag = $this->validator->validate(['x' => 1], [
             'x' => [

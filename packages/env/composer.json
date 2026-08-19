@@ -11,7 +11,8 @@
     ],
     "keywords": ["env", "dotenv", "configuration", "schema", "typed", "immutable"],
     "require": {
-        "php": ">=8.5"
+        "php": ">=8.5",
+        "ext-mbstring": "*"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",

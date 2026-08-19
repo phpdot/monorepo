@@ -34,7 +34,7 @@ final readonly class ErrorEntry
         public string $description,
         public ErrorType $type,
         public int $httpStatus,
-        public ?string $context = null,
+        public null|string $context = null,
         public array $params = [],
     ) {}
 

@@ -13,6 +13,7 @@ namespace PHPdot\Console;
 
 use PHPdot\Console\Cache\CommandCache;
 use PHPdot\Console\Discovery\CommandDiscovery;
+use PHPdot\Console\Exception\ConsoleException;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use Symfony\Component\Console\Application as SymfonyApplication;
@@ -27,7 +28,7 @@ final class Application
 {
     private readonly SymfonyApplication $symfony;
 
-    private readonly ?CommandCache $cache;
+    private readonly null|CommandCache $cache;
 
     /**
      * @var array<string, class-string<SymfonyCommand>>
@@ -48,11 +49,18 @@ final class Application
      */
     public function __construct(
         ConsoleConfig $config = new ConsoleConfig(),
-        private readonly ?ContainerInterface $container = null,
-        ?CommandCache $cache = null,
+        private readonly null|ContainerInterface $container = null,
+        null|CommandCache $cache = null,
     ) {
         $this->symfony = new SymfonyApplication($config->name, $config->version);
         $this->cache = $cache ?? ($config->cachePath !== '' ? new CommandCache($config->cachePath) : null);
+
+        /**
+         * Built-in, registered unconditionally and NEVER discovered or
+         * cached: the command that fixes a stale cache must not be hidden
+         * by one.
+         */
+        $this->symfony->addCommand(new ClearCommand($this->cache));
     }
 
     /**
@@ -153,11 +161,11 @@ final class Application
     public function alias(string $from, string $to): self
     {
         if (!isset($this->commandMap[$from])) {
-            throw new \InvalidArgumentException(sprintf('Cannot alias unknown command "%s".', $from));
+            throw new ConsoleException(sprintf('Cannot alias unknown command "%s".', $from));
         }
 
         if (isset($this->commandMap[$to]) && $this->commandMap[$to] !== $this->commandMap[$from]) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new ConsoleException(sprintf(
                 'Cannot alias "%s" → "%s": "%s" already exists for a different command.',
                 $from,
                 $to,
@@ -183,11 +191,11 @@ final class Application
     public function rename(string $from, string $to): self
     {
         if (!isset($this->commandMap[$from])) {
-            throw new \InvalidArgumentException(sprintf('Cannot rename unknown command "%s".', $from));
+            throw new ConsoleException(sprintf('Cannot rename unknown command "%s".', $from));
         }
 
         if (isset($this->commandMap[$to])) {
-            throw new \InvalidArgumentException(sprintf(
+            throw new ConsoleException(sprintf(
                 'Cannot rename "%s" → "%s": "%s" already exists.',
                 $from,
                 $to,
@@ -219,10 +227,10 @@ final class Application
      *
      * @return Application
      */
-    public function override(string $name, ?string $description = null, ?string $help = null): self
+    public function override(string $name, null|string $description = null, null|string $help = null): self
     {
         if (!isset($this->commandMap[$name])) {
-            throw new \InvalidArgumentException(sprintf('Cannot override unknown command "%s".', $name));
+            throw new ConsoleException(sprintf('Cannot override unknown command "%s".', $name));
         }
 
         $existing = $this->modifications[$name] ?? [];
@@ -248,7 +256,7 @@ final class Application
      *
      * @return int
      */
-    public function run(?InputInterface $input = null, ?OutputInterface $output = null): int
+    public function run(null|InputInterface $input = null, null|OutputInterface $output = null): int
     {
         return $this->symfony->run($input, $output);
     }
@@ -262,7 +270,7 @@ final class Application
      *
      * @return int
      */
-    public function call(string $commandName, array $arguments = [], ?OutputInterface $output = null): int
+    public function call(string $commandName, array $arguments = [], null|OutputInterface $output = null): int
     {
         $command = $this->symfony->find($commandName);
         $input = new ArrayInput($arguments);

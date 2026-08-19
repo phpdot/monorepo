@@ -26,14 +26,23 @@ final readonly class TemplateConfig
      * @param string $charset Template charset.
      * @param bool $autoReload Recompile on source change (dev only).
      * @param string|false $autoescape Escaping strategy. 'html' or false.
+     * @param bool $format Re-indent rendered output through ext-tidy. Requires ext-tidy when true.
+     * @param array<string, bool|int|string> $formatOptions Tidy options merged OVER the house
+     *                                                      defaults — override any of them, or add
+     *                                                      any other tidy option. `show-body-only`
+     *                                                      is ignored: {@see HtmlFormatter} decides
+     *                                                      it per input, because the wrong value
+     *                                                      silently discards a document's head.
      */
     public function __construct(
         public array $paths = ['__main__' => []],
-        public ?string $cache = null,
+        public null|string $cache = null,
         public bool $debug = false,
         public bool $strictVariables = true,
         public string $charset = 'UTF-8',
         public bool $autoReload = false,
         public string|false $autoescape = 'html',
+        public bool $format = false,
+        public array $formatOptions = [],
     ) {}
 }

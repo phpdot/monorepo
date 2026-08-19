@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace PHPdot\MongoDB\Tests\Integration;
 
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Database\Database;
 use PHPdot\MongoDB\Logging\QueryLogger;
+use PHPdot\MongoDB\MongoConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class QueryLoggerIntegrationTest extends TestCase
 {
     use RequiresMongo;

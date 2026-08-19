@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace PHPdot\Cache\Tests\Unit\Driver;
 
 use PHPdot\Cache\Driver\RedisDriver;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class RedisDriverTest extends TestCase
 {
     private \Redis $redis;

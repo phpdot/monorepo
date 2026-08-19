@@ -40,9 +40,9 @@ final class Pool
 
     private bool $closed = false;
 
-    private ?int $idleTimerId = null;
+    private null|int $idleTimerId = null;
 
-    private ?int $heartbeatTimerId = null;
+    private null|int $heartbeatTimerId = null;
 
     private int $borrowCount = 0;
 

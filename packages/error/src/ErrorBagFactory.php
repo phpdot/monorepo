@@ -27,7 +27,7 @@ final class ErrorBagFactory
      * @param ?MessageTranslatorInterface $translator
      */
     public function __construct(
-        private readonly ?MessageTranslatorInterface $translator = null,
+        private readonly null|MessageTranslatorInterface $translator = null,
     ) {}
 
     /**

@@ -27,7 +27,7 @@ final class TemplateSyntaxException extends TemplateException
         public readonly string $template,
         public readonly int $templateLine,
         string $message,
-        ?Throwable $previous = null,
+        null|Throwable $previous = null,
     ) {
         parent::__construct($message, 0, $previous);
     }

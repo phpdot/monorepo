@@ -15,6 +15,7 @@ namespace PHPdot\Mail;
 use PHPdot\Container\Attribute\Config;
 use PHPdot\Container\Attribute\Singleton;
 use PHPdot\Mail\Exception\MailException;
+use SensitiveParameter;
 
 #[Singleton]
 #[Config('mail')]
@@ -30,6 +31,7 @@ final readonly class MailConfig
      * @param string $fromName Default sender display name.
      */
     public function __construct(
+        #[SensitiveParameter]
         public string $dsn = 'null://null',
         public string $fromEmail = '',
         public string $fromName = '',

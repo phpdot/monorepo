@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace PHPdot\MongoDB\Tests\Integration;
 
 use PHPdot\MongoDB\Config\MongoConfig;
-use PHPdot\MongoDB\MongoConnection;
 use PHPdot\MongoDB\Exception\AuthenticationException;
 use PHPdot\MongoDB\Exception\ConnectionException;
+use PHPdot\MongoDB\MongoConnection;
+use PHPUnit\Framework\Attributes\Group;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
+#[Group('integration')]
 final class MongoConnectionTest extends TestCase
 {
     use RequiresMongo;

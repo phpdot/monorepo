@@ -22,7 +22,7 @@ use PHPdot\Package\Contract\InstallHandler;
 #[InstallHook]
 final class PathInstaller implements InstallHandler
 {
-    public static function install(string $projectRoot, string $configDir): ?string
+    public static function install(string $projectRoot, string $configDir): null|string
     {
         $pathFile = $configDir . '/path.php';
 

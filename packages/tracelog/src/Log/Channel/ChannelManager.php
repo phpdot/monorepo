@@ -43,7 +43,7 @@ final class ChannelManager
      */
     public function __construct(
         private readonly string $basePath,
-        ?FormatterInterface $formatter = null,
+        null|FormatterInterface $formatter = null,
         private readonly int $minLevel = 100,
         private readonly int $maxChannels = 50,
     ) {

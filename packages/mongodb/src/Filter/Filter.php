@@ -330,7 +330,7 @@ final class Filter
      *
      * @return Filter
      */
-    public function near(string $field, array $coordinates, ?float $maxDistance = null, ?float $minDistance = null): self
+    public function near(string $field, array $coordinates, null|float $maxDistance = null, null|float $minDistance = null): self
     {
         $query = [
             '$geometry' => [

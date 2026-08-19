@@ -24,7 +24,7 @@ final class Manifest
     /**
      * @var array<string, array<string, string>>|null entryPoint => [ ext => output-path ]
      */
-    private ?array $map = null;
+    private null|array $map = null;
 
     /**
      * Point the manifest at a Bun metafile and the public URL prefix for its assets.
@@ -76,7 +76,7 @@ final class Manifest
         }
 
         $dir = dirname($manifestPath);
-        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
             return false;
         }
 
@@ -87,40 +87,76 @@ final class Manifest
     }
 
     /**
-     * Resolve a JS source entry to its hashed public build URL.
+     * Every distinct entrypoint the build produced, in manifest order.
      *
-     * @param string $sourceEntry
+     * @throws ManifestNotReadableException
+     *
+     * @return list<string>
+     */
+    public function entries(): array
+    {
+        return array_keys($this->load());
+    }
+
+    /**
+     * The entrypoint when the build produced exactly one.
+     *
+     * Exists so nothing outside the build has to restate the entry name. The recipe that compiles
+     * the assets already names it and the manifest already records it; a consumer repeating that
+     * string is a second definition of a build fact, and renaming the entry then breaks serving
+     * while the build still passes.
+     *
+     * @throws AmbiguousEntryException If the build produced no entrypoint, or more than one.
+     * @throws ManifestNotReadableException
      *
      * @return string
      */
-    public function js(string $sourceEntry): string
+    public function sole(): string
     {
-        return $this->resolve($sourceEntry, 'js');
+        $entries = $this->entries();
+
+        return match (count($entries)) {
+            1 => $entries[0],
+            0 => throw AmbiguousEntryException::none($this->metafilePath),
+            default => throw AmbiguousEntryException::several($entries),
+        };
+    }
+
+    /**
+     * Resolve a JS source entry to its hashed public build URL.
+     *
+     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
+     *
+     * @return string
+     */
+    public function js(null|string $sourceEntry = null): string
+    {
+        return $this->resolve($sourceEntry ?? $this->sole(), 'js');
     }
 
     /**
      * Resolve a CSS source entry to its hashed public build URL.
      *
-     * @param string $sourceEntry
+     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
      *
      * @return string
      */
-    public function css(string $sourceEntry): string
+    public function css(null|string $sourceEntry = null): string
     {
-        return $this->resolve($sourceEntry, 'css');
+        return $this->resolve($sourceEntry ?? $this->sole(), 'css');
     }
 
     /**
      * Resolve a source entry of the given extension to its public build URL.
      *
-     * @param string $sourceEntry
+     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
      * @param string $ext
      *
      * @return string
      */
-    public function asset(string $sourceEntry, string $ext): string
+    public function asset(null|string $sourceEntry, string $ext): string
     {
-        return $this->resolve($sourceEntry, $ext);
+        return $this->resolve($sourceEntry ?? $this->sole(), $ext);
     }
 
     /**

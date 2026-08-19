@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace PHPdot\ErrorHandler\Tests\Integration;
 
-use PHPdot\Http\Message\ServerRequest;
 use PHPdot\ErrorHandler\Context\ErrorContext;
 use PHPdot\ErrorHandler\Contract\ContextProviderInterface;
 use PHPdot\ErrorHandler\Contract\RendererInterface;
@@ -16,9 +15,10 @@ use PHPdot\ErrorHandler\Renderer\JsonRenderer;
 use PHPdot\ErrorHandler\Renderer\PlainTextRenderer;
 use PHPdot\ErrorHandler\Solution\Solution;
 use PHPdot\ErrorHandler\Solution\SolutionLink;
-use Psr\Http\Message\ServerRequestInterface;
+use PHPdot\Http\Message\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class FullFlowTest extends TestCase
 {
@@ -197,8 +197,11 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $provider = new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Database'; }
-            public function collect(\Throwable $exception, ?ServerRequestInterface $request): array
+            public function getLabel(): string
+            {
+                return 'Database';
+            }
+            public function collect(\Throwable $exception, null|ServerRequestInterface $request): array
             {
                 return ['queries' => '5', 'total_time' => '12ms'];
             }
@@ -218,7 +221,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [
@@ -247,7 +253,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [new Solution(title: 'Fix it', description: 'Like this')];
@@ -275,7 +284,10 @@ final class FullFlowTest extends TestCase
         );
 
         $provider = new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $exception): bool { return true; }
+            public function canSolve(\Throwable $exception): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $exception): array
             {
                 return [new Solution(title: 'Fix it', description: 'Like this')];
@@ -389,7 +401,10 @@ final class FullFlowTest extends TestCase
         $request = new ServerRequest('GET', '/api', ['Accept' => 'application/json']);
 
         $exception = new class ('not found') extends \RuntimeException {
-            public function getStatusCode(): int { return 404; }
+            public function getStatusCode(): int
+            {
+                return 404;
+            }
         };
 
         $output = $handler->handle($exception, $request);
@@ -440,7 +455,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeProdHandler();
 
         $exception = new class ('not found') extends \RuntimeException {
-            public function getStatusCode(): int { return 404; }
+            public function getStatusCode(): int
+            {
+                return 404;
+            }
         };
 
         $output = $handler->handle($exception);
@@ -455,7 +473,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeProdHandler();
 
         $exception = new class ('forbidden') extends \RuntimeException {
-            public function getStatusCode(): int { return 403; }
+            public function getStatusCode(): int
+            {
+                return 403;
+            }
         };
 
         $output = $handler->handle($exception);
@@ -471,16 +492,22 @@ final class FullFlowTest extends TestCase
 
         // Add two context providers
         $handler->addContextProvider(new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Cache'; }
-            public function collect(\Throwable $e, ?ServerRequestInterface $r): array
+            public function getLabel(): string
+            {
+                return 'Cache';
+            }
+            public function collect(\Throwable $e, null|ServerRequestInterface $r): array
             {
                 return ['hits' => '100', 'misses' => '5'];
             }
         });
 
         $handler->addContextProvider(new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Queue'; }
-            public function collect(\Throwable $e, ?ServerRequestInterface $r): array
+            public function getLabel(): string
+            {
+                return 'Queue';
+            }
+            public function collect(\Throwable $e, null|ServerRequestInterface $r): array
             {
                 return ['pending' => '42'];
             }
@@ -488,7 +515,10 @@ final class FullFlowTest extends TestCase
 
         // Add solution provider
         $handler->addSolutionProvider(new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $e): bool { return true; }
+            public function canSolve(\Throwable $e): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $e): array
             {
                 return [new Solution(title: 'Clear cache', description: 'Run cache:clear')];
@@ -509,7 +539,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $handler->addSolutionProvider(new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $e): bool { return true; }
+            public function canSolve(\Throwable $e): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $e): array
             {
                 return [new Solution(title: 'Retry', description: 'Try again later')];
@@ -567,8 +600,11 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $handler->addContextProvider(new class implements ContextProviderInterface {
-            public function getLabel(): string { return 'Broken'; }
-            public function collect(\Throwable $e, ?ServerRequestInterface $r): array
+            public function getLabel(): string
+            {
+                return 'Broken';
+            }
+            public function collect(\Throwable $e, null|ServerRequestInterface $r): array
             {
                 throw new \RuntimeException('Provider is broken');
             }
@@ -587,7 +623,10 @@ final class FullFlowTest extends TestCase
         $handler = $this->makeDevHandler();
 
         $handler->addSolutionProvider(new class implements SolutionProviderInterface {
-            public function canSolve(\Throwable $e): bool { return true; }
+            public function canSolve(\Throwable $e): bool
+            {
+                return true;
+            }
             public function getSolutions(\Throwable $e): array
             {
                 throw new \LogicException('Solution provider crashed');

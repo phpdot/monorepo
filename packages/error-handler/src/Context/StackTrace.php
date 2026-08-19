@@ -76,8 +76,8 @@ final readonly class StackTrace
     private static function buildFrame(
         string $file,
         int $line,
-        ?string $class,
-        ?string $function,
+        null|string $class,
+        null|string $function,
         int $contextLines,
     ): Frame {
         $snippet = self::extractCodeSnippet($file, $line, $contextLines);

@@ -27,7 +27,7 @@ final class TestBun
     public function __construct(
         public readonly FakeProcessRunner $runner = new FakeProcessRunner(default: new ProcessResult(0, "1.3.14\n", '')),
         public readonly string $runtimeDir = '',
-        ?string $workingDir = null,
+        null|string $workingDir = null,
     ) {
         $dir = $runtimeDir !== '' ? $runtimeDir : sys_get_temp_dir() . '/phpdot-bun-test-' . uniqid();
         mkdir($dir, 0755, true);

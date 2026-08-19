@@ -137,8 +137,8 @@ final class ErrorContextTest extends TestCase
      * @param array<string, string> $environment
      */
     private function makeContext(
-        ?\Throwable $exception = null,
-        ?StackTrace $stackTrace = null,
+        null|\Throwable $exception = null,
+        null|StackTrace $stackTrace = null,
         int $statusCode = 500,
         mixed $request = 'NOT_SET',
         array $environment = [],

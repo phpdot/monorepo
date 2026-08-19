@@ -73,7 +73,7 @@ final class FileDriver implements DriverInterface
         $dir = \dirname($path);
 
         if (!\is_dir($dir)) {
-            \mkdir($dir, 0755, true);
+            \mkdir($dir, 0o755, true);
         }
 
         $expiry = $ttl > 0 ? \time() + $ttl : 0;

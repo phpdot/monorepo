@@ -407,7 +407,7 @@ final class PackageScannerTest extends TestCase
     /**
      * @param list<\PHPdot\Package\Scanner\ScannedClass> $results
      */
-    private function findByClass(array $results, string $class): ?\PHPdot\Package\Scanner\ScannedClass
+    private function findByClass(array $results, string $class): null|\PHPdot\Package\Scanner\ScannedClass
     {
         foreach ($results as $scanned) {
             if ($scanned->class === $class) {

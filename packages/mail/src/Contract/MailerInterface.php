@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace PHPdot\Mail\Contract;
 
 use PHPdot\Mail\Message\Message;
+use PHPdot\Mail\Receipt;
 
 interface MailerInterface
 {
@@ -25,6 +26,19 @@ interface MailerInterface
      * @return Message
      */
     public function message(): Message;
+
+    /**
+     * Deliver a stand-alone message through this mailer's transport and config.
+     *
+     * Messages started from message() or the shortcuts send themselves via
+     * `->send()`; this is the home for a `new Message()` built without a
+     * mailer.
+     *
+     * @param Message $message
+     *
+     * @return Receipt
+     */
+    public function send(Message $message): Receipt;
 
     /**
      * Starts a message with the sender ("From") set.

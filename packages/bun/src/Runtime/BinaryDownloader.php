@@ -66,7 +66,7 @@ final class BinaryDownloader
         }
 
         if (PHP_OS_FAMILY !== 'Windows') {
-            chmod($destination, 0755);
+            chmod($destination, 0o755);
         }
     }
 
@@ -286,7 +286,7 @@ final class BinaryDownloader
     private function streamEntry($gz, int $size, string $destination): void
     {
         $dir = dirname($destination);
-        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
             throw new BinaryDownloadException(sprintf('Unable to create directory: %s', $dir));
         }
 
@@ -346,7 +346,7 @@ final class BinaryDownloader
      *
      * @return ?string
      */
-    private function readExact($gz, int $length): ?string
+    private function readExact($gz, int $length): null|string
     {
         $buffer = '';
         while (strlen($buffer) < $length) {

@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace PHPdot\Container\Swoole\Tests;
 
 use PHPdot\Container\Swoole\ContainerDispatcher;

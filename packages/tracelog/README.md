@@ -30,7 +30,6 @@ It is a **peer** of [phpdot/psr3-bridge](https://github.com/phpdot/psr3-bridge) 
 | ext-openssl | `*` — record encryption |
 | `phpdot/container` | `^0.1` |
 | `phpdot/contracts` | `^0.1` |
-| `psr/log` | `^3.0` |
 
 ## Installation
 

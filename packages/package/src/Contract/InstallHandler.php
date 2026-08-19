@@ -24,5 +24,5 @@ interface InstallHandler
      *
      * @return string|null An optional one-line message to log, or null for silent
      */
-    public static function install(string $projectRoot, string $configDir): ?string;
+    public static function install(string $projectRoot, string $configDir): null|string;
 }

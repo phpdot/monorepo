@@ -18,9 +18,12 @@ final class JsonLoaderTest extends TestCase
         $this->basePath = __DIR__ . '/../../Fixtures/lang_json';
     }
 
-    private function createLoader(?string $path = null): JsonLoader
+    /**
+     * @param list<string>|null $paths
+     */
+    private function createLoader(null|array $paths = null): JsonLoader
     {
-        return new JsonLoader(new I18nConfig(path: $path ?? $this->basePath));
+        return new JsonLoader(new I18nConfig(paths: $paths ?? [$this->basePath]));
     }
 
     #[Test]
@@ -75,9 +78,34 @@ final class JsonLoaderTest extends TestCase
     #[Test]
     public function returnsEmptyForNonExistentBasePath(): void
     {
-        $loader = $this->createLoader('/non/existent/path');
+        $loader = $this->createLoader(['/non/existent/path']);
 
         self::assertSame([], $loader->loadAll('en'));
+    }
+
+    #[Test]
+    public function flattensNestedObjectsOntoDottedKeys(): void
+    {
+        $loader = $this->createLoader([__DIR__ . '/../../Fixtures/lang_json_nested']);
+        $translations = $loader->loadAll('en');
+
+        self::assertSame('Save', $translations['nested.buttons.save']);
+        self::assertSame('Are you sure?', $translations['nested.buttons.confirm.title']);
+        self::assertSame('Mixed depth in one file', $translations['nested.already.dotted']);
+    }
+
+    #[Test]
+    public function laterPathWinsOnADuplicateKey(): void
+    {
+        $loader = $this->createLoader([
+            $this->basePath,
+            __DIR__ . '/../../Fixtures/lang_json_override',
+        ]);
+        $translations = $loader->loadAll('en');
+
+        self::assertSame('Welcome back, {name}!', $translations['messages.welcome']);
+        self::assertSame('Added by the later path', $translations['messages.only_here']);
+        self::assertSame('Goodbye!', $translations['messages.goodbye']);
     }
 
     #[Test]
@@ -102,5 +130,16 @@ final class JsonLoaderTest extends TestCase
         foreach ($translations as $key => $value) {
             self::assertIsString($value, "Value for key '{$key}' should be string");
         }
+    }
+
+    #[Test]
+    public function malformedJsonFilesAreSkippedNotFatal(): void
+    {
+        $loader = $this->createLoader([__DIR__ . '/../../Fixtures/lang_json_malformed']);
+
+        $translations = $loader->loadAll('en');
+
+        self::assertSame('Valid', $translations['good.app.title']);
+        self::assertArrayNotHasKey('broken.broken', $translations);
     }
 }

@@ -23,7 +23,7 @@ interface ProcessRunnerInterface
      *
      * @return ProcessResult
      */
-    public function run(string $executable, array $args = [], ?string $cwd = null): ProcessResult;
+    public function run(string $executable, array $args = [], null|string $cwd = null): ProcessResult;
 
     /**
      * Run an executable, streaming its stdout/stderr live to the console and forwarding termination
@@ -36,5 +36,5 @@ interface ProcessRunnerInterface
      *
      * @return int
      */
-    public function passthrough(string $executable, array $args = [], ?string $cwd = null): int;
+    public function passthrough(string $executable, array $args = [], null|string $cwd = null): int;
 }

@@ -23,6 +23,16 @@ final class CommandCache
     ) {}
 
     /**
+     * The cache file path.
+     *
+     * @return string
+     */
+    public function path(): string
+    {
+        return $this->path;
+    }
+
+    /**
      * Check if the cache file exists.
      *
      * @return bool
@@ -37,7 +47,7 @@ final class CommandCache
      *
      * @return array<string, class-string>|null Command name to class map, or null if cache missing
      */
-    public function read(): ?array
+    public function read(): null|array
     {
         if (!file_exists($this->path)) {
             return null;
@@ -63,7 +73,7 @@ final class CommandCache
         $directory = dirname($this->path);
 
         if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
+            mkdir($directory, 0o755, true);
         }
 
         $content = "<?php\n\ndeclare(strict_types=1);\n\nreturn " . var_export($commandMap, true) . ";\n";

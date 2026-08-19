@@ -41,7 +41,7 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 | [`phpdot/routing-rt`](packages/routing-rt) | Real-time routing for WebSocket and SSE — extends phpdot/routing. |
 | [`phpdot/server`](packages/server) | Swoole HTTP, WebSocket, and TCP server for PSR-15 handlers. |
 | [`phpdot/session`](packages/session) | Secure session management with pluggable handlers, flash data, CSRF tokens, and PSR-15 middleware. |
-| [`phpdot/sheets`](packages/sheets) | Fast, streaming, low-memory XLSX reader and writer with charts, images, conditional formatting and data validation as opt-in plugins. |
+| [`phpdot/sheets`](packages/sheets) | Fast, streaming, low-memory XLSX reader and writer with charts, images, conditional formatting and data validation built in. |
 | [`phpdot/template`](packages/template) | Swoole-safe Twig integration with auto-discovered extensions for the PHPdot ecosystem. |
 | [`phpdot/totp`](packages/totp) | Coroutine-safe, zero-dependency HOTP/TOTP (RFC 4226 / RFC 6238) with provisioning URIs for the PHPdot ecosystem. |
 | [`phpdot/tracelog`](packages/tracelog) | Channel-based log backend: handlers, formatters, and fail-closed record encryption. |
@@ -60,7 +60,8 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 
 ## Adding a package
 
-1. Create the empty mirror repo `phpdot/<name>` and make sure `SPLIT_TOKEN` can push to it.
+1. Create the empty mirror repo `phpdot/<name>` — the phpdot-splitter GitHub App's org-wide
+   install covers it automatically; add the sole-pusher ruleset so only the App can push.
 2. Add `packages/<name>/` (with `composer.json`, `src/`, `tests/`, `LICENSE`, `README.md`) and map
    it in the root `composer.json` (`autoload`, `autoload-dev`, `replace`) — the manifest gate fails
    otherwise.
@@ -69,11 +70,18 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 ## Development
 
 ```bash
+docker compose up -d   # mysql, postgres, mongodb, redis, rabbitmq, minio — the integration suites
 composer install
-composer check   # phpunit + phpstan + php-cs-fixer, whole tree
+composer check         # phpunit + phpstan + php-cs-fixer, whole tree
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md).
+The compose stack is required for a full `composer check`: the root phpunit.xml sets
+`failOnSkipped`, so an unreachable service fails the run instead of silently skipping its
+integration suite. Host ports are shifted off the local defaults (mysql 3307, postgres 5433,
+redis 6380, rabbitmq 5673, mongodb 27018, minio 9002) and the root phpunit.xml points the
+suites at them; override per service with the `*_PORT`/`*_HOST` env vars.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the conventions and for how releases are cut.
 
 ## License
 

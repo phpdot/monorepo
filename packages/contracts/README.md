@@ -3,7 +3,9 @@
 Shared interfaces for the PHPdot ecosystem. Implementation packages implement these
 interfaces; consumer packages type-hint against them. An implementation can be swapped
 without changing any consumer code, and packages never depend on each other's internals.
-Concrete classes and value objects live in the implementation packages, never here.
+Implementations live in the implementation packages; the only concrete classes here are
+the pagination carriers (`Paginator`, `CursorPaginator`), because every implementation
+must hand consumers the same wire-stable result shape.
 
 ## Table of Contents
 
@@ -65,7 +67,7 @@ The package is standalone-testable:
 
 ```bash
 composer install
-composer test        # PHPUnit (the e() helper)
+composer test        # PHPUnit
 composer analyse     # PHPStan, level max + strict rules
 composer check       # Both, plus code style
 ```

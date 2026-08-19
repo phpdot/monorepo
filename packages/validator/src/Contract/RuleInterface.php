@@ -33,24 +33,37 @@ interface RuleInterface
     /**
      * Return a new instance bound to the given error code.
      *
+     * `$params` are ICU arguments for the message and OVERRIDE the rule's own,
+     * so a call site can state the bound its translation interpolates instead
+     * of the catalog hard-coding a number.
+     *
      * @param ErrorCodeInterface $code
+     * @param array<string, mixed> $params ICU params, merged over `params()`
      *
      * @return static
      */
-    public function withError(ErrorCodeInterface $code): static;
+    public function withError(ErrorCodeInterface $code, array $params = []): static;
+
+    /**
+     * The params `withError()` was given, or `[]`.
+     *
+     * @return array<string, mixed>
+     */
+    public function errorParams(): array;
 
     /**
      * The bound error code, or null if `withError()` was never called.
      *
      * @return ?ErrorCodeInterface
      */
-    public function code(): ?ErrorCodeInterface;
+    public function code(): null|ErrorCodeInterface;
 
     /**
      * ICU interpolation params merged into the resulting ErrorEntry.
      *
      * Defaults to `['field' => $context->field()]`. Rules with extra params
-     * (`min`, `max`, `other`, etc.) override this.
+     * (`min`, `max`, `other`, etc.) override this; `errorParams()` is merged
+     * over the result.
      *
      * @param ValidationContext $context
      *

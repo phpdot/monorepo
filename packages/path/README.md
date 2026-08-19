@@ -19,6 +19,7 @@ rather than being guessed.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
+| `composer-runtime-api` | `^2.2` |
 | `phpdot/config` | `^0.1` |
 | `phpdot/package` | `^0.1` |
 

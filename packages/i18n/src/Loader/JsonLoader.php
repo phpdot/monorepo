@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 /**
- * Loader that reads JSON files containing flat key/value translation maps.
+ * Loader that reads JSON files containing nested or flat translation objects.
  *
- * Scans `<config.path>/<language>/*.json`. Each file's keys are prefixed by
- * the filename without extension. Useful for sharing the same source files
+ * Scans `<path>/<language>/*.json` for every path in `config.paths`, with the
+ * same key rules as `PhpArrayLoader`. Useful for sharing the same source files
  * with non-PHP tooling. Not auto-bound — register explicitly or compose via
  * `ChainLoader` when you want to mix it with `PhpArrayLoader`.
  *
@@ -23,7 +23,7 @@ final class JsonLoader implements LoaderInterface
     /**
      * A loader that reads translations from per-language JSON files.
      *
-     * @param I18nConfig $config Provides the base path the JSON files are read from
+     * @param I18nConfig $config Provides the base paths the JSON files are read from
      */
     public function __construct(
         private readonly I18nConfig $config,
@@ -32,46 +32,80 @@ final class JsonLoader implements LoaderInterface
     /**
      * Load all translations for a language from JSON files.
      *
-     * Scans `$basePath/$language/*.json`. Each file must contain a flat JSON object.
-     * Keys are prefixed by filename without extension (e.g. `messages.welcome`).
+     * Unreadable or malformed files are skipped, matching PhpArrayLoader:
+     * a half-written file mid-deploy costs its own keys, never the boot.
      *
      * @return array<string, string> Flat key => ICU template map
      */
     public function loadAll(string $language): array
     {
-        $directory = $this->config->path . '/' . $language;
-
-        if (!is_dir($directory)) {
-            return [];
-        }
-
         $translations = [];
-        $files = glob($directory . '/*.json');
 
-        if ($files === false) {
-            return [];
-        }
+        foreach ($this->config->paths as $path) {
+            $directory = $path . '/' . $language;
 
-        foreach ($files as $file) {
-            $prefix = basename($file, '.json');
-            $contents = file_get_contents($file);
-
-            if ($contents === false) {
+            if (!is_dir($directory)) {
                 continue;
             }
 
-            /**
-             * @var array<string, string> $entries
-             */
-            $entries = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+            $files = glob($directory . '/*.json');
 
-            foreach ($entries as $key => $value) {
-                $translations[$prefix . '.' . $key] = $value;
+            if ($files === false) {
+                continue;
+            }
+
+            foreach ($files as $file) {
+                $contents = file_get_contents($file);
+
+                if ($contents === false) {
+                    continue;
+                }
+
+                try {
+                    $entries = json_decode($contents, true, 512, JSON_THROW_ON_ERROR);
+                } catch (\JsonException) {
+                    continue;
+                }
+
+                if (!is_array($entries)) {
+                    continue;
+                }
+
+                $translations = array_merge($translations, self::flatten($entries, basename($file, '.json')));
             }
         }
 
         ksort($translations);
 
         return $translations;
+    }
+
+    /**
+     * Flatten one file's object onto dotted keys. A non-string leaf is dropped
+     * rather than coerced, so the key resolves as missing and shows up.
+     *
+     * @param array<array-key, mixed> $entries
+     *
+     * @return array<string, string>
+     */
+    private static function flatten(array $entries, string $prefix): array
+    {
+        $flat = [];
+
+        foreach ($entries as $key => $value) {
+            $path = $prefix . '.' . $key;
+
+            if (is_array($value)) {
+                $flat = array_merge($flat, self::flatten($value, $path));
+
+                continue;
+            }
+
+            if (is_string($value)) {
+                $flat[$path] = $value;
+            }
+        }
+
+        return $flat;
     }
 }

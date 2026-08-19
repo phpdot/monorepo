@@ -70,6 +70,41 @@ final class StoreTest extends TestCase
     }
 
     #[Test]
+    public function setWithZeroTtlDeletesKeyAndReturnsTrue(): void
+    {
+        $this->store->set('key', 'value');
+
+        $result = $this->store->set('key', 'updated', 0);
+
+        self::assertTrue($result);
+        self::assertNull($this->store->get('key'));
+    }
+
+    #[Test]
+    public function setMultipleWithZeroTtlDeletesKeysAndReturnsTrue(): void
+    {
+        $this->store->set('a', 1);
+        $this->store->set('b', 2);
+
+        $result = $this->store->setMultiple(['a' => 10, 'b' => 20], 0);
+
+        self::assertTrue($result);
+        self::assertNull($this->store->get('a'));
+        self::assertNull($this->store->get('b'));
+    }
+
+    #[Test]
+    public function setMultipleWithNegativeTtlDeletesKeysAndReturnsTrue(): void
+    {
+        $this->store->set('a', 1);
+
+        $result = $this->store->setMultiple(['a' => 10], -5);
+
+        self::assertTrue($result);
+        self::assertNull($this->store->get('a'));
+    }
+
+    #[Test]
     public function setWithDateIntervalTtlWorks(): void
     {
         $interval = new \DateInterval('PT60S');

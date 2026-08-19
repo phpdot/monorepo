@@ -26,14 +26,25 @@ final class Bail implements RuleInterface
         return true;
     }
 
-    public function withError(\PHPdot\Error\ErrorCodeInterface $code): static
+    /**
+     * @param array<string, mixed> $params
+     */
+    public function withError(\PHPdot\Error\ErrorCodeInterface $code, array $params = []): static
     {
         return $this;
     }
 
-    public function code(): ?\PHPdot\Error\ErrorCodeInterface
+    public function code(): null|\PHPdot\Error\ErrorCodeInterface
     {
         return null;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function errorParams(): array
+    {
+        return [];
     }
 
     /**

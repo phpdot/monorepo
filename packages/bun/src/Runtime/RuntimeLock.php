@@ -40,7 +40,7 @@ final class RuntimeLock
     public function withLock(string $lockFile, callable $work): mixed
     {
         $dir = dirname($lockFile);
-        if (!is_dir($dir) && !mkdir($dir, 0755, true) && !is_dir($dir)) {
+        if (!is_dir($dir) && !mkdir($dir, 0o755, true) && !is_dir($dir)) {
             throw new BinaryDownloadException(sprintf('Unable to create runtime directory: %s', $dir));
         }
 

@@ -9,6 +9,7 @@ use PHPdot\Template\EngineFactory;
 use PHPdot\Template\Exception\TemplateNotFoundException;
 use PHPdot\Template\Exception\TemplateRenderException;
 use PHPdot\Template\Exception\TemplateSyntaxException;
+use PHPdot\Template\HtmlFormatter;
 use PHPdot\Template\TemplateConfig;
 use PHPdot\Template\Tests\Stubs\ArrayContainer;
 use PHPdot\Template\View;
@@ -25,7 +26,7 @@ final class ViewTest extends TestCase
         $manifest = new Manifest([], '2026-04-22T00:00:00+00:00');
         $factory = new EngineFactory($config, $manifest, new ArrayContainer());
 
-        $this->view = new View($factory);
+        $this->view = new View($factory, new HtmlFormatter($config));
     }
 
     public function test_render_returns_rendered_template(): void

@@ -320,6 +320,45 @@ final class SessionMiddlewareTest extends TestCase
     }
 
     #[Test]
+    public function exceptionAfterRegenerateLeavesStoredSessionAndCookieIntact(): void
+    {
+        $initial = $this->manager->start(null);
+        $initial->set('user_id', 7);
+        $this->manager->save($initial);
+        $originalId = $initial->id();
+
+        $capturedSession = null;
+        $handler = new class ($capturedSession) implements \Psr\Http\Server\RequestHandlerInterface {
+            public function __construct(private mixed &$sessionCapture) {}
+
+            public function handle(\Psr\Http\Message\ServerRequestInterface $request): \Psr\Http\Message\ResponseInterface
+            {
+                $session = $request->getAttribute(SessionMiddleware::ATTRIBUTE);
+
+                if ($session instanceof Session) {
+                    $this->sessionCapture = $session;
+                    $session->regenerate(destroy: true);
+                }
+
+                throw new \RuntimeException('handler blew up after regenerate');
+            }
+        };
+
+        try {
+            $this->middleware->process($this->createRequest($originalId), $handler);
+            self::fail('the handler exception must propagate');
+        } catch (\RuntimeException) {
+        }
+
+        self::assertTrue($this->handler->exists($originalId));
+        self::assertInstanceOf(Session::class, $capturedSession);
+        self::assertFalse($this->handler->exists($capturedSession->id()));
+
+        $resumed = $this->manager->start($originalId);
+        self::assertSame(7, $resumed->get('user_id'));
+    }
+
+    #[Test]
     public function attributeConstant(): void
     {
         self::assertSame('session', SessionMiddleware::ATTRIBUTE);

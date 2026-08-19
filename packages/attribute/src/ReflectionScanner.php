@@ -42,12 +42,16 @@ final class ReflectionScanner
         $classMap = [];
 
         foreach ($classes as $className) {
-            if (
-                !class_exists($className)
-                && !interface_exists($className)
-                && !trait_exists($className)
-                && !enum_exists($className)
-            ) {
+            try {
+                $loadable = class_exists($className)
+                    || interface_exists($className)
+                    || trait_exists($className)
+                    || enum_exists($className);
+            } catch (\Throwable) {
+                continue;
+            }
+
+            if (!$loadable) {
                 continue;
             }
 
@@ -78,6 +82,7 @@ final class ReflectionScanner
             generatedAt: time(),
             directories: $directories,
             filter: $filter,
+            visibilityFilter: $visibilityFilter,
         );
     }
 
@@ -102,10 +107,10 @@ final class ReflectionScanner
         TargetType $target,
         array $filterAttributes,
         array &$results,
-        ?string $method = null,
-        ?string $property = null,
-        ?string $parameter = null,
-        ?string $constant = null,
+        null|string $method = null,
+        null|string $property = null,
+        null|string $parameter = null,
+        null|string $constant = null,
     ): void {
         foreach ($attributes as $attr) {
             if ($filterAttributes !== [] && !in_array($attr->getName(), $filterAttributes, true)) {

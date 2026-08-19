@@ -79,10 +79,16 @@ final class CommandDiscovery
                 continue;
             }
 
-            /**
-             * @var class-string<SymfonyCommand> $class
-             */
-            $commandMap[$name] = $class;
+            foreach (explode('|', $name) as $candidate) {
+                if ($candidate === '') {
+                    continue;
+                }
+
+                /**
+                 * @var class-string<SymfonyCommand> $class
+                 */
+                $commandMap[$candidate] = $class;
+            }
         }
 
         ksort($commandMap);

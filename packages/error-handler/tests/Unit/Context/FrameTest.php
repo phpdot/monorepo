@@ -135,8 +135,8 @@ final class FrameTest extends TestCase
     private function makeFrame(
         string $file = '/app/src/Foo.php',
         int $line = 10,
-        ?string $class = null,
-        ?string $function = null,
+        null|string $class = null,
+        null|string $function = null,
         array $codeSnippet = [],
         bool $isApplication = true,
     ): Frame {

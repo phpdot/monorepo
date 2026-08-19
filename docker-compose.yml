@@ -18,7 +18,7 @@ services:
   postgres:
     image: postgres:17
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -58,6 +58,19 @@ services:
       - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  # Passworded twin for the redis package's authentication tests — the main
+  # redis stays open so every other suite connects without credentials.
+  redis-auth:
+    image: redis:8
+    command: ["redis-server", "--requirepass", "phpdot-secret"]
+    ports:
+      - "6381:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "phpdot-secret", "ping"]
       interval: 5s
       timeout: 3s
       retries: 30

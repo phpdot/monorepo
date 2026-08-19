@@ -15,7 +15,7 @@ namespace PHPdot\Attribute;
 use PHPdot\Attribute\Cache\FileCache;
 use PHPdot\Attribute\Discovery\ClassDiscovery;
 use PHPdot\Attribute\Discovery\TokenDiscovery;
-use RuntimeException;
+use PHPdot\Attribute\Exception\AttributeException;
 
 final class Scanner
 {
@@ -23,7 +23,7 @@ final class Scanner
 
     private readonly ReflectionScanner $reflectionScanner;
 
-    private ?Registry $registry = null;
+    private null|Registry $registry = null;
 
     /**
      * Create a scanner; collaborators default to standard implementations.
@@ -33,9 +33,9 @@ final class Scanner
      * @param ?FileCache $cache
      */
     public function __construct(
-        ?ClassDiscovery $discovery = null,
-        ?ReflectionScanner $reflectionScanner = null,
-        private readonly ?FileCache $cache = null,
+        null|ClassDiscovery $discovery = null,
+        null|ReflectionScanner $reflectionScanner = null,
+        private readonly null|FileCache $cache = null,
     ) {
         $this->discovery = $discovery ?? new ClassDiscovery(tokenDiscovery: new TokenDiscovery());
         $this->reflectionScanner = $reflectionScanner ?? new ReflectionScanner();
@@ -63,7 +63,7 @@ final class Scanner
             return $this->registry;
         }
 
-        throw new RuntimeException('Scanner has not been scanned yet. Call scan() or scanClasses() first.');
+        throw new AttributeException('Scanner has not been scanned yet. Call scan() or scanClasses() first.');
     }
 
     /**
@@ -88,14 +88,10 @@ final class Scanner
         int $visibilityFilter = 0,
         bool $forceRescan = false,
     ): Registry {
-        if (!$forceRescan && $this->cache !== null && $this->cache->has()) {
-            $map = $this->cache->read();
+        $cached = $forceRescan ? null : $this->readCacheFor($directories, $filter, $visibilityFilter);
 
-            if ($map !== null) {
-                $this->registry = new Registry($map);
-
-                return $this->registry;
-            }
+        if ($cached !== null) {
+            return $cached;
         }
 
         $classes = $this->discovery->discover(
@@ -124,17 +120,49 @@ final class Scanner
         int $visibilityFilter = 0,
         bool $forceRescan = false,
     ): Registry {
-        if (!$forceRescan && $this->cache !== null && $this->cache->has()) {
-            $map = $this->cache->read();
+        $cached = $forceRescan ? null : $this->readCacheFor([], $filter, $visibilityFilter);
 
-            if ($map !== null) {
-                $this->registry = new Registry($map);
-
-                return $this->registry;
-            }
+        if ($cached !== null) {
+            return $cached;
         }
 
         return $this->buildRegistry($classes, $filter, $visibilityFilter, []);
+    }
+
+    /**
+     * The cached registry, but only when the cache was generated for exactly
+     * this scan configuration.
+     *
+     * A cache file answers only the scan that produced it: the map persists
+     * its directories, filter, and visibility filter for this comparison, so
+     * a cache written by one configuration is rescanned — not silently
+     * reused — by another.
+     *
+     * @param list<string> $directories
+     * @param list<class-string> $filter
+     * @param int $visibilityFilter
+     *
+     * @return ?Registry
+     */
+    private function readCacheFor(array $directories, array $filter, int $visibilityFilter): null|Registry
+    {
+        if ($this->cache === null || !$this->cache->has()) {
+            return null;
+        }
+
+        $map = $this->cache->read();
+
+        if ($map === null
+            || $map->directories !== $directories
+            || $map->filter !== $filter
+            || $map->visibilityFilter !== $visibilityFilter
+        ) {
+            return null;
+        }
+
+        $this->registry = new Registry($map);
+
+        return $this->registry;
     }
 
     /**

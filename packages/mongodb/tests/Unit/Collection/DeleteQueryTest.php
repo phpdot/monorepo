@@ -44,7 +44,7 @@ final class DeleteQueryTest extends TestCase
     public function it_builds_filter_from_callback(): void
     {
         $query = $this->createQuery();
-        $query->where(fn (Filter $f) => $f->lt('expires_at', 1000));
+        $query->where(fn(Filter $f) => $f->lt('expires_at', 1000));
 
         self::assertSame(['expires_at' => ['$lt' => 1000]], $query->getFilter());
     }

@@ -12,7 +12,9 @@
     "require": {
         "php": ">=8.5",
         "ext-curl": "*",
+        "ext-fileinfo": "*",
         "ext-gd": "*",
+        "ext-hash": "*",
         "ext-intl": "*",
         "ext-mbstring": "*",
         "ext-mongodb": "^2.1",
@@ -148,6 +150,7 @@
             "PHPdot\\Console\\Tests\\": "packages/console/tests/",
             "PHPdot\\Container\\Swoole\\Tests\\": "packages/container-swoole/tests/",
             "PHPdot\\Container\\Tests\\": "packages/container/tests/",
+            "PHPdot\\Contracts\\Tests\\": "packages/contracts/tests/",
             "PHPdot\\Database\\Tests\\": "packages/database/tests/",
             "PHPdot\\Env\\Tests\\": "packages/env/tests/",
             "PHPdot\\Error\\Tests\\": "packages/error/tests/",

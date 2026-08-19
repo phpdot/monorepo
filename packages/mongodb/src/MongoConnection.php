@@ -19,7 +19,7 @@ use PHPdot\MongoDB\Exception\ConnectionException;
 
 final class MongoConnection
 {
-    private ?Client $client = null;
+    private null|Client $client = null;
 
     private bool $connected = false;
 

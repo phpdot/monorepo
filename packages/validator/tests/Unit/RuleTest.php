@@ -8,18 +8,21 @@ use PHPdot\Validator\Tests\Stubs\AlwaysFails;
 use PHPdot\Validator\Tests\Stubs\CapturingRule;
 use PHPdot\Validator\Tests\Stubs\TestErrorCode;
 use PHPdot\Validator\ValidationContext;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class RuleTest extends TestCase
 {
-    public function test_code_is_null_until_with_error_called(): void
+    #[Test]
+    public function codeIsNullUntilWithErrorCalled(): void
     {
         $rule = new AlwaysFails();
 
         self::assertNull($rule->code());
     }
 
-    public function test_with_error_returns_new_instance(): void
+    #[Test]
+    public function withErrorReturnsNewInstance(): void
     {
         $rule = new AlwaysFails();
         $bound = $rule->withError(TestErrorCode::Generic);
@@ -29,7 +32,8 @@ final class RuleTest extends TestCase
         self::assertSame(TestErrorCode::Generic, $bound->code());
     }
 
-    public function test_with_error_can_be_called_repeatedly_returning_a_new_instance(): void
+    #[Test]
+    public function withErrorCanBeCalledRepeatedlyReturningANewInstance(): void
     {
         $rule = new AlwaysFails();
         $first = $rule->withError(TestErrorCode::Generic);
@@ -39,7 +43,8 @@ final class RuleTest extends TestCase
         self::assertSame(TestErrorCode::EmailRequired, $second->code());
     }
 
-    public function test_default_params_contain_field(): void
+    #[Test]
+    public function defaultParamsContainField(): void
     {
         $rule = new AlwaysFails();
         $context = new ValidationContext('email', []);
@@ -47,7 +52,8 @@ final class RuleTest extends TestCase
         self::assertSame(['field' => 'email'], $rule->params($context));
     }
 
-    public function test_subclass_can_extend_params(): void
+    #[Test]
+    public function subclassCanExtendParams(): void
     {
         $rule = new CapturingRule(['min' => 3, 'max' => 50]);
         $context = new ValidationContext('username', []);
@@ -56,5 +62,41 @@ final class RuleTest extends TestCase
             ['field' => 'username', 'min' => 3, 'max' => 50],
             $rule->params($context),
         );
+    }
+
+    #[Test]
+    public function errorParamsDefaultToEmpty(): void
+    {
+        $rule = new AlwaysFails();
+
+        self::assertSame([], $rule->errorParams());
+    }
+
+    #[Test]
+    public function withErrorCarriesParams(): void
+    {
+        $rule = (new AlwaysFails())->withError(TestErrorCode::Generic, ['min' => 1, 'max' => 4]);
+
+        self::assertSame(['min' => 1, 'max' => 4], $rule->errorParams());
+    }
+
+    #[Test]
+    public function withErrorParamsDoNotLeakToTheOriginalRule(): void
+    {
+        $rule = new AlwaysFails();
+        $bound = $rule->withError(TestErrorCode::Generic, ['max' => 4]);
+
+        self::assertSame([], $rule->errorParams());
+        self::assertSame(['max' => 4], $bound->errorParams());
+    }
+
+    #[Test]
+    public function errorParamsStayOutOfParams(): void
+    {
+        $rule = (new AlwaysFails())->withError(TestErrorCode::Generic, ['max' => 4]);
+        $context = new ValidationContext('prefixes', []);
+
+        // The validator merges the two; params() itself stays the rule's own.
+        self::assertSame(['field' => 'prefixes'], $rule->params($context));
     }
 }

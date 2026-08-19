@@ -9,7 +9,16 @@
             "email": "omar@phpdot.com"
         }
     ],
-    "keywords": ["totp", "hotp", "otp", "2fa", "mfa", "rfc6238", "rfc4226", "phpdot"],
+    "keywords": [
+        "totp",
+        "hotp",
+        "otp",
+        "2fa",
+        "mfa",
+        "rfc6238",
+        "rfc4226",
+        "phpdot"
+    ],
     "require": {
         "php": ">=8.5",
         "psr/clock": "^1.0"
@@ -23,6 +32,7 @@
         "phpunit/phpunit": "^13.0"
     },
     "suggest": {
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
         "phpdot/qrcode": "Render a provisioning URI as a scannable QR code via QrCodeBridge (^0.1)."
     },
     "autoload": {

@@ -17,8 +17,8 @@ final class ChainLoaderTest extends TestCase
     #[Test]
     public function mergesFromMultipleLoaders(): void
     {
-        $phpLoader = new PhpArrayLoader(new I18nConfig(path: __DIR__ . '/../../Fixtures/lang'));
-        $jsonLoader = new JsonLoader(new I18nConfig(path: __DIR__ . '/../../Fixtures/lang_json'));
+        $phpLoader = new PhpArrayLoader(new I18nConfig(paths: [__DIR__ . '/../../Fixtures/lang']));
+        $jsonLoader = new JsonLoader(new I18nConfig(paths: [__DIR__ . '/../../Fixtures/lang_json']));
 
         $chain = new ChainLoader([$phpLoader, $jsonLoader]);
         $translations = $chain->loadAll('en');
@@ -72,7 +72,7 @@ final class ChainLoaderTest extends TestCase
     #[Test]
     public function singleLoaderWorks(): void
     {
-        $loader = new PhpArrayLoader(new I18nConfig(path: __DIR__ . '/../../Fixtures/lang'));
+        $loader = new PhpArrayLoader(new I18nConfig(paths: [__DIR__ . '/../../Fixtures/lang']));
         $chain = new ChainLoader([$loader]);
 
         self::assertArrayHasKey('messages.welcome', $chain->loadAll('en'));
