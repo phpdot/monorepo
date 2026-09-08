@@ -30,6 +30,8 @@ final class ReflectionScanner
      * @param list<class-string> $filter
      * @param list<string> $directories
      * @param int $visibilityFilter
+     * @param null|string $classesKey Cache identity of the explicit class list, when the
+     *                                caller scanned one; null for directory discovery
      *
      * @return AttributeMap
      */
@@ -38,6 +40,7 @@ final class ReflectionScanner
         array $filter = [],
         int $visibilityFilter = 0,
         array $directories = [],
+        null|string $classesKey = null,
     ): AttributeMap {
         $classMap = [];
 
@@ -83,6 +86,7 @@ final class ReflectionScanner
             directories: $directories,
             filter: $filter,
             visibilityFilter: $visibilityFilter,
+            classesKey: $classesKey,
         );
     }
 
@@ -124,7 +128,7 @@ final class ReflectionScanner
             }
 
             /**
-             * @var list<mixed> $arguments
+             * @var array<int|string, mixed> $arguments
              */
             $arguments = $attr->getArguments();
 

@@ -1,0 +1,71 @@
+{
+    "name": "phpdot/webauthn",
+    "description": "WebAuthn and passkeys for the PHPdot ecosystem — a production wrap of web-auth/webauthn-lib: ceremony orchestration, single-use challenges, duplicate-credential refusal, counter discipline, and an exception fence, with host-owned storage.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": [
+        "webauthn",
+        "passkey",
+        "fido2",
+        "authentication",
+        "mfa",
+        "phpdot"
+    ],
+    "require": {
+        "php": ">=8.5",
+        "ext-json": "*",
+        "ext-openssl": "*",
+        "paragonie/constant_time_encoding": "^2.6 || ^3.0",
+        "phpdot/contracts": "^0.3",
+        "psr/clock": "^1.0",
+        "symfony/serializer": "^8.0",
+        "web-auth/cose-lib": "^4.7",
+        "web-auth/webauthn-lib": "^5.3"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.3",
+        "phpdot/iam": "^0.3",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "phpdot/iam": "Enables the WebauthnStage bridge — WebAuthn as an AuthenticationStageInterface factor in the iam engine (^0.3).",
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed)."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\WebAuthn\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\WebAuthn\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/webauthn",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

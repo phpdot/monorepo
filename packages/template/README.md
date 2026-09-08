@@ -19,12 +19,13 @@ API.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/package` | `^0.2` |
+| `phpdot/package` | `^0.3` |
 | `psr/container` | `^2.0` |
 | `twig/twig` | `^3.10` |
 
-`phpdot/config` and `phpdot/container` are dev-only suggestions — the `#[Config('template')]` / binding
-attributes are inert until a phpdot application reflects them.
+`phpdot/config` and `phpdot/container` are `require-dev` only (`phpdot/container` also appears in
+`suggest`) — the `#[Config('template')]` / binding attributes are inert until a phpdot application
+reflects them.
 
 ## Installation
 
@@ -38,12 +39,13 @@ Three objects; your application code touches only `View`:
 
 ```php
 use PHPdot\Template\EngineFactory;
+use PHPdot\Template\HtmlFormatter;
 use PHPdot\Template\TemplateConfig;
 use PHPdot\Template\View;
 
 $config  = new TemplateConfig(paths: ['__main__' => [__DIR__ . '/views']]);
 $factory = new EngineFactory($config, $manifest, $container);
-$view = new View($factory);
+$view    = new View($factory, new HtmlFormatter($config));
 
 echo $view->render('hello.twig', ['name' => 'Omar']);
 ```
@@ -60,6 +62,33 @@ $twig = $view->environment();   // escape hatch to the underlying Twig\Environme
 
 `TemplateConfig` carries namespaced paths, an optional compiled-template `cache`, and the `debug`,
 `strictVariables`, `autoReload`, and `autoescape` flags.
+
+### Output formatting
+
+`format` re-indents rendered browser HTML through ext-tidy — **on by default**, off with
+`'format' => false`. Only browser HTML is touched (`.html.twig`, `.htm.twig`, or a bare
+`.twig`); `.mail.twig`, `.txt`/`.csv`/`.xml.twig` templates are returned exactly as rendered,
+because tidy restructures the table layouts and Outlook conditional comments email depends on.
+Formatting is fail-open: markup tidy cannot parse comes back unchanged, never lost. With
+formatting enabled the constructor requires ext-tidy and fails at boot, naming both remedies.
+
+### Console
+
+When a phpdot application discovers commands, the package contributes one:
+
+```bash
+php dot template:clear     # remove every compiled template from the `cache` directory
+```
+
+It removes only what Twig writes — the two-character buckets of hash-named `.php` files — so a
+misconfigured `cache` path cannot cost application code, and it reports "already empty" when the
+directory does not exist yet or "disabled" when no cache path is set. A running Swoole worker keeps
+the compiled classes it has already loaded, so clear, then restart the server. Clear on every deploy
+that changes templates, `autoescape`, or `charset`: Twig's compiled-class key covers neither of those
+two options, so a warm cache keeps the previous setting silently.
+
+`phpdot/console` and `symfony/console` are `require-dev` + `suggest` only: the command class stays
+inert until a console loads it, so standalone consumers pay nothing for it.
 
 ## Architecture
 

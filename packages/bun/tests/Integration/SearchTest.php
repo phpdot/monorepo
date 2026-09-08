@@ -28,7 +28,7 @@ final class SearchTest extends TestCase
         }
 
         $http = new HttpClient();
-        $registry = new NpmRegistryClient($http, $http, new BunConfig());
+        $registry = new NpmRegistryClient($http, $http, new BunConfig(resourcesDir: "/tmp/bun-test", outputDir: "/tmp/bun-test"));
 
         $results = $registry->search('chart', 5);
         self::assertNotEmpty($results, 'a search for "chart" should return packages');

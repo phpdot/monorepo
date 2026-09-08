@@ -5,10 +5,11 @@ read-only per-package mirrors.
 
 ## Packages
 
-The 37 packages in this monorepo, each published as a read-only mirror at `github.com/phpdot/<name>`:
+The 42 packages in this monorepo, each published as a read-only mirror at `github.com/phpdot/<name>`:
 
 | Package | Description |
 |---|---|
+| [`phpdot/ai`](packages/ai) | LLM client layer for the PHPdot ecosystem — one streaming turn API over the two wire shapes that matter (Anthropic /messages and OpenAI-compatible /chat/completions), with tools, usage, and mid-turn cancellation, on ext-curl that yields coroutines under Swoole hooks. |
 | [`phpdot/attribute`](packages/attribute) | PHP 8 attribute scanning, caching, and discovery. Standalone. |
 | [`phpdot/bun`](packages/bun) | A PHP wrapper around the Bun binary (oven-sh/bun, MIT licensed): manages a hidden Bun runtime and exposes its CLI as console commands. |
 | [`phpdot/cache`](packages/cache) | PSR-16 cache with pluggable drivers for modern PHP. |
@@ -25,9 +26,11 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 | [`phpdot/filesystem`](packages/filesystem) | Coroutine-safe, PSR-native file storage for the PHPdot ecosystem: local and S3-compatible (AWS S3, Cloudflare R2, MinIO, DigitalOcean Spaces) over a PSR-18 + SigV4 client, with typed streams, resumable chunked uploads and first-class progress. |
 | [`phpdot/http`](packages/http) | PSR-7 HTTP messages, responses, and uploads for modern PHP. |
 | [`phpdot/http-middleware`](packages/http-middleware) | PSR-15 middlewares for PHPdot. |
+| [`phpdot/iam`](packages/iam) | Identity and access management for the PHPdot ecosystem — staged policy-driven authentication, typed permissions, and policy-class authorization. No policy engine, no DSL. |
 | [`phpdot/i18n`](packages/i18n) | Internationalization with ICU MessageFormat, pluggable loaders, PSR-16 caching. |
 | [`phpdot/logs`](packages/logs) | Tracer, span, and pending-log core implementing the contracts observability boundary. |
 | [`phpdot/mail`](packages/mail) | Coroutine-safe transactional email for the PHPdot ecosystem: a fluent, immutable message builder over any symfony/mailer transport. |
+| [`phpdot/mcp`](packages/mcp) | Model Context Protocol server for the PHPdot ecosystem — attribute-discovered tools, permission-filtered exposure per actor, Streamable HTTP through the official SDK, sessions shared across Swoole workers. |
 | [`phpdot/mongodb`](packages/mongodb) | Resilient MongoDB client with fluent CRUD builders, Document object, exception translation, and query logging. |
 | [`phpdot/package`](packages/package) | Package discovery and definition loading for the PHPdot container. |
 | [`phpdot/path`](packages/path) | Project-root discovery and named path resolution for PHPdot, configured via phpdot/config. |
@@ -39,6 +42,7 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 | [`phpdot/redis`](packages/redis) | Coroutine-safe Redis client wrapping ext-redis with auto-reconnect, exponential backoff, exception translation, and a pool connector for phpdot/pool. |
 | [`phpdot/routing`](packages/routing) | High-performance segment-trie routing for PHP. PSR-7/15/17 compliant. |
 | [`phpdot/routing-rt`](packages/routing-rt) | Real-time routing for WebSocket and SSE — extends phpdot/routing. |
+| [`phpdot/scheduler`](packages/scheduler) | Distributed cron-style scheduler: an atomic store claim with lease heartbeats and fencing guarantees exactly one server runs each task, with first-class run history. |
 | [`phpdot/server`](packages/server) | Swoole HTTP, WebSocket, and TCP server for PSR-15 handlers. |
 | [`phpdot/session`](packages/session) | Secure session management with pluggable handlers, flash data, CSRF tokens, and PSR-15 middleware. |
 | [`phpdot/sheets`](packages/sheets) | Fast, streaming, low-memory XLSX reader and writer with charts, images, conditional formatting and data validation built in. |
@@ -46,6 +50,7 @@ The 37 packages in this monorepo, each published as a read-only mirror at `githu
 | [`phpdot/totp`](packages/totp) | Coroutine-safe, zero-dependency HOTP/TOTP (RFC 4226 / RFC 6238) with provisioning URIs for the PHPdot ecosystem. |
 | [`phpdot/tracelog`](packages/tracelog) | Channel-based log backend: handlers, formatters, and fail-closed record encryption. |
 | [`phpdot/validator`](packages/validator) | Strict, type-safe validation with structured error codes for the PHPdot ecosystem. |
+| [`phpdot/webauthn`](packages/webauthn) | WebAuthn and passkeys for the PHPdot ecosystem — a production wrap of web-auth/webauthn-lib: ceremony orchestration, single-use challenges, duplicate-credential refusal, counter discipline, and an exception fence, with host-owned storage. |
 
 ## How it works
 
@@ -77,7 +82,7 @@ composer check         # phpunit + phpstan + php-cs-fixer, whole tree
 
 The compose stack is required for a full `composer check`: the root phpunit.xml sets
 `failOnSkipped`, so an unreachable service fails the run instead of silently skipping its
-integration suite. Host ports are shifted off the local defaults (mysql 3307, postgres 5433,
+integration suite. Host ports are shifted off the local defaults, except postgres (mysql 3307, postgres 5432,
 redis 6380, rabbitmq 5673, mongodb 27018, minio 9002) and the root phpunit.xml points the
 suites at them; override per service with the `*_PORT`/`*_HOST` env vars.
 

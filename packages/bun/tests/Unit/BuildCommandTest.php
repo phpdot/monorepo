@@ -24,7 +24,7 @@ final class BuildCommandTest extends TestCase
         $this->fake = new TestBun();
         $this->cwd = (string) getcwd();
         $this->workdir = sys_get_temp_dir() . '/phpdot-bun-cmdtest-' . uniqid();
-        mkdir($this->workdir, 0755, true);
+        mkdir($this->workdir, 0o755, true);
         chdir($this->workdir);
     }
 

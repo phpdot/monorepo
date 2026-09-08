@@ -6,6 +6,7 @@ namespace PHPdot\Bun\Tests\Unit;
 
 use PHPdot\Bun\Build\BuildOptions;
 use PHPdot\Bun\Build\BuildSpec;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -29,14 +30,14 @@ final class BuildOptionsTest extends TestCase
             loader: ['.svg:text', '.png:dataurl'],
             conditions: ['phpdot', 'development'],
             env: 'PUBLIC_*',
-            metafileMd: '.phpdot/build/graph.md',
+            metafileMd: 'resources/.bun/build/graph.md',
         );
 
         self::assertSame([
             '--root=resources/js',
             '--public-path=https://cdn.example.com/build/',
             '--entry-naming=[dir]/[name].[ext]',
-            '--metafile-md=.phpdot/build/graph.md',
+            '--metafile-md=resources/.bun/build/graph.md',
             '--packages=external',
             '--loader=.svg:text',
             '--loader=.png:dataurl',
@@ -116,5 +117,14 @@ final class BuildOptionsTest extends TestCase
         self::assertNull($base->toOptions()->publicPath);
         self::assertFalse($base->toOptions()->cssChunking);
         self::assertSame([], $base->toOptions()->loader);
+    }
+
+    #[Test]
+    public function tsconfigOverrideMapsToItsFlag(): void
+    {
+        $args = (new BuildSpec())->tsconfig('/srv/app/resources/.bun/tsconfig.json')->toOptions()->toArguments();
+
+        self::assertContains('--tsconfig-override=/srv/app/resources/.bun/tsconfig.json', $args);
+        self::assertNotContains('--tsconfig-override=', (new BuildSpec())->toOptions()->toArguments());
     }
 }

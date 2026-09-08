@@ -28,12 +28,6 @@ use PHPdot\Container\Attribute\Singleton;
 final class Bun
 {
     /**
-     * Private, project-relative path for the verbose metafile bun emits. Kept outside the output dir
-     * (often the web root): it is distilled into a deploy-safe manifest, then deleted.
-     */
-    private const string THROWAWAY_METAFILE = '.phpdot/build/metafile.json';
-
-    /**
      * Wire the Bun facade to its binary resolver, process runner, and config.
      *
      * @param BinaryResolver $resolver
@@ -47,7 +41,19 @@ final class Bun
     ) {}
 
     /**
+     * The resolved Bun binary path — memoized by the resolver, so this is
+     * free after the first call in a process.
+     *
+     * @return string Absolute path to the pinned binary
+     */
+    public function binary(): string
+    {
+        return $this->resolver->resolve();
+    }
+
+    /**
      * Install packages: `bun add [--dev] <pkg...>`. Auto-creates package.json + lockfile.
+     * An empty list installs from the lockfile instead (`bun install`).
      *
      * @param list<string> $packages
      * @param bool $dev
@@ -57,6 +63,10 @@ final class Bun
      */
     public function install(array $packages, bool $dev = false, null|string $cwd = null): int
     {
+        if ($packages === []) {
+            return $this->passthrough(['install'], $this->workingDir($cwd));
+        }
+
         $args = $dev ? ['add', '--dev', ...$packages] : ['add', ...$packages];
 
         return $this->passthrough($args, $this->workingDir($cwd));
@@ -171,7 +181,7 @@ final class Bun
      *
      * For any one-shot build that has an output dir this also distils a deploy-safe manifest into
      * `<outDir>/manifest.json`. When the caller didn't request a metafile, a private throwaway
-     * (outside the output dir) is used solely to produce the manifest and then removed — so the
+     * under home/build (never the output dir) is used solely to produce the manifest and then removed — so the
      * verbose metafile (absolute paths + module graph) is never left in or served from the web root.
      * Watch builds are long-lived and skip this. Returns bun's exit code, or a non-zero code if the
      * build succeeded but its manifest could not be written.
@@ -189,7 +199,7 @@ final class Bun
 
         $metafile = $explicitMetafile;
         if (!$options->watch && $outDir !== null && $metafile === null) {
-            $metafile = self::THROWAWAY_METAFILE;
+            $metafile = $this->config->homeDir . '/build/metafile.json';
         }
 
         $args = $options->toArguments();
@@ -208,7 +218,12 @@ final class Bun
             return $exit;
         }
 
-        $compiled = Manifest::compile($metafilePath, $this->underCwd($cwd, $outDir . '/manifest.json'));
+        $compiled = Manifest::compile(
+            $metafilePath,
+            $this->underCwd($cwd, $outDir . '/manifest.json'),
+            $cwd ?? (string) getcwd(),
+            $this->config->resourcesDir,
+        );
 
         if ($explicitMetafile === null) {
             @unlink($metafilePath);
@@ -218,16 +233,17 @@ final class Bun
     }
 
     /**
-     * Resolve the working directory for a package-context command: an explicit cwd wins, otherwise
-     * the configured workingDir (which may be null = current dir).
+     * Resolve the working directory for a package-context command: an explicit cwd wins,
+     * otherwise the configured home — where package.json and node_modules live, so installs
+     * land in home (resources/.bun by default) whatever directory the command was invoked from.
      *
      * @param ?string $cwd
      *
-     * @return ?string
+     * @return string
      */
-    private function workingDir(null|string $cwd): null|string
+    private function workingDir(null|string $cwd): string
     {
-        return $cwd ?? $this->config->workingDir;
+        return $cwd ?? $this->config->homeDir;
     }
 
     /**

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PHPdot\ErrorHandler\Tests\Unit;
 
+use PHPdot\Container\Context\ArrayContextProvider;
+use PHPdot\Contracts\Logs\WriterInterface;
 use PHPdot\ErrorHandler\Context\ErrorContext;
 use PHPdot\ErrorHandler\Contract\ContextProviderInterface;
 use PHPdot\ErrorHandler\Contract\RendererInterface;
@@ -14,11 +16,11 @@ use PHPdot\ErrorHandler\Renderer\HtmlProdRenderer;
 use PHPdot\ErrorHandler\Renderer\JsonRenderer;
 use PHPdot\ErrorHandler\Solution\Solution;
 use PHPdot\Http\Message\ServerRequest;
+use PHPdot\Logs\CoreTracer;
+use PHPdot\Logs\ScopeManager;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 
 final class ExceptionHandlerTest extends TestCase
 {
@@ -534,61 +536,125 @@ final class ExceptionHandlerTest extends TestCase
     }
 
     #[Test]
-    public function logsWithErrorLevelFor500(): void
+    public function logsThroughTheTracerWithErrorLevelFor500(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())
-            ->method('log')
-            ->with(
-                LogLevel::ERROR,
-                'Server error',
-                self::callback(
-                    static fn(array $ctx): bool =>
-                    $ctx['status_code'] === 500 && $ctx['exception'] instanceof \Throwable,
-                ),
-            );
+        [$tracer, $writer] = $this->tracer();
 
         $handler = $this->makeHandler();
-        $handler->setLogger($logger);
+        $handler->setTracer($tracer);
         $handler->handle(new \RuntimeException('Server error'));
+
+        $log = $this->singleLog($writer);
+        self::assertSame('error', $log['level']);
+        self::assertSame('Server error', $log['message']);
+        self::assertSame(500, $log['context']['status_code']);
+        self::assertSame(\RuntimeException::class, $log['context']['exception']['class']);
+        self::assertSame('Server error', $log['context']['exception']['message']);
+        self::assertArrayHasKey('file', $log['context']['exception']);
+        self::assertArrayHasKey('line', $log['context']['exception']);
     }
 
     #[Test]
-    public function logsWithWarningLevelFor400(): void
+    public function logsThroughTheTracerWithWarningLevelFor400(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())
-            ->method('log')
-            ->with(
-                LogLevel::WARNING,
-                'Bad input',
-                self::anything(),
-            );
+        [$tracer, $writer] = $this->tracer();
 
         $handler = $this->makeHandler();
-        $handler->setLogger($logger);
+        $handler->setTracer($tracer);
         $handler->handle(new \InvalidArgumentException('Bad input'));
+
+        $log = $this->singleLog($writer);
+        self::assertSame('warning', $log['level']);
+        self::assertSame('Bad input', $log['message']);
+        self::assertSame(400, $log['context']['status_code']);
     }
 
     #[Test]
-    public function logsWithWarningLevelFor422(): void
+    public function logsThroughTheTracerWithWarningLevelFor422(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())
-            ->method('log')
-            ->with(
-                LogLevel::WARNING,
-                'Invalid domain',
-                self::anything(),
-            );
+        [$tracer, $writer] = $this->tracer();
 
         $handler = $this->makeHandler();
-        $handler->setLogger($logger);
+        $handler->setTracer($tracer);
         $handler->handle(new \DomainException('Invalid domain'));
+
+        $log = $this->singleLog($writer);
+        self::assertSame('warning', $log['level']);
+        self::assertSame('Invalid domain', $log['message']);
     }
 
     #[Test]
-    public function doesNotLogWhenNoLogger(): void
+    public function logsThroughTheTracerWithNoticeLevelForRoutine404(): void
+    {
+        [$tracer, $writer] = $this->tracer();
+
+        $handler = $this->makeHandler();
+        $handler->setTracer($tracer);
+        $handler->handle(new class ('Page not found') extends \RuntimeException {
+            public function getStatusCode(): int
+            {
+                return 404;
+            }
+        });
+
+        $log = $this->singleLog($writer);
+        self::assertSame('notice', $log['level']);
+        self::assertSame('Page not found', $log['message']);
+    }
+
+    #[Test]
+    public function aHandledExceptionMarksTheActiveSpanError(): void
+    {
+        // The converted throwable never crosses the trace boundary, so without
+        // this stamp a rendered 500 and a healthy response export the identical
+        // span status.
+        $writer = new class implements WriterInterface {
+            /** @var list<array<string, mixed>> */
+            public array $records = [];
+
+            public function write(array $record): void
+            {
+                $this->records[] = $record;
+            }
+        };
+
+        $scope  = new ScopeManager(new ArrayContextProvider());
+        $tracer = new CoreTracer($scope, $writer);
+
+        $handler = new ExceptionHandler(
+            environment: 'production',
+            devRenderer: new HtmlDevRenderer(),
+            prodRenderer: new HtmlProdRenderer(),
+            jsonRenderer: new JsonRenderer(),
+            tracer: $tracer,
+        );
+
+        $span = $tracer->span('GET /orders', 'server');
+
+        $handler->handle(new \RuntimeException('order service down'));
+        $span->end();
+
+        $spans = array_values(array_filter(
+            $writer->records,
+            static fn(array $record): bool => ($record['type'] ?? null) === 'span',
+        ));
+        self::assertCount(1, $spans);
+        self::assertSame('error', $spans[0]['status']);
+        self::assertSame('order service down', $spans[0]['status_message']);
+    }
+
+    #[Test]
+    public function withoutATracerNothingIsMarkedAndHandlingStillWorks(): void
+    {
+        $handler = $this->makeHandler();
+
+        $output = $handler->handle(new \RuntimeException('no tracer wired'));
+
+        self::assertNotSame('', $output);
+    }
+
+    #[Test]
+    public function doesNotLogWithoutATracer(): void
     {
         $handler = $this->makeHandler();
 
@@ -806,20 +872,17 @@ final class ExceptionHandlerTest extends TestCase
     }
 
     #[Test]
-    public function logsExceptionMessageCorrectly(): void
+    public function logsExceptionMessageVerbatimThroughTheTracer(): void
     {
-        $logger = $this->createMock(LoggerInterface::class);
-        $logger->expects(self::once())
-            ->method('log')
-            ->with(
-                self::anything(),
-                'Exact error message here',
-                self::anything(),
-            );
+        [$tracer, $writer] = $this->tracer();
 
         $handler = $this->makeHandler();
-        $handler->setLogger($logger);
+        $handler->setTracer($tracer);
         $handler->handle(new \RuntimeException('Exact error message here'));
+
+        $log = $this->singleLog($writer);
+        self::assertSame('Exact error message here', $log['message']);
+        self::assertSame('Exact error message here', $log['context']['exception']['message']);
     }
 
     #[Test]
@@ -882,6 +945,47 @@ final class ExceptionHandlerTest extends TestCase
         } finally {
             $_SERVER = $original;
         }
+    }
+
+
+    /**
+     * A real engine pair: the tracer the handler logs through, and the writer
+     * that captures what it emitted.
+     *
+     * @return array{PHPdot\Logs\CoreTracer, object}
+     */
+    private function tracer(): array
+    {
+        $writer = new class implements WriterInterface {
+            /** @var list<array<string, mixed>> */
+            public array $records = [];
+
+            public function write(array $record): void
+            {
+                $this->records[] = $record;
+            }
+        };
+
+        return [new CoreTracer(new ScopeManager(new ArrayContextProvider()), $writer), $writer];
+    }
+
+    /**
+     * The single log record the handler emitted through the tracer.
+     *
+     * @param object $writer The capturing writer from tracer().
+     *
+     * @return array<string, mixed>
+     */
+    private function singleLog(object $writer): array
+    {
+        $logs = array_values(array_filter(
+            $writer->records,
+            static fn(array $record): bool => ($record['type'] ?? null) === 'log',
+        ));
+
+        self::assertCount(1, $logs);
+
+        return $logs[0];
     }
 
     private function makeHandler(string $environment = 'development'): ExceptionHandler

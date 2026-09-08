@@ -19,7 +19,7 @@ final readonly class AttributeResult
      * Create one attribute occurrence with its instance, arguments, and location.
      *
      * @param class-string $attribute
-     * @param list<mixed> $arguments
+     * @param array<int|string, mixed> $arguments Positional and named constructor arguments
      * @param class-string $class
      * @param object $instance
      * @param TargetType $target

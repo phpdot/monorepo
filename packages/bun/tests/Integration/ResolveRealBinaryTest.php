@@ -32,7 +32,7 @@ final class ResolveRealBinaryTest extends TestCase
         }
 
         $runtimeDir = sys_get_temp_dir() . '/phpdot-bun-integration-' . uniqid();
-        $config = new BunConfig(runtimeDir: $runtimeDir);
+        $config = new BunConfig(resourcesDir: $runtimeDir, outputDir: $runtimeDir);
         $process = new BunProcess();
         $psr18 = new Psr18Client();
 
@@ -52,10 +52,20 @@ final class ResolveRealBinaryTest extends TestCase
         self::assertSame($config->pinnedVersion, trim($result->stdout));
 
         // Cleanup.
-        if (is_file($path)) {
-            unlink($path);
+        $this->deleteTree($runtimeDir);
+    }
+
+    private function deleteTree(null|string $path): void
+    {
+        if ($path === null || !is_dir($path)) {
+            return;
         }
-        @unlink($runtimeDir . '/.lock');
-        @rmdir($runtimeDir);
+        /** @var list<string> $entries */
+        $entries = array_diff((array) scandir($path), ['.', '..']);
+        foreach ($entries as $entry) {
+            $full = $path . DIRECTORY_SEPARATOR . $entry;
+            is_dir($full) && !is_link($full) ? $this->deleteTree($full) : @unlink($full);
+        }
+        @rmdir($path);
     }
 }

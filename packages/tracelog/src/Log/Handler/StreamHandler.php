@@ -16,6 +16,7 @@ declare(strict_types=1);
 namespace PHPdot\TraceLog\Log\Handler;
 
 use PHPdot\TraceLog\Log\Formatter\FormatterInterface;
+use Throwable;
 
 final class StreamHandler implements HandlerInterface
 {
@@ -61,7 +62,7 @@ final class StreamHandler implements HandlerInterface
         try {
             $formatted = $this->formatter->format($record);
             @file_put_contents($this->path, $formatted, FILE_APPEND | LOCK_EX);
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
     }
 

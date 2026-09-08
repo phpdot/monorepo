@@ -17,21 +17,25 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/package": "^0.2",
+        "phpdot/package": "^0.3",
         "psr/container": "^2.0",
         "twig/twig": "^3.10"
     },
     "suggest": {
-        "ext-tidy": "Enables the optional HTML formatter (template.format); without it, set template.format to false.",
-        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed)."
+        "ext-tidy": "The HTML formatter (template.format) is on by default; install ext-tidy, or set template.format to false where the extension cannot be installed.",
+        "phpdot/console": "Enables the template:clear command (the class stays inert until something loads it, so standalone consumers do not need it installed).",
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
+        "symfony/console": "The template:clear command is a Symfony console command; the class stays inert until a console loads it."
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/config": "^0.2",
-        "phpdot/container": "^0.2",
+        "phpdot/config": "^0.3",
+        "phpdot/console": "^0.3",
+        "phpdot/container": "^0.3",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^13.0"
+        "phpunit/phpunit": "^13.0",
+        "symfony/console": "^8.0"
     },
     "autoload": {
         "psr-4": {

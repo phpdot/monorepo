@@ -327,15 +327,39 @@ final class Configuration
             }
         }
 
-        $data = $this->section($section);
+        $instance = $this->dtoFromArray($this->section($section), $class, $section);
+        $this->dtoCache[$cacheKey] = $instance;
+
+        return $instance;
+    }
+
+    /**
+     * Hydrate a DTO from a provided array of values.
+     *
+     * The same matching and casting `dto()` applies to a section, over data
+     * the caller already holds — a named sub-block of a section, a merged
+     * map, anything shaped like one section. Not cached: each call hydrates
+     * fresh.
+     *
+     * @template T of object
+     *
+     * @param array<string, mixed> $data The values to hydrate from
+     * @param class-string<T> $class The DTO class name
+     * @param null|string $origin Label naming the data's source in error messages
+     *
+     * @throws HydrationException If a required parameter is missing from the data
+     *
+     * @return T The hydrated DTO instance
+     */
+    public function dtoFromArray(array $data, string $class, null|string $origin = null): object
+    {
+        $label = $origin ?? 'array';
+
         $reflection = new ReflectionClass($class);
         $constructor = $reflection->getConstructor();
 
         if ($constructor === null) {
-            $instance = $reflection->newInstance();
-            $this->dtoCache[$cacheKey] = $instance;
-
-            return $instance;
+            return $reflection->newInstance();
         }
 
         $args = [];
@@ -349,15 +373,12 @@ final class Configuration
                 $args[] = $param->getDefaultValue();
             } else {
                 throw new HydrationException(
-                    "Missing required config key '{$name}' in section '{$section}' for {$class}",
+                    "Missing required config key '{$name}' in {$label} for {$class}",
                 );
             }
         }
 
-        $instance = $reflection->newInstanceArgs($args);
-        $this->dtoCache[$cacheKey] = $instance;
-
-        return $instance;
+        return $reflection->newInstanceArgs($args);
     }
 
     /**

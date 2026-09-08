@@ -108,6 +108,22 @@ final class FileCacheTest extends TestCase
         self::assertInstanceOf(AttributeMap::class, $result);
     }
 
+    #[Test]
+    public function readTreatsCorruptCacheAsMiss(): void
+    {
+        file_put_contents($this->cachePath, '<?php this is not php');
+
+        self::assertNull($this->cache->read());
+    }
+
+    #[Test]
+    public function readTreatsWrongShapeAsMiss(): void
+    {
+        file_put_contents($this->cachePath, '<?php return 42;');
+
+        self::assertNull($this->cache->read());
+    }
+
     // --- clear ---
 
     #[Test]

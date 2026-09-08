@@ -26,7 +26,8 @@ final readonly class TemplateConfig
      * @param string $charset Template charset.
      * @param bool $autoReload Recompile on source change (dev only).
      * @param string|false $autoescape Escaping strategy. 'html' or false.
-     * @param bool $format Re-indent rendered output through ext-tidy. Requires ext-tidy when true.
+     * @param bool $format Re-indent rendered browser HTML through ext-tidy. On by default;
+     *                     requires ext-tidy, so set false where the extension is absent.
      * @param array<string, bool|int|string> $formatOptions Tidy options merged OVER the house
      *                                                      defaults — override any of them, or add
      *                                                      any other tidy option. `show-body-only`
@@ -42,7 +43,7 @@ final readonly class TemplateConfig
         public string $charset = 'UTF-8',
         public bool $autoReload = false,
         public string|false $autoescape = 'html',
-        public bool $format = false,
+        public bool $format = true,
         public array $formatOptions = [],
     ) {}
 }

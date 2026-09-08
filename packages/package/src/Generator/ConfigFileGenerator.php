@@ -11,9 +11,12 @@ declare(strict_types=1);
 
 namespace PHPdot\Package\Generator;
 
+use BackedEnum;
 use PHPdot\Package\Scanner\PackageMeta;
 use PHPdot\Package\Scanner\ScannedClass;
 use ReflectionClass;
+use ReflectionParameter;
+use UnitEnum;
 
 final class ConfigFileGenerator
 {
@@ -144,6 +147,10 @@ final class ConfigFileGenerator
             foreach ($constructor->getParameters() as $param) {
                 $name = $param->getName();
 
+                if ($this->isPureEnumDefault($param)) {
+                    continue;
+                }
+
                 $description = $scanned->paramDescriptions[$name]
                     ?? $this->humanize($name);
 
@@ -237,6 +244,9 @@ final class ConfigFileGenerator
     /**
      * Format default.
      *
+     * A backed enum default is written as its backing value — the exact shape
+     * phpdot/config's `castValue()` hydrates back into the case.
+     *
      * @param mixed $value
      * @param int $indent
      *
@@ -264,6 +274,10 @@ final class ConfigFileGenerator
             return $this->formatArray($value, $indent);
         }
 
+        if ($value instanceof BackedEnum) {
+            return $this->formatDefault($value->value, $indent);
+        }
+
         if (is_object($value)) {
             return $this->formatNestedDto($value, $indent);
         }
@@ -272,8 +286,31 @@ final class ConfigFileGenerator
     }
 
     /**
+     * Whether a parameter's default is a pure enum case.
+     *
+     * A pure enum has no config-representable value — phpdot/config can hydrate
+     * neither a name nor an array into it — so the scaffold omits the key
+     * entirely and the constructor's own default applies at hydration.
+     *
+     * @param ReflectionParameter $param
+     *
+     * @return bool
+     */
+    private function isPureEnumDefault(ReflectionParameter $param): bool
+    {
+        if (!$param->isDefaultValueAvailable()) {
+            return false;
+        }
+
+        $default = $param->getDefaultValue();
+
+        return $default instanceof UnitEnum && !$default instanceof BackedEnum;
+    }
+
+    /**
      * Recursively scaffold a nested DTO instance as a multi-line array.
      * Reads each public, initialised property and emits its current value.
+     * A pure-enum property is omitted for the same reason a pure-enum default is.
      *
      * @param object $instance
      * @param int $indent
@@ -293,8 +330,13 @@ final class ConfigFileGenerator
                 continue;
             }
 
-            $name = $prop->getName();
             $val = $prop->getValue($instance);
+
+            if ($val instanceof UnitEnum && !$val instanceof BackedEnum) {
+                continue;
+            }
+
+            $name = $prop->getName();
             $parts[] = $inner . "'{$name}' => " . $this->formatDefault($val, $indent + 1);
         }
 

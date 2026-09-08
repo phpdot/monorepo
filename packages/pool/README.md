@@ -32,7 +32,9 @@ return, and prevents leaks and cross-coroutine sharing — created in `onWorkerS
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-swoole` | `>= 6.2` |
-| `phpdot/contracts` | `^0.2` |
+| `phpdot/config` | `^0.3` |
+| `phpdot/contracts` | `^0.3` |
+| `psr/container` | `^2.0` |
 
 ## Installation
 
@@ -78,15 +80,16 @@ check catches connections killed by idle timeouts, firewall drops, or restarts.
 
 ### Create and Initialize
 
-`init()` pre-creates `minConnections` and starts the timers. It **must** run inside a Swoole
-coroutine (typically `onWorkerStart`).
+The first `borrow()` initialises the pool — `minConnections` are created and the maintenance
+timers start, inside the coroutine the borrow runs in. `init()` remains for explicit
+pre-warming and is idempotent: a second call, explicit or self-triggered, is a no-op.
 
 ```php
 use PHPdot\Pool\Pool;
 use PHPdot\Pool\PoolConfig;
 
 $pool = new Pool(new RedisConnector(), new PoolConfig(minConnections: 4, maxConnections: 20));
-$pool->init();
+$redis = $pool->borrow();        // initialises, then borrows
 ```
 
 ### Borrow and Release
@@ -177,13 +180,68 @@ $s->createCount; $s->closeCount; $s->timeoutCount; $s->waitingCount;
   in-flight `borrow()` calls still complete against live connections. Use it on `onWorkerExit`
   during a graceful drain; the OS closes pooled connections when the worker exits.
 
-### Framework Wiring
+### Framework Wiring — the DI way
+
+Applications do not touch `Pool` at all. `pooled()` binds a connection class to a named pool
+as a **scoped definition**: the first resolution inside a coroutine borrows from the pool,
+every later resolution in the same coroutine returns the same connection, and coroutine end
+releases it — the container's own scoping does the lifecycle. Outside a coroutine (CLI, boot,
+migrations) the same definition hands a dedicated, unpooled connection.
 
 ```php
-$server->on('workerStart', fn () => $pool->init());
-$server->on('workerExit',  fn () => $pool->suspendTimers()); // keep serving through the drain
-$server->on('workerStop',  fn () => $pool->close());         // full teardown
+use function PHPdot\Pool\pooled;
+
+$builder->add(DatabaseConnection::class, pooled('database', DatabaseConnector::class));
+$builder->add('redis.cache',             pooled('redis.cache', RedisConnector::class));
 ```
+
+Each pool reads its own client's config block: the `pool` key sizes the pool, everything
+else in the block hydrates the connector's configuration — when that parameter is a concrete
+class (`RedisConnector(RedisConfig)`), automatically; when it is an interface
+(`DatabaseConnector(ConnectionConfig)`), bind the interface and the registry resolves it
+from the container. Dotted names address a multi-pool client's `pools` sub-block.
+
+```php
+// config/database.php
+return [
+    'host' => env('DB_HOST'),
+    'pool' => ['min' => 5, 'max' => 100],
+];
+
+// config/redis.php
+return [
+    'pools' => [
+        'cache'   => ['host' => env('REDIS_CACHE_HOST'),   'pool' => ['max' => 20]],
+        'session' => ['host' => env('REDIS_SESSION_HOST'), 'pool' => ['max' => 5]],
+    ],
+];
+```
+
+**Sizing model:** a scoped connection is held for the whole request, so a pool's `max` must
+cover that worker's concurrent requests — a database pool of 100 is that model, and a
+non-hookable client like MongoDB (`'pool' => ['max' => 1]`) serialises through a single
+connection. Long-lived coroutines (SSE, WebSocket streams) must not hold a scoped connection
+for the stream's lifetime: resolve them through `PoolRegistry::connection()` and release
+when the work, not the stream, ends.
+
+The one lifecycle an application still owns is the worker-exit drain — stop the maintenance
+timers so an exiting worker's event loop can close, never closing the pool itself:
+
+```php
+#[ServerListener]
+final class DrainPools
+{
+    public function __construct(private readonly PoolRegistry $pools) {}
+
+    public function __invoke(WorkerExiting $event): void
+    {
+        $this->pools->suspendAll();
+    }
+}
+```
+
+For direct, manual wiring the low-level hooks remain: construct the pool after the worker
+fork, `suspendTimers()` on worker exit, `close()` on worker stop.
 
 ## Architecture
 

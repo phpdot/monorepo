@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Host platform descriptor: operating system, CPU architecture and (on Linux) libc flavour.
  *
- * Maps the host to the matching `@oven/bun-*` npm package name (see the Bun 1.3.14 platform table).
+ * Maps the host to the matching `@oven/bun-*` npm package name (see the Bun 1.4.0 platform table).
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT

@@ -18,11 +18,10 @@ final class BuildCommandTest extends TestCase
     protected function setUp(): void
     {
         $this->fake = new TestBun();
-        // The command resolves the throwaway metafile relative to the cwd; run it in a throwaway dir
-        // so nothing touches the repo and a stale metafile can't influence the result.
+        // The throwaway metafile lives under home/build; run in a throwaway cwd so nothing touches the repo.
         $this->cwd = (string) getcwd();
         $this->workdir = sys_get_temp_dir() . '/phpdot-bun-cmdtest-' . uniqid();
-        mkdir($this->workdir, 0755, true);
+        mkdir($this->workdir, 0o755, true);
         chdir($this->workdir);
     }
 
@@ -60,7 +59,7 @@ final class BuildCommandTest extends TestCase
             '--define=A=1',
             '--define=B=2',
             '--external=react',
-            '--metafile=.phpdot/build/metafile.json',
+            '--metafile=' . $this->fake->config->homeDir . '/build/metafile.json',
         ], $this->fake->lastArgs());
     }
 
@@ -71,7 +70,7 @@ final class BuildCommandTest extends TestCase
 
         $tester->assertCommandIsSuccessful();
         self::assertSame(
-            ['build', 'a.ts', 'b.ts', '--outdir=out', '--metafile=.phpdot/build/metafile.json'],
+            ['build', 'a.ts', 'b.ts', '--outdir=out', '--metafile=' . $this->fake->config->homeDir . '/build/metafile.json'],
             $this->fake->lastArgs(),
         );
     }

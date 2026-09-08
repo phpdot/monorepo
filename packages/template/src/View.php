@@ -53,7 +53,7 @@ final readonly class View
     public function render(string $template, array $context = []): string
     {
         try {
-            return $this->formatter->format($this->factory->environment()->render($template, $context));
+            return $this->formatter->format($this->factory->environment()->render($template, $context), $template);
         } catch (LoaderError $e) {
             throw new TemplateNotFoundException($template, $e->getMessage(), $e);
         } catch (SyntaxError $e) {
@@ -81,7 +81,7 @@ final readonly class View
         try {
             $loaded = $this->factory->environment()->load($template);
 
-            return $this->formatter->format($loaded->renderBlock($block, $context));
+            return $this->formatter->format($loaded->renderBlock($block, $context), $template);
         } catch (LoaderError $e) {
             throw new TemplateNotFoundException($template, $e->getMessage(), $e);
         } catch (SyntaxError $e) {

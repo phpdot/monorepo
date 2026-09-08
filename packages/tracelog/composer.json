@@ -19,14 +19,25 @@
     "require": {
         "php": ">=8.5",
         "ext-openssl": "*",
-        "phpdot/container": "^0.2",
-        "phpdot/contracts": "^0.2"
+        "phpdot/contracts": "^0.3"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.3",
+        "phpdot/console": "^0.3",
+        "phpdot/logs": "^0.3",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^13.0"
+        "phpunit/phpunit": "^13.0",
+        "psr/container": "^2.0",
+        "symfony/console": "^8.0"
+    },
+    "suggest": {
+        "phpdot/container": "The #[Singleton]/#[Config]/#[Binds] attributes in src stay inert until a phpdot application reflects them, so standalone consumers do not need it installed.",
+        "phpdot/console": "Enables the tracelog:key:generate and tracelog:check commands (the classes stay inert until something loads them, so standalone consumers do not need it installed).",
+        "phpdot/logs": "tracelog:check names the engine NullWriter binding when the application discards records (the class-string check never autoloads it).",
+        "psr/container": "tracelog:check reads the WriterInterface binding from the running application container.",
+        "symfony/console": "The tracelog:key:generate and tracelog:check commands are Symfony console commands; the classes stay inert until a console loads them."
     },
     "autoload": {
         "psr-4": {

@@ -16,6 +16,13 @@
             <exclude>packages/http/tests/Psr7</exclude>
         </testsuite>
     </testsuites>
+    <groups>
+        <!-- live suites call real paid APIs with keys read from the environment;
+             they are opt-in by suite selection and never part of a gate run -->
+        <exclude>
+            <group>live</group>
+        </exclude>
+    </groups>
     <php>
         <!-- factories the vendored PSR-7 conformance suite builds its inputs from -->
         <const name="URI_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
@@ -24,12 +31,14 @@
 
         <!-- integration suites default to the docker-compose stack; real env vars win -->
         <env name="MYSQL_PORT" value="3307"/>
-        <env name="PG_PORT" value="5433"/>
+        <env name="PG_PORT" value="5432"/>
         <env name="REDIS_PORT" value="6380"/>
         <env name="REDIS_AUTH_PORT" value="6381"/>
         <env name="REDIS_AUTH_PASS" value="phpdot-secret"/>
         <env name="RABBITMQ_PORT" value="5673"/>
         <env name="MONGO_PORT" value="27018"/>
+        <env name="MAILPIT_SMTP_PORT" value="1026"/>
+        <env name="MAILPIT_HTTP_PORT" value="8026"/>
         <env name="BUN_LIVE" value="1"/>
         <env name="AWS_ACCESS_KEY_ID" value="phpdot"/>
         <env name="AWS_SECRET_ACCESS_KEY" value="phpdot-secret"/>

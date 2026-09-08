@@ -53,6 +53,16 @@ final class ContainerCommandLoader implements CommandLoaderInterface
             ));
         }
 
+        /*
+         * Hand the command its resolving container, so its coroutine wrapper
+         * can suspend pool timers before the scheduler waits on them — the
+         * difference between a command that exits and one that hangs after
+         * printing its output.
+         */
+        if ($command instanceof Command) {
+            $command->resolvedFrom($this->container);
+        }
+
         if (isset($this->modifications[$name])) {
             $mod = $this->modifications[$name];
 

@@ -9,6 +9,7 @@ use PHPdot\Console\Cache\CommandCache;
 use PHPdot\Console\ConsoleConfig;
 use PHPdot\Console\Tests\Fixtures\GreetCommand;
 use PHPdot\Console\Tests\Fixtures\MathAddCommand;
+use PHPdot\Pool\PoolRegistry;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -230,7 +231,13 @@ final class ApplicationTest extends TestCase
 
             public function has(string $id): bool
             {
-                return class_exists($id);
+                /*
+                 * Honest about what a bare-autoload container can build: the
+                 * pool registry has constructor state this stub cannot supply,
+                 * so claiming it would make the run's release hook fetch an
+                 * unbbuildable service.
+                 */
+                return class_exists($id) && $id !== PoolRegistry::class;
             }
         };
 

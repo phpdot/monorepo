@@ -66,6 +66,8 @@ final class BuildSpec
     private array $conditions = [];
     private null|string $env = null;
     private null|string $metafileMd = null;
+
+    private null|string $tsconfig = null;
     private bool $noClearScreen = false;
 
     /**
@@ -565,6 +567,23 @@ final class BuildSpec
     }
 
     /**
+     * Use the given tsconfig.json in place of the one bun would discover — how a
+     * project whose node_modules lives outside the entrypoints' ancestor chain
+     * maps bare imports to it (`paths`).
+     *
+     * @param string $path Absolute path to the tsconfig.json
+     *
+     * @return self
+     */
+    public function tsconfig(string $path): self
+    {
+        $c = clone $this;
+        $c->tsconfig = $path;
+
+        return $c;
+    }
+
+    /**
      * Toggle keeping the terminal scrollback on watch-mode rebuilds.
      *
      * @param bool $on
@@ -619,6 +638,7 @@ final class BuildSpec
             env: $this->env,
             metafileMd: $this->metafileMd,
             noClearScreen: $this->noClearScreen,
+            tsconfig: $this->tsconfig,
         );
     }
 }

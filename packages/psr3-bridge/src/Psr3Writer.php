@@ -18,7 +18,9 @@ declare(strict_types=1);
  *
  * A record flagged `secure()` has its message AND context encrypted with the
  * injected {@see EncryptorInterface} and forwarded as ciphertext; it is fail-closed
- * — dropped, never forwarded in plaintext — when no encryptor is configured.
+ * — dropped, never forwarded in plaintext — when no encryptor is configured. A
+ * sensitive span is encrypted as a span: its line and its full context travel
+ * together in the ciphertext, never collapsed to the log shape.
  *
  * NO sampling: every other record is forwarded. The only `try/catch` is
  * crash-safety — a misbehaving logger must not bring down the caller or the
@@ -77,14 +79,14 @@ final class Psr3Writer implements WriterInterface
     public function write(array $record): void
     {
         try {
-            if ($this->isSensitive($record)) {
-                $this->writeSensitive($record);
+            if (($record['type'] ?? null) === 'span') {
+                $this->writeSpan($record);
 
                 return;
             }
 
-            if (($record['type'] ?? null) === 'span') {
-                $this->writeSpan($record);
+            if ($this->isSensitive($record)) {
+                $this->writeSensitive($record);
 
                 return;
             }
@@ -119,21 +121,12 @@ final class Psr3Writer implements WriterInterface
      */
     private function writeSensitive(array $record): void
     {
-        if ($this->encryptor === null) {
-            return;
-        }
+        $ciphertext = $this->protect(
+            $this->toString($record['message'] ?? null),
+            $this->toArray($record['context'] ?? null),
+        );
 
-        try {
-            $payload = json_encode(
-                [
-                    'message' => $this->toString($record['message'] ?? null),
-                    'context' => $this->toArray($record['context'] ?? null),
-                ],
-                JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
-            );
-
-            $ciphertext = $this->encryptor->encrypt($payload);
-        } catch (Throwable) {
+        if ($ciphertext === null) {
             return;
         }
 
@@ -147,6 +140,33 @@ final class Psr3Writer implements WriterInterface
                 'encrypted' => true,
             ],
         );
+    }
+
+    /**
+     * Encrypt a message and its context together, or null when protection is
+     * impossible — no encryptor configured, or encryption failed.
+     *
+     * @param string $message The plaintext message.
+     * @param array<array-key, mixed> $context The plaintext context.
+     *
+     * @return string|null The ciphertext, or null so the caller drops the record.
+     */
+    private function protect(string $message, array $context): null|string
+    {
+        if ($this->encryptor === null) {
+            return null;
+        }
+
+        try {
+            $payload = json_encode(
+                ['message' => $message, 'context' => $context],
+                JSON_THROW_ON_ERROR | JSON_INVALID_UTF8_SUBSTITUTE,
+            );
+
+            return $this->encryptor->encrypt($payload);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -181,21 +201,41 @@ final class Psr3Writer implements WriterInterface
     {
         $status = $this->toString($record['status'] ?? null);
         $level  = strtolower($status) === 'error' ? LogLevel::ERROR : LogLevel::INFO;
+        $name   = 'span ' . $this->toString($record['name'] ?? null, 'span');
+
+        $context = [
+            'channel'        => $this->toString($record['channel'] ?? null, 'app'),
+            'trace_id'       => $this->toString($record['trace_id'] ?? null),
+            'span_id'        => $this->toString($record['span_id'] ?? null),
+            'parent_span_id' => $this->toString($record['parent_span_id'] ?? null),
+            'kind'           => $this->toString($record['kind'] ?? null),
+            'duration_ms'    => $this->toFloat($record['duration_ms'] ?? null),
+            'status'         => $status,
+            'status_message' => $this->toString($record['status_message'] ?? null),
+            'attributes'     => $this->toArray($record['attributes'] ?? null),
+            'events'         => $this->toArray($record['events'] ?? null),
+        ];
+
+        if (!$this->isSensitive($record)) {
+            $this->logger->log($level, $name, $context);
+
+            return;
+        }
+
+        $ciphertext = $this->protect($name, $context);
+
+        if ($ciphertext === null) {
+            return;
+        }
 
         $this->logger->log(
-            $level,
-            'span ' . $this->toString($record['name'] ?? null, 'span'),
+            LogLevel::INFO,
+            $ciphertext,
             [
-                'channel'        => $this->toString($record['channel'] ?? null, 'app'),
-                'trace_id'       => $this->toString($record['trace_id'] ?? null),
-                'span_id'        => $this->toString($record['span_id'] ?? null),
-                'parent_span_id' => $this->toString($record['parent_span_id'] ?? null),
-                'kind'           => $this->toString($record['kind'] ?? null),
-                'duration_ms'    => $this->toFloat($record['duration_ms'] ?? null),
-                'status'         => $status,
-                'status_message' => $this->toString($record['status_message'] ?? null),
-                'attributes'     => $this->toArray($record['attributes'] ?? null),
-                'events'         => $this->toArray($record['events'] ?? null),
+                'channel'   => $context['channel'],
+                'trace_id'  => $context['trace_id'],
+                'span_id'   => $context['span_id'],
+                'encrypted' => true,
             ],
         );
     }

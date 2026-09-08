@@ -17,15 +17,21 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/container": "^0.2",
-        "phpdot/contracts": "^0.2",
+        "phpdot/contracts": "^0.3",
+        "phpdot/logs": "^0.3",
         "psr/log": "^3.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.3",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "monolog/monolog": "The usual PSR-3 implementation behind Psr3Writer when an application wants its own handler stack.",
+        "phpdot/tracelog": "The file-based writer peer \u2014 install it instead when you want encrypted per-channel files rather than a PSR-3 handler stack.",
+        "phpdot/container": "The #[Singleton] attributes in src stay inert until a phpdot application reflects them, so standalone consumers do not need it installed."
     },
     "autoload": {
         "psr-4": {

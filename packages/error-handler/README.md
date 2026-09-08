@@ -20,13 +20,15 @@ fully wired request pipeline.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
+| `phpdot/contracts` | `^0.3` |
 | `psr/http-factory` | `^1.0` |
 | `psr/http-message` | `^2.0` |
 | `psr/http-server-middleware` | `^1.0` |
-| `psr/log` | `^3.0` |
 
-The package depends only on PSR interfaces — bring any PSR-7/PSR-17 implementation (for
-example [phpdot/http](https://github.com/phpdot/http)) and any PSR-3 logger.
+The package depends on PSR interfaces and the phpdot observability contracts — bring any
+PSR-7/PSR-17 implementation (for example [phpdot/http](https://github.com/phpdot/http))
+and a tracer. Handled exceptions are logged through `TracerInterface` at the
+status-mapped level and mark the active span `error`; there is no PSR-3 surface.
 
 ## Installation
 

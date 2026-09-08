@@ -2,9 +2,9 @@
 
 A PSR-3 / Monolog writer for the PHPdot observability engine.
 
-`psr-bridge` is a **backend** for [phpdot/logs](https://github.com/phpdot/logs). It implements the engine's `WriterInterface` and forwards every record — a log line or a finished span — to an injected PSR-3 logger (Monolog, or any other). It owns no trace identity and writes no files; it is the adapter that lets the engine speak to the entire PSR-3 ecosystem.
+`psr-bridge` speaks PSR-3 in **both directions**. `Psr3Writer` is a **backend** for [phpdot/logs](https://github.com/phpdot/logs): it implements the engine's `WriterInterface` and forwards every record — a log line or a finished span — to an injected PSR-3 logger (Monolog, or any other). `TracerLogger` is the inbound peer: it implements `Psr\Log\LoggerInterface` over the tracer, so anything that type-hints a PSR-3 logger logs through the engine, trace-correlated.
 
-It is a **peer** of [phpdot/tracelog](https://github.com/phpdot/tracelog) (the file backend). An application binds exactly one of them as its `WriterInterface`; the packages that log never know which. Because it depends only on [contracts](https://github.com/phpdot/contracts) and `psr/log` — **never on tracelog** — a Monolog-only app installs `{contracts, logs, psr-bridge}` and never pulls the file writer or its OpenSSL/encryption code.
+`Psr3Writer` is a **peer** of [phpdot/tracelog](https://github.com/phpdot/tracelog) (the file backend). An application binds exactly one of them as its `WriterInterface`; the packages that log never know which. It depends on [contracts](https://github.com/phpdot/contracts), [logs](https://github.com/phpdot/logs), and `psr/log` — **never on tracelog** — so a Monolog-only app installs `{contracts, logs, psr3-bridge}` and never pulls the file writer or its OpenSSL/encryption code.
 
 ## Table of Contents
 
@@ -16,6 +16,7 @@ It is a **peer** of [phpdot/tracelog](https://github.com/phpdot/tracelog) (the f
   - [Trace correlation](#trace-correlation)
   - [Crash-safety & no sampling](#crash-safety--no-sampling)
   - [Any PSR-3 logger](#any-psr-3-logger)
+  - [TracerLogger: the inbound bridge](#tracerlogger-the-inbound-bridge)
 - [Architecture](#architecture)
 - [Testing](#testing)
 - [License](#license)
@@ -25,9 +26,13 @@ It is a **peer** of [phpdot/tracelog](https://github.com/phpdot/tracelog) (the f
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/container` | `^0.2` |
-| `phpdot/contracts` | `^0.2` |
+| `phpdot/contracts` | `^0.3` |
+| `phpdot/logs` | `^0.3` — `TracerLogger` renders `exception` context through the engine's `_e()` |
 | `psr/log` | `^3.0` |
+
+`phpdot/container` is `require-dev` only (and a `suggest` entry) — the `#[Singleton]` attributes in
+`src` stay inert until a phpdot application reflects them, so standalone consumers don't need it
+installed.
 
 ## Installation
 
@@ -112,6 +117,28 @@ Nothing here is Monolog-specific — `Psr3Writer` takes a `Psr\Log\LoggerInterfa
 new Psr3Writer($anyPsr3Logger);
 ```
 
+### TracerLogger: the inbound bridge
+
+`TracerLogger` implements `Psr\Log\LoggerInterface` over the tracer, so the ecosystem's PSR-3 consumers — phpdot's event, database, rabbitmq, and error-handler packages, or any third-party library — log through the engine with trace and span correlation. Applications bind it **explicitly** (it deliberately carries no `#[Binds]`, so installing this package never silently redefines an application's logger):
+
+```php
+use Psr\Log\LoggerInterface;
+use PHPdot\Contracts\Logs\TracerInterface;
+use PHPdot\Psr3Bridge\TracerLogger;
+
+$builder->add(LoggerInterface::class, static fn ($c) => new TracerLogger(
+    $c->get(TracerInterface::class),
+))->singleton();
+```
+
+Behavior at the boundary:
+
+- Every PSR-3 level maps 1:1 onto the tracer's — `notice`, `critical`, `alert`, and `emergency` survive intact; unknown tokens fall back to `info`.
+- A PSR-3 `exception` context value is converted to the engine's canonical `_e()` shape (`class`, `message`, `code`, `file`, `line`), so every exception line carries the same structure regardless of origin.
+- `secure()` is unreachable from the PSR-3 side by design — encryption is a tracer-API capability; sensitive logging stays on the tracer.
+
+**The no-loop rule:** never hand a `TracerLogger` to a `Psr3Writer` that the same tracer exports to — that wiring recurses (the writer forwards to the logger, which feeds the tracer, which exports to the writer). Construct the outbound `Psr3Writer` with a hand-built Monolog stack instead. A re-entrancy guard inside `TracerLogger` drops calls that arrive from within a write, turning a would-be unbounded recursion into one dropped line — but the guard is a backstop, not a license to wire the loop.
+
 ## Architecture
 
 ```mermaid
@@ -120,6 +147,11 @@ graph TD
     W["Psr3Writer<br/><br/>the WriterInterface backend:<br/>maps each record to a PSR-3 call,<br/>keeps trace_id / span_id in context"]
     PSR["Any PSR-3 logger<br/><br/>Monolog, Laminas, Analog, …"]
     REC --> W --> PSR
+
+    IN["PSR-3 consumers<br/><br/>phpdot event / database / rabbitmq /<br/>error-handler, third-party libraries"]
+    TL["TracerLogger<br/><br/>the LoggerInterface facade:<br/>same level, _e() exceptions,<br/>re-entrancy-guarded"]
+    TR["phpdot/logs tracer"]
+    IN --> TL --> TR
 ```
 
 ## Testing
@@ -128,7 +160,7 @@ The package is standalone-testable:
 
 ```bash
 composer install
-composer test        # PHPUnit (24 tests)
+composer test        # PHPUnit
 composer analyse     # PHPStan, level max + strict rules
 composer cs-check    # PHP-CS-Fixer (@PER-CS2.0)
 composer check       # all three

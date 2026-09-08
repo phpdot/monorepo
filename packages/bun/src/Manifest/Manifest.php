@@ -19,6 +19,8 @@ declare(strict_types=1);
 
 namespace PHPdot\Bun\Manifest;
 
+use JsonException;
+
 final class Manifest
 {
     /**
@@ -31,10 +33,12 @@ final class Manifest
      *
      * @param string $metafilePath
      * @param string $publicPrefix
+     * @param string $resourcesDir
      */
     public function __construct(
         private readonly string $metafilePath,
         private readonly string $publicPrefix = '/build',
+        private readonly string $resourcesDir = '',
     ) {}
 
     /**
@@ -46,12 +50,14 @@ final class Manifest
      * Returns true when the manifest was written; false if the metafile was unreadable, malformed,
      * or the write failed (so a caller can surface a build that succeeded but produced no manifest).
      *
-     * @param string $manifestPath
      * @param string $metafilePath
+     * @param string $manifestPath
+     * @param string $cwd
+     * @param string $resourcesDir
      *
      * @return bool
      */
-    public static function compile(string $metafilePath, string $manifestPath): bool
+    public static function compile(string $metafilePath, string $manifestPath, string $cwd = '', string $resourcesDir = ''): bool
     {
         $raw = @file_get_contents($metafilePath);
         if ($raw === false) {
@@ -60,7 +66,7 @@ final class Manifest
 
         try {
             $data = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             return false;
         }
 
@@ -70,7 +76,7 @@ final class Manifest
         if (is_array($outputs)) {
             foreach ($outputs as $out => $meta) {
                 if (is_array($meta) && is_string($meta['entryPoint'] ?? null)) {
-                    $trimmed[(string) $out] = ['entryPoint' => $meta['entryPoint']];
+                    $trimmed[(string) $out] = ['entryPoint' => self::entryKey($meta['entryPoint'], $cwd, $resourcesDir)];
                 }
             }
         }
@@ -125,7 +131,7 @@ final class Manifest
     /**
      * Resolve a JS source entry to its hashed public build URL.
      *
-     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
+     * @param null|string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
      *
      * @return string
      */
@@ -137,7 +143,7 @@ final class Manifest
     /**
      * Resolve a CSS source entry to its hashed public build URL.
      *
-     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
+     * @param null|string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
      *
      * @return string
      */
@@ -149,7 +155,7 @@ final class Manifest
     /**
      * Resolve a source entry of the given extension to its public build URL.
      *
-     * @param ?string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
+     * @param null|string $sourceEntry Null uses {@see sole()} — the build's only entrypoint
      * @param string $ext
      *
      * @return string
@@ -173,6 +179,7 @@ final class Manifest
     private function resolve(string $sourceEntry, string $ext): string
     {
         $map = $this->load();
+        $sourceEntry = self::entryKey($sourceEntry, '', $this->resourcesDir);
 
         $byExt = $map[$sourceEntry] ?? throw new ManifestEntryNotFoundException($sourceEntry, array_keys($map));
         $out = $byExt[$ext] ?? throw new ManifestEntryNotFoundException(
@@ -181,6 +188,42 @@ final class Manifest
         );
 
         return rtrim($this->publicPrefix, '/') . '/' . self::relativeOutput($out);
+    }
+
+    /**
+     * The manifest key for an entrypoint: relative to the resources directory when
+     * the entry lives under it — `platform.ts`, `apps/sdp/countries.ts` — so a
+     * template names the authored file exactly as the developer wrote it; an
+     * entry elsewhere keeps its absolute path. Bun records entrypoints relative
+     * to its working directory, which `$cwd` resolves; a lookup passes none.
+     *
+     * @param string $entryPoint As bun recorded it, or as a caller named it
+     * @param string $cwd The directory bun ran in, or empty for an already-resolved path
+     * @param string $resourcesDir The authored-sources root, or empty to keep paths as given
+     *
+     * @return string
+     */
+    private static function entryKey(string $entryPoint, string $cwd, string $resourcesDir): string
+    {
+        $absolute = $entryPoint;
+
+        if ($cwd !== '' && !str_starts_with($entryPoint, '/')) {
+            $absolute = $cwd . '/' . $entryPoint;
+        }
+
+        if (str_starts_with($absolute, '/')) {
+            $real = realpath($absolute);
+            $absolute = $real === false ? $absolute : $real;
+        }
+
+        if ($resourcesDir === '' || !str_starts_with($absolute, '/')) {
+            return $absolute;
+        }
+
+        $realBase = realpath($resourcesDir);
+        $base = rtrim($realBase === false ? $resourcesDir : $realBase, '/') . '/';
+
+        return str_starts_with($absolute, $base) ? substr($absolute, strlen($base)) : $absolute;
     }
 
     /**
@@ -222,7 +265,7 @@ final class Manifest
 
         try {
             $data = json_decode($raw, true, flags: JSON_THROW_ON_ERROR);
-        } catch (\JsonException) {
+        } catch (JsonException) {
             throw new ManifestNotReadableException($this->metafilePath);
         }
 

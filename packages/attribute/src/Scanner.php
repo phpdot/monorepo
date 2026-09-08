@@ -107,6 +107,11 @@ final class Scanner
     /**
      * Scan an explicit list of classes, bypassing discovery.
      *
+     * The class list is part of the cache identity: two explicit scans that
+     * share a filter but name different classes must not answer each other's
+     * cache, so the map persists an order-insensitive digest of the list it
+     * scanned and a mismatching cache is rescanned.
+     *
      * @param list<class-string> $classes
      * @param list<class-string> $filter
      * @param int $visibilityFilter
@@ -120,13 +125,14 @@ final class Scanner
         int $visibilityFilter = 0,
         bool $forceRescan = false,
     ): Registry {
-        $cached = $forceRescan ? null : $this->readCacheFor([], $filter, $visibilityFilter);
+        $classesKey = $this->classesKey($classes);
+        $cached = $forceRescan ? null : $this->readCacheFor([], $filter, $visibilityFilter, $classesKey);
 
         if ($cached !== null) {
             return $cached;
         }
 
-        return $this->buildRegistry($classes, $filter, $visibilityFilter, []);
+        return $this->buildRegistry($classes, $filter, $visibilityFilter, [], $classesKey);
     }
 
     /**
@@ -134,18 +140,23 @@ final class Scanner
      * this scan configuration.
      *
      * A cache file answers only the scan that produced it: the map persists
-     * its directories, filter, and visibility filter for this comparison, so
-     * a cache written by one configuration is rescanned — not silently
-     * reused — by another.
+     * its directories, filter, visibility filter, and — for an explicit-list
+     * scan — the digest of that list, for this comparison, so a cache written
+     * by one configuration is rescanned — not silently reused — by another.
      *
      * @param list<string> $directories
      * @param list<class-string> $filter
      * @param int $visibilityFilter
+     * @param null|string $classesKey Digest of the explicit class list the caller scanned
      *
      * @return ?Registry
      */
-    private function readCacheFor(array $directories, array $filter, int $visibilityFilter): null|Registry
-    {
+    private function readCacheFor(
+        array $directories,
+        array $filter,
+        int $visibilityFilter,
+        null|string $classesKey = null,
+    ): null|Registry {
         if ($this->cache === null || !$this->cache->has()) {
             return null;
         }
@@ -156,6 +167,7 @@ final class Scanner
             || $map->directories !== $directories
             || $map->filter !== $filter
             || $map->visibilityFilter !== $visibilityFilter
+            || $map->classesKey !== $classesKey
         ) {
             return null;
         }
@@ -172,6 +184,7 @@ final class Scanner
      * @param list<class-string> $filter
      * @param list<string> $directories
      * @param int $visibilityFilter
+     * @param null|string $classesKey Digest of the explicit class list, when the caller scanned one
      *
      * @return Registry
      */
@@ -180,12 +193,14 @@ final class Scanner
         array $filter,
         int $visibilityFilter,
         array $directories,
+        null|string $classesKey = null,
     ): Registry {
         $map = $this->reflectionScanner->scan(
             classes: $classes,
             filter: $filter,
             visibilityFilter: $visibilityFilter,
             directories: $directories,
+            classesKey: $classesKey,
         );
 
         if ($this->cache !== null) {
@@ -195,5 +210,21 @@ final class Scanner
         $this->registry = new Registry($map);
 
         return $this->registry;
+    }
+
+    /**
+     * An order-insensitive digest of an explicit class list: the cache identity
+     * of what a `scanClasses()` call scanned.
+     *
+     * @param list<class-string> $classes
+     *
+     * @return string
+     */
+    private function classesKey(array $classes): string
+    {
+        $sorted = $classes;
+        sort($sorted);
+
+        return md5(implode("\0", $sorted));
     }
 }

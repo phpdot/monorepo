@@ -13,6 +13,7 @@ namespace PHPdot\Attribute\Cache;
 
 use PHPdot\Attribute\Exception\AttributeException;
 use PHPdot\Attribute\Result\AttributeMap;
+use Throwable;
 
 final class FileCache
 {
@@ -48,7 +49,14 @@ final class FileCache
     }
 
     /**
-     * The cached attribute map, or null when no cache file exists.
+     * The cached attribute map, or null when no cache file exists or the file
+     * cannot be read back as one.
+     *
+     * A cache that cannot be required or rebuilt — corrupt file, drifted
+     * format, an attribute class that no longer loads — is a miss, never a
+     * boot failure: the caller rescans and rewrites it. The scan path guards
+     * attribute instantiation the same way; the read path must not be the one
+     * place a stale cache turns fatal.
      *
      * @return ?AttributeMap
      */
@@ -58,33 +66,38 @@ final class FileCache
             return null;
         }
 
-        /**
-         * @var array{
-         *     classes: array<string, array{
-         *         class: string,
-         *         structureType: string,
-         *         implements: list<string>,
-         *         extends: ?string,
-         *         results: list<array{
-         *             attribute: string,
-         *             arguments: list<mixed>,
-         *             class: string,
-         *             target: string,
-         *             method: ?string,
-         *             property: ?string,
-         *             parameter: ?string,
-         *             constant: ?string
-         *         }>
-         *     }>,
-         *     generatedAt: int,
-         *     directories: list<string>,
-         *     filter: list<string>,
-         *     visibilityFilter?: int
-         * } $data
-         */
-        $data = require $this->path;
+        try {
+            /**
+             * @var array{
+             *     classes: array<string, array{
+             *         class: string,
+             *         structureType: string,
+             *         implements: list<string>,
+             *         extends: ?string,
+             *         results: list<array{
+             *             attribute: string,
+             *             arguments: array<int|string, mixed>,
+             *             class: string,
+             *             target: string,
+             *             method: ?string,
+             *             property: ?string,
+             *             parameter: ?string,
+             *             constant: ?string
+             *         }>
+             *     }>,
+             *     generatedAt: int,
+             *     directories: list<string>,
+             *     filter: list<string>,
+             *     visibilityFilter?: int,
+             *     classesKey?: null|string
+             * } $data
+             */
+            $data = require $this->path;
 
-        return AttributeMap::fromCache($data);
+            return AttributeMap::fromCache($data);
+        } catch (Throwable) {
+            return null;
+        }
     }
 
     /**

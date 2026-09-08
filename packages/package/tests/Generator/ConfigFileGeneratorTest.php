@@ -8,6 +8,7 @@ use PHPdot\Container\Scope;
 use PHPdot\Package\Generator\ConfigFileGenerator;
 use PHPdot\Package\Scanner\PackageMeta;
 use PHPdot\Package\Scanner\ScannedClass;
+use PHPdot\Package\Tests\Fixtures\EnumConfig;
 use PHPdot\Package\Tests\Fixtures\MapConfig;
 use PHPdot\Package\Tests\Fixtures\OuterConfig;
 use PHPdot\Package\Tests\Fixtures\SampleConfig;
@@ -48,6 +49,24 @@ final class ConfigFileGeneratorTest extends TestCase
 
         self::assertCount(1, $generated);
         self::assertFileExists($this->tmpDir . '/sample.php');
+    }
+
+    #[Test]
+    public function aBackedEnumDefaultIsWrittenAsItsBackingValue(): void
+    {
+        $content = $this->renderEnumConfig();
+
+        self::assertStringContainsString("'mode' => 'eof',", $content);
+        self::assertStringContainsString("'level' => 3,", $content);
+        self::assertStringNotContainsString("'name' => 'Eof'", $content, 'the enum-as-array shape must never come back');
+    }
+
+    #[Test]
+    public function aPureEnumDefaultIsOmittedSoTheConstructorDefaultApplies(): void
+    {
+        $content = $this->renderEnumConfig();
+
+        self::assertStringNotContainsString("'state'", $content, 'a pure enum has no config-representable value');
     }
 
     #[Test]
@@ -425,6 +444,20 @@ final class ConfigFileGeneratorTest extends TestCase
         $paths = $this->generator->ownedPaths($classes, $this->tmpDir);
 
         self::assertCount(1, $paths);
+    }
+
+    private function renderEnumConfig(): string
+    {
+        $scanned = new ScannedClass(
+            EnumConfig::class,
+            Scope::SINGLETON,
+            [],
+            [],
+            'enum-sample',
+            'test/pkg',
+        );
+
+        return $this->generator->render($scanned, $this->packages['test/pkg'], []);
     }
 
     private function configClass(): ScannedClass

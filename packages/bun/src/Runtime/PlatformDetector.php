@@ -16,6 +16,7 @@ namespace PHPdot\Bun\Runtime;
 use PHPdot\Bun\Exception\UnsupportedPlatformException;
 use PHPdot\Bun\Process\ProcessRunnerInterface;
 use PHPdot\Container\Attribute\Singleton;
+use Throwable;
 
 #[Singleton]
 final class PlatformDetector
@@ -96,7 +97,7 @@ final class PlatformDetector
 
         try {
             $result = $this->process->run('ldd', ['--version']);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return 'glibc';
         }
 

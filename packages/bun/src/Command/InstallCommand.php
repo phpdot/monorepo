@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Installs one or more packages via `bun add`. Auto-creates package.json + lockfile.
+ * Installs one or more packages via `bun add`. Auto-creates package.json + lockfile. With no
+ * packages, installs from the lockfile (`bun install`) — the fresh-clone repair.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -21,7 +22,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 #[AsCommand(
     name: 'bun:install',
-    description: 'Install one or more packages (bun add).',
+    description: 'Install packages (bun add) — with none, install from the lockfile.',
 )]
 final class InstallCommand extends Command
 {
@@ -39,7 +40,7 @@ final class InstallCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('packages', InputArgument::IS_ARRAY | InputArgument::REQUIRED, 'Package name(s) to install')
+            ->addArgument('packages', InputArgument::IS_ARRAY | InputArgument::OPTIONAL, 'Package name(s) to install — none installs from the lockfile')
             ->addOption('dev', 'D', InputOption::VALUE_NONE, 'Install as devDependencies');
     }
 

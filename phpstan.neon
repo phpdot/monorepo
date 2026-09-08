@@ -8,6 +8,7 @@ parameters:
     # needs its reference fixtures analysed too, or PHPStan reports trait.unused; only an analysed
     # user clears it. New package → add its `packages/<name>/src` line here.
     paths:
+        - packages/ai/src
         - packages/attribute/src
         - packages/bun/src
         - packages/cache/src
@@ -24,9 +25,11 @@ parameters:
         - packages/filesystem/src
         - packages/http/src
         - packages/i18n/src
+        - packages/iam/src
         - packages/http-middleware/src
         - packages/logs/src
         - packages/mail/src
+        - packages/mcp/src
         - packages/mongodb/src
         - packages/package/src
         - packages/path/src
@@ -38,6 +41,7 @@ parameters:
         - packages/redis/src
         - packages/routing/src
         - packages/routing-rt/src
+        - packages/scheduler/src
         - packages/server/src
         - packages/template/src
         - packages/session/src
@@ -45,6 +49,7 @@ parameters:
         - packages/totp/src
         - packages/tracelog/src
         - packages/validator/src
+        - packages/webauthn/src
         - packages/error/tests/Fixtures
     excludePaths:
         - packages/package/src/Composer/ComposerScript.php

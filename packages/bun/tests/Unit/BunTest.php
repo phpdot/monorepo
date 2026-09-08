@@ -21,11 +21,11 @@ final class BunTest extends TestCase
     protected function setUp(): void
     {
         $this->fake = new TestBun();
-        // Builds resolve the throwaway metafile relative to the cwd; isolate it so the suite stays
+        // The throwaway metafile lives under home/build; a separate cwd proves it is not cwd-relative and the suite stays
         // hermetic regardless of the repo's working tree.
         $this->cwd = (string) getcwd();
         $this->workdir = sys_get_temp_dir() . '/phpdot-bun-buntest-' . uniqid();
-        mkdir($this->workdir, 0755, true);
+        mkdir($this->workdir, 0o755, true);
         chdir($this->workdir);
     }
 
@@ -99,7 +99,7 @@ final class BunTest extends TestCase
             '--splitting',
             '--entry-naming=[dir]/[name]-[hash].[ext]',
             '--chunk-naming=[name]-[hash].[ext]',
-            '--metafile=.phpdot/build/metafile.json',
+            '--metafile=' . $this->fake->config->homeDir . '/build/metafile.json',
         ], $this->fake->lastArgs());
     }
 
@@ -145,8 +145,8 @@ final class BunTest extends TestCase
     {
         // Simulate bun exiting 0 but leaving a corrupt metafile (killed mid-write, disk full): the
         // distillation must fail the build rather than report a hollow success with no usable manifest.
-        $metafile = $this->workdir . '/.phpdot/build/metafile.json';
-        mkdir(dirname($metafile), 0755, true);
+        $metafile = $this->fake->config->homeDir . '/build/metafile.json';
+        @mkdir(dirname($metafile), 0o755, true);
         file_put_contents($metafile, '{"outputs": {"./app.js": {"entryPoint"');
 
         $exit = $this->fake->bun->build('app.ts');
@@ -155,19 +155,20 @@ final class BunTest extends TestCase
         self::assertFileDoesNotExist($this->workdir . '/public/build/manifest.json');
     }
 
-    public function testWorkingDirScopesPackageCommandsButNotBuild(): void
+    public function testHomeScopesPackageCommandsButNotBuild(): void
     {
-        $fake = new TestBun(workingDir: 'resources');
+        $home = sys_get_temp_dir() . '/phpdot-bun-home-' . uniqid();
+        $fake = new TestBun(root: $home);
 
         try {
             $fake->bun->install(['ejs']);
-            self::assertSame('resources', $fake->runner->passthroughCalls[0]['cwd'], 'install defaults to workingDir');
+            self::assertSame($fake->home, $fake->runner->passthroughCalls[0]['cwd'], 'install defaults to the configured home');
 
             $fake->bun->build('resources/js/app.ts');
-            self::assertNull($fake->runner->passthroughCalls[1]['cwd'], 'build is project-relative, not scoped to workingDir');
+            self::assertNull($fake->runner->passthroughCalls[1]['cwd'], 'build is project-relative, not scoped to the home');
 
             $fake->bun->install(['vue'], cwd: 'elsewhere');
-            self::assertSame('elsewhere', $fake->runner->passthroughCalls[2]['cwd'], 'an explicit cwd overrides workingDir');
+            self::assertSame('elsewhere', $fake->runner->passthroughCalls[2]['cwd'], 'an explicit cwd overrides the home');
         } finally {
             $fake->cleanup();
         }

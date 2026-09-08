@@ -36,28 +36,99 @@ $escape = static fn (string $s): string => htmlspecialchars($s, ENT_QUOTES | ENT
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $errorContext->statusCode ?> - <?= $escape($title) ?></title>
+    <meta name="robots" content="noindex, nofollow">
+    <title><?= $errorContext->statusCode ?> &middot; <?= $escape($title) ?></title>
     <style>
-        :root { --bg: #0f172a; --text: #e2e8f0; --dim: #94a3b8; --accent: #38bdf8; --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-        @media (prefers-color-scheme: light) { :root { --bg: #f8fafc; --text: #1e293b; --dim: #64748b; } }
+        :root {
+            --bg: #1f2a3d;
+            --surface: #26334a;
+            --line: #35455f;
+            --text: #eef2f8;
+            --dim: #9fb0c7;
+            --accent: #7aa7d9;
+            --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+        }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; text-align: center; padding: 2rem; }
-        .container { max-width: 480px; }
-        .code { font-size: 6rem; font-weight: 800; line-height: 1; color: var(--dim); opacity: 0.3; }
-        h1 { font-size: 1.5rem; margin: 1rem 0 0.5rem; }
-        p { color: var(--dim); font-size: 1rem; line-height: 1.6; }
-        a { color: var(--accent); text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        .home { display: inline-block; margin-top: 1.5rem; padding: 0.6rem 1.5rem; border: 1px solid var(--dim); border-radius: 6px; color: var(--text); font-size: 0.9rem; }
-        .home:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+        html { -webkit-text-size-adjust: 100%; }
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.5rem;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+        .panel { width: 100%; max-width: 30rem; }
+        .status {
+            display: inline-block;
+            font: 600 0.6875rem/1 var(--mono);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: var(--dim);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            padding: 0.375rem 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        h1 { font-size: 1.375rem; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 0.5rem; }
+        .message { color: var(--dim); font-size: 0.9375rem; }
+        .reference {
+            margin-top: 1.75rem;
+            padding: 0.875rem 1rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+        .reference-label {
+            display: block;
+            font-size: 0.6875rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--dim);
+            margin-bottom: 0.375rem;
+        }
+        .reference code {
+            font: 400 0.8125rem/1.5 var(--mono);
+            color: var(--text);
+            user-select: all;
+            word-break: break-all;
+        }
+        .actions { margin-top: 1.75rem; }
+        .home {
+            display: inline-block;
+            padding: 0.5625rem 1.125rem;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            color: var(--text);
+            font-size: 0.875rem;
+            text-decoration: none;
+            transition: border-color 0.15s ease, color 0.15s ease;
+        }
+        .home:hover, .home:focus-visible { border-color: var(--accent); color: var(--accent); }
+        @media (max-width: 30rem) {
+            h1 { font-size: 1.1875rem; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="code"><?= $errorContext->statusCode ?></div>
+    <main class="panel">
+        <span class="status">Error <?= $errorContext->statusCode ?></span>
         <h1><?= $escape($title) ?></h1>
-        <p><?= $escape($message) ?></p>
-        <a href="/" class="home">Go Home</a>
-    </div>
+        <p class="message"><?= $escape($message) ?></p>
+<?php if ($errorContext->traceId !== null): ?>
+        <div class="reference">
+            <span class="reference-label">Reference</span>
+            <code><?= $escape($errorContext->traceId) ?></code>
+        </div>
+<?php endif; ?>
+        <div class="actions">
+            <a href="/" class="home">Return home</a>
+        </div>
+    </main>
 </body>
 </html>

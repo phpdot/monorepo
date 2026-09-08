@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
 final class BinaryDownloaderTest extends TestCase
 {
     private const string PACKAGE = 'test-pkg';
-    private const string VERSION = '1.3.14';
+    private const string VERSION = '1.4.0';
     private const string TARBALL_URL = 'https://example.test/test-pkg.tgz';
 
     private string $dest;
@@ -70,7 +70,7 @@ final class BinaryDownloaderTest extends TestCase
         $http->map(self::TARBALL_URL, $tgz);
 
         $this->expectException(BinaryDownloadException::class);
-        $this->expectExceptionMessage('Version 1.3.14 not found');
+        $this->expectExceptionMessage('Version ' . self::VERSION . ' not found');
         $this->makeDownloader($http)->download(self::PACKAGE, self::VERSION, $this->dest, 'bun');
     }
 
@@ -116,6 +116,6 @@ final class BinaryDownloaderTest extends TestCase
     {
         $factory = new Psr17Factory();
 
-        return new BinaryDownloader($http, $factory, new NpmRegistryClient($http, $factory, new BunConfig()));
+        return new BinaryDownloader($http, $factory, new NpmRegistryClient($http, $factory, new BunConfig(resourcesDir: "/tmp/bun-test", outputDir: "/tmp/bun-test")));
     }
 }

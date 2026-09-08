@@ -27,7 +27,24 @@ final readonly class Mailbox
         public string $name = '',
     ) {
         if (!str_contains($email, '@') || str_contains($email, ' ')) {
-            throw new MailException(sprintf('Invalid email address: "%s".', $email));
+            throw new MailException(sprintf('Invalid email address: %s.', self::rendered($email)));
         }
+    }
+
+    /**
+     * Renders the offending address log-safe: JSON-escaped when encodable —
+     * control characters, line breaks included, come out escaped so the
+     * exception message stays one line — or hex when the bytes are not valid
+     * UTF-8 at all.
+     *
+     * @param string $email
+     *
+     * @return string
+     */
+    private static function rendered(string $email): string
+    {
+        $encoded = json_encode($email);
+
+        return $encoded === false ? '"' . bin2hex($email) . '"' : $encoded;
     }
 }

@@ -55,9 +55,9 @@ manifest hygiene, README tables); the rest are the house rules every new file fo
 - Container attributes (`#[Singleton]`, `#[Binds]`, `#[Config]`, `#[Scoped]`) are inert
   until a phpdot application reflects them: `phpdot/container` goes in `require-dev` plus a
   `suggest` entry, never in `require`, for packages that only carry attributes.
-- Guarded optional integrations use `class_exists`/`extension_loaded` with FQCN references
-  (no import) or a suggest-declared extension; optional phpdot bridges use
-  require-dev + suggest (totp's QrCodeBridge form).
+- Guarded optional integrations guard with `class_exists`/`extension_loaded` and declare
+  the dependency in `require-dev` plus `suggest` — or in `require` when the code calls it
+  unconditionally (psr3-bridge's `_e()`).
 
 ### Tests
 

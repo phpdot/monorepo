@@ -84,7 +84,7 @@ final class NpmRegistryClientTest extends TestCase
     {
         $factory = new Psr17Factory();
 
-        return new NpmRegistryClient($http, $factory, new BunConfig(registryUrl: $registryUrl));
+        return new NpmRegistryClient($http, $factory, new BunConfig(registryUrl: $registryUrl, resourcesDir: "/tmp/bun-test", outputDir: "/tmp/bun-test"));
     }
 
     private function searchUrl(string $registryUrl, string $term, int $limit): string

@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Transport;
 
+use InvalidArgumentException;
 use PHPdot\Container\Attribute\Singleton;
 use PHPdot\Mail\Exception\MailException;
 use PHPdot\Mail\Exception\TransportException;
@@ -57,9 +58,25 @@ final class Transport
 
             return new Receipt($sent?->getMessageId() ?? '', $sent?->getDebug() ?? '');
         } catch (TransportExceptionInterface $e) {
-            throw new TransportException($e->getMessage(), previous: $e);
-        } catch (MailerExceptionInterface | MimeExceptionInterface $e) {
+            throw new TransportException($e->getMessage(), scheme: self::schemeOf($config->dsn), previous: $e);
+        } catch (MailerExceptionInterface | MimeExceptionInterface | InvalidArgumentException $e) {
             throw new MailException($e->getMessage(), previous: $e);
         }
+    }
+
+    /**
+     * The DSN's scheme — the transport family on the wire. Extracted because
+     * the DSN itself carries credentials and must never reach an exception a
+     * log will persist.
+     *
+     * @param string $dsn
+     *
+     * @return string
+     */
+    private static function schemeOf(string $dsn): string
+    {
+        $scheme = parse_url($dsn, PHP_URL_SCHEME);
+
+        return is_string($scheme) ? $scheme : '';
     }
 }

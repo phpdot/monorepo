@@ -9,12 +9,19 @@
             "email": "omar@phpdot.com"
         }
     ],
-    "keywords": ["bun", "bundler", "javascript", "npm", "php", "phpdot"],
+    "keywords": [
+        "bun",
+        "bundler",
+        "javascript",
+        "npm",
+        "php",
+        "phpdot"
+    ],
     "require": {
-        "php": ">=8.5",
         "ext-mbstring": "*",
         "nyholm/psr7": "^1.8",
-        "phpdot/console": "^0.2",
+        "php": ">=8.5",
+        "phpdot/console": "^0.3",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
         "psr/http-message": "^1.1 || ^2.0",
@@ -24,7 +31,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.2",
+        "phpdot/container": "^0.3",
+        "phpdot/package": "^0.3",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -33,8 +41,8 @@
     "suggest": {
         "ext-curl": "Lets symfony/http-client use its curl transport for Bun runtime downloads; without it the native-stream transport is used.",
         "phpdot/container": "Autowires the #[Singleton]/#[Binds] services and the #[Config('bun')] DTO (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
-        "phpdot/package": "Auto-discovers bun's services and config by scanning the #[Singleton]/#[Binds]/#[Config] attributes at composer install — zero manual wiring.",
-        "phpdot/config": "Populates BunConfig from config/bun.php (pinnedVersion, registryUrl, runtimeDir, workingDir) when used with phpdot/package.",
+        "phpdot/package": "Discovers BunInstaller at composer time \u2014 the hook that fills config/bun.php directory keys with portable absolute paths. Without it, set the three directory keys yourself.",
+        "phpdot/config": "Populates BunConfig from config/bun.php when used with phpdot/package.",
         "ext-pcntl": "Forwards SIGINT/SIGTERM to long-lived child processes (bun run dev server, build --watch) for clean shutdown."
     },
     "autoload": {

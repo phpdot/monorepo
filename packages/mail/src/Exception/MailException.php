@@ -12,4 +12,6 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Exception;
 
-class MailException extends \RuntimeException {}
+use RuntimeException;
+
+class MailException extends RuntimeException {}

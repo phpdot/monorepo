@@ -11,6 +11,8 @@ declare(strict_types=1);
 
 namespace PHPdot\Console;
 
+use PHPdot\Pool\PoolRegistry;
+use Psr\Container\ContainerInterface;
 use Swoole\Coroutine;
 use Symfony\Component\Console\Command\Command as SymfonyCommand;
 use Symfony\Component\Console\Helper\QuestionHelper;
@@ -36,6 +38,26 @@ abstract class Command extends SymfonyCommand
      * this to false.
      */
     protected bool $coroutine = true;
+
+    /**
+     * The container the command was resolved from, when it was — the pool
+     * release hook below needs it. Set by the command loader on every
+     * container-resolved command; a hand-constructed one runs without the
+     * hook.
+     */
+    private null|ContainerInterface $releaseContainer = null;
+
+    /**
+     * Record the container this command was resolved from.
+     *
+     * @param ContainerInterface $container The resolving container
+     *
+     * @return void
+     */
+    public function resolvedFrom(ContainerInterface $container): void
+    {
+        $this->releaseContainer = $container;
+    }
 
     /**
      * {@inheritDoc}
@@ -70,6 +92,8 @@ abstract class Command extends SymfonyCommand
                 $exit = parent::run($input, $output);
             } catch (\Throwable $e) {
                 $thrown = $e;
+            } finally {
+                $this->releasePools();
             }
         });
 
@@ -78,6 +102,38 @@ abstract class Command extends SymfonyCommand
         }
 
         return $exit;
+    }
+
+    /**
+     * Suspend any pool timers the command built — INSIDE the scheduler,
+     * before Coroutine\run starts waiting on what remains.
+     *
+     * A pooled resolution starts the pool's idle and heartbeat ticks, and
+     * the scheduler this command runs in waits on them: without this call
+     * the command finishes, prints, and the process hangs on timers nobody
+     * needs. Suspending — never closing — matches worker-exit behavior:
+     * connections stay valid for anything still reading them.
+     *
+     * Soft-coupled: a no-op without phpdot/pool, without a container, or
+     * when no registry is bound.
+     *
+     * @return void
+     */
+    private function releasePools(): void
+    {
+        if ($this->releaseContainer === null || !class_exists(PoolRegistry::class)) {
+            return;
+        }
+
+        if (!$this->releaseContainer->has(PoolRegistry::class)) {
+            return;
+        }
+
+        $registry = $this->releaseContainer->get(PoolRegistry::class);
+
+        if ($registry instanceof PoolRegistry) {
+            $registry->suspendAll();
+        }
     }
 
     /**

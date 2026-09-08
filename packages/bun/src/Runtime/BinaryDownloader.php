@@ -21,6 +21,7 @@ use PHPdot\Container\Attribute\Singleton;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
+use Throwable;
 
 #[Singleton]
 final class BinaryDownloader
@@ -190,7 +191,7 @@ final class BinaryDownloader
             } finally {
                 fclose($out);
             }
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             @unlink($tmp);
             throw $e;
         }

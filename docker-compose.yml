@@ -18,7 +18,7 @@ services:
   postgres:
     image: postgres:17
     ports:
-      - "5433:5432"
+      - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -50,6 +50,19 @@ services:
       test: ["CMD-SHELL", "mongosh --port 27018 --quiet --eval \"try { rs.status().ok } catch (e) { rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27018'}]}).ok }\""]
       interval: 5s
       timeout: 10s
+      retries: 30
+
+  # SMTP catcher for the mail package's delivery tests: messages are sent to
+  # the SMTP port and asserted back through the REST API.
+  mailpit:
+    image: axllent/mailpit:v1.31
+    ports:
+      - "1026:1025"
+      - "8026:8025"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8025/readyz"]
+      interval: 5s
+      timeout: 3s
       retries: 30
 
   redis:

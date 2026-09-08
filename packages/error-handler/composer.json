@@ -12,14 +12,16 @@
     "keywords": ["error", "exception", "handler", "debug", "psr-15", "rfc-9457"],
     "require": {
         "php": ">=8.5",
+        "phpdot/contracts": "^0.3",
         "psr/http-factory": "^1.0",
         "psr/http-message": "^2.0",
-        "psr/http-server-middleware": "^1.0",
-        "psr/log": "^3.0"
+        "psr/http-server-middleware": "^1.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/http": "^0.2",
+        "phpdot/container": "^0.3",
+        "phpdot/http": "^0.3",
+        "phpdot/logs": "^0.3",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"

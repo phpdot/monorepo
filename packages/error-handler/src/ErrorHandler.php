@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace PHPdot\ErrorHandler;
 
+use PHPdot\Contracts\Logs\TracerInterface;
 use PHPdot\ErrorHandler\Contract\ContextProviderInterface;
 use PHPdot\ErrorHandler\Contract\RendererInterface;
 use PHPdot\ErrorHandler\Contract\SolutionProviderInterface;
@@ -22,7 +23,6 @@ use PHPdot\ErrorHandler\Renderer\HtmlDevRenderer;
 use PHPdot\ErrorHandler\Renderer\HtmlProdRenderer;
 use PHPdot\ErrorHandler\Renderer\JsonRenderer;
 use PHPdot\ErrorHandler\Renderer\PlainTextRenderer;
-use Psr\Log\LoggerInterface;
 
 final class ErrorHandler
 {
@@ -107,15 +107,15 @@ final class ErrorHandler
     }
 
     /**
-     * Set PSR-3 logger for error logging.
+     * Set tracer for error logging and span marking.
      *
-     * @param LoggerInterface $logger
+     * @param TracerInterface $tracer
      *
      * @return ErrorHandler
      */
-    public function setLogger(LoggerInterface $logger): self
+    public function setTracer(TracerInterface $tracer): self
     {
-        $this->exceptionHandler->setLogger($logger);
+        $this->exceptionHandler->setTracer($tracer);
 
         return $this;
     }

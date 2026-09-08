@@ -5,7 +5,7 @@ declare(strict_types=1);
 /**
  * Immutable description of a `bun build` invocation, mapped to the binary's CLI flags.
  *
- * Verified against Bun 1.3.14: value flags use the `--flag=value` form; `--define`/`--drop`/
+ * Verified against Bun 1.4.0: value flags use the `--flag=value` form; `--define`/`--drop`/
  * `--loader` are accepted though absent from `bun build --help`; hashed names are expressed via
  * `--entry-naming` (an explicit entryNaming pattern wins over the hashedNames preset).
  *
@@ -57,6 +57,7 @@ final readonly class BuildOptions
      * @param list<string> $conditions custom package.json export conditions
      * @param ?string $env inline env vars: 'inline', 'disable', or a prefix like "PUBLIC_*"
      * @param ?string $metafileMd write the module-graph markdown to this path
+     * @param ?string $tsconfig a tsconfig.json to use in place of the discovered one (--tsconfig-override)
      * @param bool $noClearScreen keep the terminal scrollback in watch mode
      */
     public function __construct(
@@ -92,6 +93,7 @@ final readonly class BuildOptions
         public null|string $env = null,
         public null|string $metafileMd = null,
         public bool $noClearScreen = false,
+        public null|string $tsconfig = null,
     ) {}
 
     /**
@@ -162,6 +164,10 @@ final readonly class BuildOptions
         }
         if ($this->metafileMd !== null) {
             $args[] = '--metafile-md=' . $this->metafileMd;
+        }
+
+        if ($this->tsconfig !== null) {
+            $args[] = '--tsconfig-override=' . $this->tsconfig;
         }
 
         foreach ($this->define as $define) {

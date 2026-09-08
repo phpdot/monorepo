@@ -9,6 +9,7 @@ use PHPdot\Template\Exception\InvalidFormatOptionsException;
 use PHPdot\Template\HtmlFormatter;
 use PHPdot\Template\TemplateConfig;
 use PHPUnit\Framework\Attributes\RequiresPhpExtension;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class HtmlFormatterTest extends TestCase
@@ -20,7 +21,7 @@ final class HtmlFormatterTest extends TestCase
 
     public function test_disabled_returns_input_untouched(): void
     {
-        $formatter = new HtmlFormatter(new TemplateConfig());
+        $formatter = new HtmlFormatter(new TemplateConfig(format: false));
 
         self::assertSame(self::DOCUMENT, $formatter->format(self::DOCUMENT));
     }
@@ -184,5 +185,38 @@ final class HtmlFormatterTest extends TestCase
     private function formatter(): HtmlFormatter
     {
         return new HtmlFormatter(new TemplateConfig(format: true));
+    }
+
+    #[Test]
+    #[RequiresPhpExtension('tidy')]
+    public function itSkipsTemplatesThatAreNotBrowserHtml(): void
+    {
+        foreach (['order.mail.twig', 'invoice.txt.twig', 'export.csv.twig', 'feed.xml.twig'] as $template) {
+            self::assertSame(
+                self::DOCUMENT,
+                $this->formatter()->format(self::DOCUMENT, $template),
+                $template . ' must reach the caller exactly as the template produced it',
+            );
+        }
+    }
+
+    #[Test]
+    #[RequiresPhpExtension('tidy')]
+    public function itFormatsBrowserHtmlAndUnsuffixedTemplates(): void
+    {
+        foreach (['page.html.twig', 'page.htm.twig', 'page.twig', ''] as $template) {
+            self::assertStringContainsString(
+                "\n    <head>",
+                $this->formatter()->format(self::DOCUMENT, $template),
+                $template === '' ? '(no name)' : $template,
+            );
+        }
+    }
+
+    #[Test]
+    #[RequiresPhpExtension('tidy')]
+    public function theExtensionCheckIsCaseInsensitive(): void
+    {
+        self::assertSame(self::DOCUMENT, $this->formatter()->format(self::DOCUMENT, 'order.MAIL.twig'));
     }
 }

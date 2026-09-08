@@ -22,26 +22,37 @@ use PHPdot\Bun\Runtime\RuntimeLock;
 final class TestBun
 {
     public readonly Bun $bun;
+
+    public readonly BunConfig $config;
+
     public readonly string $binaryPath;
 
-    public function __construct(
-        public readonly FakeProcessRunner $runner = new FakeProcessRunner(default: new ProcessResult(0, "1.3.14\n", '')),
-        public readonly string $runtimeDir = '',
-        null|string $workingDir = null,
-    ) {
-        $dir = $runtimeDir !== '' ? $runtimeDir : sys_get_temp_dir() . '/phpdot-bun-test-' . uniqid();
-        mkdir($dir, 0755, true);
+    public readonly string $home;
 
-        $config = new BunConfig(runtimeDir: $dir, workingDir: $workingDir);
+    private null|string $ownedRoot = null;
+
+    public function __construct(
+        public readonly FakeProcessRunner $runner = new FakeProcessRunner(default: new ProcessResult(0, "1.4.0\n", '')),
+        public readonly string $root = '',
+    ) {
+        $dir = $root !== '' ? $root : sys_get_temp_dir() . '/phpdot-bun-test-' . uniqid();
+        $this->ownedRoot = $root === '' ? $dir : null;
+        $this->home = $dir . '/resources/.bun';
+        mkdir($this->home . '/runtime', 0o755, true);
+        mkdir($dir . '/public/build', 0o755, true);
+
+        $config = new BunConfig(resourcesDir: $dir . '/resources', outputDir: $dir . '/public/build');
         $filename = (new PlatformDetector($this->runner))->detect()->binaryFilename();
-        $this->binaryPath = $dir . DIRECTORY_SEPARATOR . $filename;
-        file_put_contents($this->binaryPath, '#!/bin/sh');
+        $this->binaryPath = $this->home . DIRECTORY_SEPARATOR . 'runtime' . DIRECTORY_SEPARATOR . $filename;
+        file_put_contents($this->binaryPath, "#!/bin/sh\nexit 0\n");
+        chmod($this->binaryPath, 0o755);
 
         $factory = new Psr17Factory();
         $http = new FakeHttpClient();
         $downloader = new BinaryDownloader($http, $factory, new NpmRegistryClient($http, $factory, $config));
         $resolver = new BinaryResolver($config, new PlatformDetector($this->runner), $downloader, $this->runner, new RuntimeLock());
 
+        $this->config = $config;
         $this->bun = new Bun($resolver, $this->runner, $config);
     }
 
@@ -62,9 +73,34 @@ final class TestBun
 
     public function cleanup(): void
     {
+        if ($this->ownedRoot !== null) {
+            $this->removeTree($this->ownedRoot);
+
+            return;
+        }
+
         if (is_file($this->binaryPath)) {
             unlink($this->binaryPath);
         }
         @rmdir(dirname($this->binaryPath));
+        @rmdir($this->config->homeDir . '/resources');
+    }
+
+    private function removeTree(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        foreach (scandir($dir) ?: [] as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+
+            $path = $dir . '/' . $entry;
+            is_dir($path) ? $this->removeTree($path) : @unlink($path);
+        }
+
+        @rmdir($dir);
     }
 }

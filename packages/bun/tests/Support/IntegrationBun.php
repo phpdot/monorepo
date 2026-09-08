@@ -23,8 +23,10 @@ use RuntimeException;
  */
 final class IntegrationBun
 {
-    public static function create(null|string $runtimeDir = null, null|string $workingDir = null): Bun
+    public static function create(null|string $resourcesDir = null): Bun
     {
+        $resources = $resourcesDir ?? sys_get_temp_dir() . '/phpdot-bun-it-resources';
+
         $container = (new ContainerBuilder())
             ->scanAttributesIn(dirname(__DIR__, 2) . '/src')
             ->addDefinitions([
@@ -32,8 +34,8 @@ final class IntegrationBun
                 RequestFactoryInterface::class => static fn(ContainerInterface $c) => $c->get(HttpClient::class),
                 ProcessRunnerInterface::class => static fn(ContainerInterface $c) => $c->get(BunProcess::class),
                 BunConfig::class => static fn(): BunConfig => new BunConfig(
-                    runtimeDir: $runtimeDir ?? sys_get_temp_dir() . '/phpdot-bun-it-runtime',
-                    workingDir: $workingDir,
+                    resourcesDir: $resources,
+                    outputDir: $resources . '/public/build',
                 ),
             ])
             ->build();

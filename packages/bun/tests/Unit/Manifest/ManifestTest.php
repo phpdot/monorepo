@@ -8,6 +8,7 @@ use PHPdot\Bun\Manifest\AmbiguousEntryException;
 use PHPdot\Bun\Manifest\Manifest;
 use PHPdot\Bun\Manifest\ManifestEntryNotFoundException;
 use PHPdot\Bun\Manifest\ManifestNotReadableException;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class ManifestTest extends TestCase
@@ -214,5 +215,37 @@ final class ManifestTest extends TestCase
         self::assertFileDoesNotExist($target);
 
         unlink($corrupt);
+    }
+
+    #[Test]
+    public function compileKeysEntriesRelativeToTheResourcesDirectory(): void
+    {
+        $root = sys_get_temp_dir() . '/phpdot-manifest-keys-' . bin2hex(random_bytes(4));
+        mkdir($root . '/resources/apps', 0o755, true);
+        mkdir($root . '/resources/.bun/build', 0o755, true);
+        touch($root . '/resources/apps/users.ts');
+        touch($root . '/resources/.bun/build/app.build.css');
+
+        $metafile = $root . '/metafile.json';
+        file_put_contents($metafile, (string) json_encode(['outputs' => [
+            './js/users-h1.js' => ['entryPoint' => '../../resources/apps/users.ts'],
+            './css/app.build-h2.css' => ['entryPoint' => 'build/app.build.css'],
+        ]]));
+        $target = $root . '/manifest.json';
+
+        self::assertTrue(Manifest::compile($metafile, $target, $root . '/resources/.bun', $root . '/resources'));
+
+        $manifest = new Manifest($target, '/build', $root . '/resources');
+        self::assertSame(['apps/users.ts', '.bun/build/app.build.css'], $manifest->entries(), 'under resources → keyed relative to it, home .bun intermediates included — never an absolute machine path');
+        self::assertSame('/build/js/users-h1.js', $manifest->js('apps/users.ts'), 'a template names the authored file as written');
+        self::assertSame('/build/js/users-h1.js', $manifest->js($root . '/resources/apps/users.ts'), 'an absolute path under resources resolves too');
+        self::assertSame('/build/css/app.build-h2.css', $manifest->css($root . '/resources/.bun/build/app.build.css'));
+
+        foreach ([$metafile, $target, $root . '/resources/apps/users.ts', $root . '/resources/.bun/build/app.build.css'] as $file) {
+            unlink($file);
+        }
+        foreach (['/resources/apps', '/resources/.bun/build', '/resources/.bun', '/resources', ''] as $dir) {
+            rmdir($root . $dir);
+        }
     }
 }

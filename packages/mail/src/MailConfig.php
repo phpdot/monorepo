@@ -26,7 +26,9 @@ final readonly class MailConfig
      *
      * @param string $dsn Transport DSN, e.g. "smtp://user:pass@smtp.example.com:587".
      *                    Defaults to the null transport (sends nowhere) so an
-     *                    unconfigured install never errors. Read from `MAIL_DSN`.
+     *                    unconfigured install never errors. No environment
+     *                    variable is read here; a consumer wanting one sets it
+     *                    in its own `config/mail.php`.
      * @param string $fromEmail Default sender address used when a message sets no "from".
      * @param string $fromName Default sender display name.
      */

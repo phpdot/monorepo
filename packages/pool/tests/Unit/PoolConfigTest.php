@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Pool\Tests\Unit;
 
+use PHPdot\Pool\Exception\PoolException;
 use PHPdot\Pool\PoolConfig;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -41,6 +42,24 @@ final class PoolConfigTest extends TestCase
         self::assertSame(60.0, $config->maxIdleTime);
         self::assertSame(10.0, $config->idleCheckInterval);
         self::assertSame(15.0, $config->heartbeatInterval);
+    }
+
+    #[Test]
+    public function minAboveMaxIsRejectedLoudlyAtConstruction(): void
+    {
+        $this->expectException(PoolException::class);
+        $this->expectExceptionMessage('minConnections (11) cannot exceed maxConnections (10)');
+
+        new PoolConfig(minConnections: 11, maxConnections: 10);
+    }
+
+    #[Test]
+    public function minEqualsMaxIsValid(): void
+    {
+        $config = new PoolConfig(minConnections: 4, maxConnections: 4);
+
+        self::assertSame(4, $config->minConnections);
+        self::assertSame(4, $config->maxConnections);
     }
 
     #[Test]

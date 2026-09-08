@@ -52,6 +52,7 @@ final class JsonFormatter implements FormatterInterface
             'level'      => $record['level'] ?? 0,
             'level_name' => $record['level_name'] ?? '',
             'message'    => $record['message'] ?? '',
+            'type'       => $record['type'] ?? 'log',
         ];
 
         foreach (self::PROMOTED_FIELDS as $field) {

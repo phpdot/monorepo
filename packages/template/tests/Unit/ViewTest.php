@@ -22,7 +22,7 @@ final class ViewTest extends TestCase
 
     protected function setUp(): void
     {
-        $config = new TemplateConfig(paths: ['__main__' => [__DIR__ . '/../fixtures/views']]);
+        $config = new TemplateConfig(paths: ['__main__' => [__DIR__ . '/../fixtures/views']], format: false);
         $manifest = new Manifest([], '2026-04-22T00:00:00+00:00');
         $factory = new EngineFactory($config, $manifest, new ArrayContainer());
 

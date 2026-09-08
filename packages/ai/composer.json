@@ -1,0 +1,69 @@
+{
+    "name": "phpdot/ai",
+    "description": "LLM client layer for the PHPdot ecosystem — one streaming turn API over the two wire shapes that matter (Anthropic /messages and OpenAI-compatible /chat/completions), with tools, usage, and mid-turn cancellation, on ext-curl that yields coroutines under Swoole hooks.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": [
+        "ai",
+        "llm",
+        "anthropic",
+        "openai",
+        "streaming",
+        "sse",
+        "tools",
+        "swoole",
+        "phpdot"
+    ],
+    "require": {
+        "php": ">=8.5",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "phpdot/config": "^0.3"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.3",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0",
+        "swoole/ide-helper": "^6.0"
+    },
+    "suggest": {
+        "phpdot/container": "Autowires the #[Singleton] Drivers accessor (the attribute stays inert until reflected, so standalone consumers don't need it installed) (^0.3).",
+        "ext-swoole": "The runtime the client is proven under — with SWOOLE_HOOK_ALL and SWOOLE_HOOK_NATIVE_CURL on, each turn's curl yields the coroutine instead of blocking the worker for the minutes a hard prompt can take."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Ai\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Ai\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/ai",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

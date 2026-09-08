@@ -59,10 +59,12 @@ interface TracerInterface
      * Run a callback inside a fresh child span, guaranteeing the span is always ended.
      *
      * Starts a child of current() and activates it, runs the callback, and ends the span
-     * afterwards no matter how the callback returns. If the callback throws, the span is
-     * marked with an 'error' status, the exception is recorded, the span is ended, and the
-     * exception is re-thrown. This is the contract-level guarantee that no span is ever
-     * orphaned. Returns the callback's return value unchanged.
+     * afterwards no matter how the callback returns. The outcome is stamped: 'ok' on a
+     * clean return, 'error' with the exception message if the callback throws (then the
+     * exception is re-thrown). A status the callback set explicitly is never overwritten.
+     * This is the contract-level guarantee that no span is ever orphaned — and that every
+     * span the engine closes carries its real outcome. Returns the callback's return value
+     * unchanged.
      *
      * @template T
      *
@@ -101,6 +103,19 @@ interface TracerInterface
     public function info(string $message, array $context = []): PendingLogInterface;
 
     /**
+     * Emit a notice-level log line correlated to the current span.
+     *
+     * Returns a pending handle written when it is released (end of statement);
+     * call secure() on it to encrypt the line — $tracer->notice('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function notice(string $message, array $context = []): PendingLogInterface;
+
+    /**
      * Emit a warning-level log line correlated to the current span.
      *
      * Returns a pending handle written when it is released (end of statement);
@@ -125,4 +140,43 @@ interface TracerInterface
      * @return PendingLogInterface
      */
     public function error(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit a critical-level log line correlated to the current span.
+     *
+     * Returns a pending handle written when it is released (end of statement);
+     * call secure() on it to encrypt the line — $tracer->critical('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function critical(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit an alert-level log line correlated to the current span.
+     *
+     * Returns a pending handle written when it is released (end of statement);
+     * call secure() on it to encrypt the line — $tracer->alert('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function alert(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit an emergency-level log line correlated to the current span.
+     *
+     * Returns a pending handle written when it is released (end of statement);
+     * call secure() on it to encrypt the line — $tracer->emergency('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function emergency(string $message, array $context = []): PendingLogInterface;
 }

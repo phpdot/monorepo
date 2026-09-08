@@ -15,7 +15,9 @@ declare(strict_types=1);
  * Normalization maps the engine record onto the handler record shape:
  *   - `timestamp` float (microtime) -> ISO-8601 string,
  *   - `level` PSR string -> integer level + `level_name`,
- *   - log records route to the `app` channel, finished spans to the `trace` channel.
+ *   - the record `type` ('log' | 'span') is written onto the line, so the
+ *     split survives on disk — no duck-typing context keys to tell them apart,
+ *   - every record routes to its own `channel` field's stream, defaulting to `app`.
  *
  * Trace correlation fields (`trace_id`, `span_id`) are always written in
  * plaintext at the top level so the output stays queryable.
@@ -26,8 +28,10 @@ declare(strict_types=1);
  * is dropped, never written in plaintext. Export never throws — a failure in the
  * write path must not crash the application or the coroutine-end span flush.
  *
- * Stateless singleton; binds as the default {@see WriterInterface}, overriding the
- * engine's NullWriter whenever tracelog is installed.
+ * Stateless singleton; {@see Binds} makes it the default {@see WriterInterface}
+ * whenever tracelog is installed — composer emits installed packages in
+ * alphabetical order, so this binding always lands after (and therefore replaces)
+ * the engine's NullWriter.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -36,30 +40,67 @@ declare(strict_types=1);
 namespace PHPdot\TraceLog\Writer;
 
 use DateTimeImmutable;
+use PHPdot\Container\Attribute\Binds;
 use PHPdot\Container\Attribute\Singleton;
 use PHPdot\Contracts\Logs\EncryptorInterface;
 use PHPdot\Contracts\Logs\WriterInterface;
+use PHPdot\TraceLog\Encryption\ChaChaEncryptor;
 use PHPdot\TraceLog\Log\Channel\ChannelManager;
+use PHPdot\TraceLog\Log\Formatter\FormatterInterface;
+use PHPdot\TraceLog\Log\Formatter\JsonFormatter;
+use PHPdot\TraceLog\Log\Formatter\TextFormatter;
 use PHPdot\TraceLog\Log\LogLevel;
+use PHPdot\TraceLog\TraceLogConfig;
+use stdClass;
 use Throwable;
 
 #[Singleton]
+#[Binds(WriterInterface::class)]
 final class TraceLogWriter implements WriterInterface
 {
     /**
-     * Create a TraceLog writer.
+     * Channel router, derived from the configured base path, formatter, and gates.
+     */
+    private readonly ChannelManager $channelManager;
+
+    /**
+     * Master switch from configuration — false discards every record at the writer.
+     */
+    private readonly bool $enabled;
+
+    /**
+     * Protects sensitive records: injected override, the configured key, or none.
+     */
+    private readonly null|EncryptorInterface $encryptor;
+
+    /**
+     * Build the writer from the application's `config/tracelog.php`.
      *
-     * The channel manager (built from config in the consumer's binding closure)
-     * resolves a dedicated stream handler per channel, and the optional encryptor
-     * enables the sensitive-record encrypt path.
+     * The channel manager is derived from the DTO, so an install needs no binding
+     * closure. A configured `encryptionKey` is validated here by constructing the
+     * encryptor: a malformed key fails the boot loudly rather than dropping every
+     * secure record silently for the life of the process. An explicitly injected
+     * encryptor wins over the configured key.
      *
-     * @param ChannelManager $channelManager Resolves the stream handler per channel.
-     * @param EncryptorInterface|null $encryptor Optional encryptor for sensitive records.
+     * @param TraceLogConfig $config The hydrated application configuration.
+     * @param EncryptorInterface|null $encryptor Optional encryptor override for sensitive records.
      */
     public function __construct(
-        private readonly ChannelManager $channelManager,
-        private readonly null|EncryptorInterface $encryptor = null,
-    ) {}
+        TraceLogConfig $config,
+        null|EncryptorInterface $encryptor = null,
+    ) {
+        $this->channelManager = new ChannelManager(
+            $config->basePath,
+            self::formatter($config->defaultFormatter),
+            $config->minLevel,
+            $config->maxChannels,
+        );
+
+        $this->enabled = $config->enabled;
+
+        $this->encryptor = $encryptor
+            ?? ($config->encryptionKey === null ? null : new ChaChaEncryptor($config->encryptionKey));
+    }
 
     /**
      * Export a single record — a log line or a finished span snapshot.
@@ -74,6 +115,10 @@ final class TraceLogWriter implements WriterInterface
      */
     public function write(array $record): void
     {
+        if (!$this->enabled) {
+            return;
+        }
+
         try {
             $isSpan = ($record['type'] ?? null) === 'span';
 
@@ -114,10 +159,11 @@ final class TraceLogWriter implements WriterInterface
             'level'      => $level,
             'level_name' => LogLevel::name($level),
             'message'    => $protected['message'],
+            'type'       => 'log',
             'channel'    => $this->channelName($record),
             'trace_id'   => $this->toString($record['trace_id'] ?? null),
             'span_id'    => $this->toString($record['span_id'] ?? null),
-            'context'    => $protected['context'],
+            'context'    => $this->asMap($protected['context']),
         ];
     }
 
@@ -142,14 +188,14 @@ final class TraceLogWriter implements WriterInterface
         $stamp     = $endedAt > 0.0 ? $endedAt : $startedAt;
 
         $context = [
-            'parent_span_id' => $this->toString($record['parent_span_id'] ?? null),
+            'parent_span_id' => $this->toParentId($record['parent_span_id'] ?? null),
             'kind'           => $this->toString($record['kind'] ?? null),
             'started_at'     => $startedAt,
             'ended_at'       => $endedAt,
             'duration_ms'    => $this->toFloat($record['duration_ms'] ?? null),
             'status'         => $status,
             'status_message' => $this->toString($record['status_message'] ?? null),
-            'attributes'     => $this->toArray($record['attributes'] ?? null),
+            'attributes'     => $this->asMap($this->toArray($record['attributes'] ?? null)),
             'events'         => $this->toArray($record['events'] ?? null),
         ];
 
@@ -164,6 +210,7 @@ final class TraceLogWriter implements WriterInterface
             'level'      => $level,
             'level_name' => LogLevel::name($level),
             'message'    => $protected['message'],
+            'type'       => 'span',
             'channel'    => $this->channelName($record),
             'trace_id'   => $this->toString($record['trace_id'] ?? null),
             'span_id'    => $this->toString($record['span_id'] ?? null),
@@ -304,6 +351,41 @@ final class TraceLogWriter implements WriterInterface
     }
 
     /**
+     * Keep a schema-owned map field a stable JSON type.
+     *
+     * PHP renders an empty array as `[]`, so a map that serializes as `{}`
+     * when populated and `[]` when empty changes JSON type with its content —
+     * breaking typed ingestion downstream. Only the schema's own maps (log
+     * context, span attributes) are cast; user-owned values keep their shapes,
+     * and genuine lists (`events`) stay lists.
+     *
+     * @param array<array-key, mixed> $value The map to stabilize.
+     *
+     * @return array<array-key, mixed>|object The map, or an empty object.
+     */
+    private function asMap(array $value): array|object
+    {
+        return $value === [] ? new stdClass() : $value;
+    }
+
+    /**
+     * A span's parent id, or null at a trace root.
+     *
+     * An empty string would claim a parent exists with an empty id; null is
+     * the honest "no parent" and matches the engine's nullable export.
+     *
+     * @param mixed $value The raw parent id from the engine record.
+     *
+     * @return string|null The parent id, or null when the span is a root.
+     */
+    private function toParentId(mixed $value): null|string
+    {
+        $parent = $this->toString($value);
+
+        return $parent === '' ? null : $parent;
+    }
+
+    /**
      * The channel a record routes to — its `channel` field, or 'app' by default.
      *
      * @param array<string, mixed> $record The engine record.
@@ -313,5 +395,20 @@ final class TraceLogWriter implements WriterInterface
     private function channelName(array $record): string
     {
         return $this->toString($record['channel'] ?? null, 'app');
+    }
+
+    /**
+     * Build the configured default line format for every channel.
+     *
+     * @param string $name The validated formatter name from configuration.
+     *
+     * @return FormatterInterface
+     */
+    private static function formatter(string $name): FormatterInterface
+    {
+        return match ($name) {
+            'text' => new TextFormatter(),
+            default => new JsonFormatter(),
+        };
     }
 }

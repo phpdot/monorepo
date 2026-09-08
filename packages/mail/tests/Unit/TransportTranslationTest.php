@@ -2,26 +2,27 @@
 
 declare(strict_types=1);
 
+/**
+ * The Transport boundary translates every Symfony failure into the package
+ * hierarchy — no Symfony type leaks past it. Only construction-time failures
+ * are exercised here so the suite stays hermetic: an unsupported DSN scheme
+ * and a malformed sendmail command both fail before any I/O happens.
+ *
+ * @author Omar Hamdan <omar@phpdot.com>
+ * @license MIT
+ */
+
 namespace PHPdot\Mail\Tests\Unit;
 
+use InvalidArgumentException;
 use PHPdot\Mail\Exception\MailException;
 use PHPdot\Mail\Exception\TransportException;
 use PHPdot\Mail\MailConfig;
 use PHPdot\Mail\Mailer;
 use PHPdot\Mail\Transport\EmailFactory;
 use PHPdot\Mail\Transport\Transport;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
-/**
- * The Transport boundary translates every Symfony failure into the package
- * hierarchy — no Symfony type leaks past it. Exercised without a network:
- * an unsupported DSN scheme fails at transport construction, and a closed
- * loopback port is refused before any traffic leaves the machine.
- *
- * @author Omar Hamdan <omar@phpdot.com>
- * @license MIT
- */
 final class TransportTranslationTest extends TestCase
 {
     private function mailer(string $dsn): Mailer
@@ -29,50 +30,37 @@ final class TransportTranslationTest extends TestCase
         return new Mailer(new MailConfig(dsn: $dsn), new Transport(new EmailFactory()));
     }
 
-    #[Test]
-    public function unsupportedDsnSchemeSurfacesAsMailException(): void
+    private function deliverable(Mailer $mailer): void
     {
-        $message = $this->mailer('carrier-pigeon://loft')->message()
+        $mailer->message()
             ->from('no-reply@example.com')
             ->to('alice@example.com')
             ->subject('x')
-            ->text('x');
+            ->text('x')
+            ->send();
+    }
 
+    public function testAnUnsupportedDsnSchemeSurfacesAsMailException(): void
+    {
         try {
-            $message->send();
+            $this->deliverable($this->mailer('carrier-pigeon://loft'));
             self::fail('an unsupported DSN scheme must throw');
         } catch (MailException $e) {
             self::assertNotInstanceOf(TransportException::class, $e);
+            self::assertStringContainsString('carrier-pigeon', $e->getMessage());
             self::assertNotNull($e->getPrevious());
         }
     }
 
-    #[Test]
-    public function unreachableSmtpServerSurfacesAsTransportException(): void
+    public function testAMalformedSendmailCommandSurfacesAsMailException(): void
     {
-        $message = $this->mailer('smtp://127.0.0.1:1')->message()
-            ->from('no-reply@example.com')
-            ->to('alice@example.com')
-            ->subject('x')
-            ->text('x');
-
-        $this->expectException(TransportException::class);
-
-        $message->send();
-    }
-
-    #[Test]
-    public function mailerSendDeliversAStandaloneMessage(): void
-    {
-        $mailer = $this->mailer('null://null');
-        $message = (new \PHPdot\Mail\Message\Message())
-            ->from('no-reply@example.com')
-            ->to('alice@example.com')
-            ->subject('standalone')
-            ->text('sent without a mailer-started chain');
-
-        $receipt = $mailer->send($message);
-
-        self::assertNotSame('', $receipt->messageId);
+        try {
+            $this->deliverable($this->mailer('sendmail://default?command=/bin/cat'));
+            self::fail('a malformed sendmail command must throw');
+        } catch (MailException $e) {
+            self::assertNotInstanceOf(TransportException::class, $e);
+            self::assertStringContainsString('sendmail command', $e->getMessage());
+            self::assertInstanceOf(InvalidArgumentException::class, $e->getPrevious());
+        }
     }
 }

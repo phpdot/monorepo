@@ -18,8 +18,8 @@ declare(strict_types=1);
  * neither can happen — which is exactly the knowledge a template package
  * should own once instead of every consumer rediscovering it.
  *
- * Disabled is the default and costs nothing: `format()` returns its input, so
- * callers need no conditional.
+ * Disabled costs nothing: `format()` returns its input, so callers need no
+ * conditional.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -137,9 +137,9 @@ final readonly class HtmlFormatter
      *
      * @return string
      */
-    public function format(string $html): string
+    public function format(string $html, string $template = ''): string
     {
-        if (!$this->enabled || trim($html) === '') {
+        if (!$this->enabled || trim($html) === '' || !$this->isFormattable($template)) {
             return $html;
         }
 
@@ -156,6 +156,27 @@ final readonly class HtmlFormatter
     }
 
     /**
+     * Only browser-bound HTML is formatted.
+     *
+     * A `.mail.twig` carries table layouts, inline styles and Outlook conditional comments
+     * that tidy would restructure, so anything but `.html`, `.htm` or a bare `.twig` is left
+     * exactly as the template produced it. An empty name formats, for direct callers.
+     *
+     * @param string $template The template name the output came from.
+     */
+    private function isFormattable(string $template): bool
+    {
+        if ($template === '') {
+            return true;
+        }
+
+        $name = preg_replace('/\\.twig$/', '', $template) ?? $template;
+        $extension = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+
+        return $extension === '' || $extension === 'html' || $extension === 'htm';
+    }
+
+    /**
      * Whether the markup is a whole document rather than a fragment.
      *
      * Decided on the opening tag, which is the only signal that survives
@@ -163,8 +184,6 @@ final readonly class HtmlFormatter
      * anything else.
      *
      * @param string $html The rendered markup
-     *
-     * @return bool
      */
     private function isDocument(string $html): bool
     {

@@ -18,12 +18,16 @@ namespace PHPdot\Bun\Runtime;
 
 use PHPdot\Bun\Config\BunConfig;
 use PHPdot\Bun\Exception\BinaryDownloadException;
+use PHPdot\Bun\Exception\UnsupportedPlatformException;
 use PHPdot\Bun\Process\ProcessRunnerInterface;
 use PHPdot\Container\Attribute\Singleton;
+use Throwable;
 
 #[Singleton]
 final class BinaryResolver
 {
+    private null|string $resolved = null;
+
     /**
      * Wire the resolver to its config, platform detector, downloader, and process runner.
      *
@@ -44,32 +48,40 @@ final class BinaryResolver
     /**
      * Returns the pinned Bun binary path, downloading and verifying it under a lock when missing or stale.
      *
+     * The answer is memoized: after the first resolution in a process, later calls return the
+     * path without re-probing `--version` — the pin and the platform are immutable for the
+     * resolver's lifetime, so the memo cannot go stale. If a binary-removal API ever appears,
+     * it must clear the memo.
+     *
      * @throws BinaryDownloadException
-     * @throws \PHPdot\Bun\Exception\UnsupportedPlatformException
+     * @throws UnsupportedPlatformException
      *
      * @return string
      */
     public function resolve(): string
     {
+        if ($this->resolved !== null) {
+            return $this->resolved;
+        }
+
         $platform = $this->detector->detect();
-        $dir = $this->runtimeDir();
-        $target = $dir . DIRECTORY_SEPARATOR . $platform->binaryFilename();
+        $target = $this->runtimeDir() . DIRECTORY_SEPARATOR . $platform->binaryFilename();
         $version = $this->config->pinnedVersion;
 
         if ($this->isValid($target, $version)) {
-            return $target;
+            return $this->resolved = $target;
         }
 
         return $this->lock->withLock(
-            $dir . DIRECTORY_SEPARATOR . '.lock',
+            $this->runtimeDir() . DIRECTORY_SEPARATOR . '.lock',
             function () use ($platform, $target, $version): string {
                 if ($this->isValid($target, $version)) {
-                    return $target;
+                    return $this->resolved = $target;
                 }
 
                 $this->downloadAndVerify($platform, $target, $version);
 
-                return $target;
+                return $this->resolved = $target;
             },
         );
     }
@@ -124,7 +136,7 @@ final class BinaryResolver
 
         try {
             $result = $this->process->run($path, ['--version']);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return false;
         }
 
@@ -132,35 +144,14 @@ final class BinaryResolver
     }
 
     /**
-     * The directory the resolved Bun binary is cached in.
+     * The directory the resolved Bun binary is cached in: the configured home's
+     * runtime subdirectory. The home is absolute by config contract, so the
+     * binary is found from any working directory.
      *
      * @return string
      */
     private function runtimeDir(): string
     {
-        $dir = $this->config->runtimeDir;
-        if ($this->isAbsolute($dir)) {
-            return $dir;
-        }
-
-        $cwd = getcwd();
-
-        return ($cwd === false ? '.' : $cwd) . DIRECTORY_SEPARATOR . $dir;
-    }
-
-    /**
-     * Whether the given filesystem path is absolute.
-     *
-     * @param string $path
-     *
-     * @return bool
-     */
-    private function isAbsolute(string $path): bool
-    {
-        if (str_starts_with($path, '/')) {
-            return true;
-        }
-
-        return preg_match('#^[A-Za-z]:[\\\\/]#', $path) === 1;
+        return $this->config->homeDir . DIRECTORY_SEPARATOR . 'runtime';
     }
 }

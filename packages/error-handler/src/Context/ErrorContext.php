@@ -29,6 +29,7 @@ final readonly class ErrorContext
      * @param list<ContextTab> $context Extra debug tabs from context providers
      * @param list<\PHPdot\ErrorHandler\Solution\Solution> $solutions Suggested fixes
      * @param bool $isDevelopment Whether this is a development environment
+     * @param string|null $traceId The trace the request is logged under, when an engine is bound.
      */
     public function __construct(
         public \Throwable $exception,
@@ -39,5 +40,6 @@ final readonly class ErrorContext
         public array $context,
         public array $solutions,
         public bool $isDevelopment,
+        public null|string $traceId = null,
     ) {}
 }

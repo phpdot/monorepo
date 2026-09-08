@@ -24,6 +24,8 @@ final readonly class AttributeMap
      * @param list<string> $filter
      * @param int $generatedAt
      * @param int $visibilityFilter
+     * @param null|string $classesKey Cache identity of the explicit class list a
+     *                                `Scanner::scanClasses()` run scanned; null for directory scans
      */
     public function __construct(
         public array $classes,
@@ -31,6 +33,7 @@ final readonly class AttributeMap
         public array $directories,
         public array $filter,
         public int $visibilityFilter = 0,
+        public null|string $classesKey = null,
     ) {}
 
     /**
@@ -44,7 +47,7 @@ final readonly class AttributeMap
      *         extends: ?string,
      *         results: list<array{
      *             attribute: string,
-     *             arguments: list<mixed>,
+     *             arguments: array<int|string, mixed>,
      *             class: string,
      *             target: string,
      *             method: ?string,
@@ -56,7 +59,8 @@ final readonly class AttributeMap
      *     generatedAt: int,
      *     directories: list<string>,
      *     filter: list<string>,
-     *     visibilityFilter?: int
+     *     visibilityFilter?: int,
+     *     classesKey?: null|string
      * } $data
      *
      * @return self
@@ -74,7 +78,7 @@ final readonly class AttributeMap
                  */
                 $attr = $resultData['attribute'];
                 /**
-                 * @var list<mixed> $args
+                 * @var array<int|string, mixed> $args
                  */
                 $args = $resultData['arguments'];
 
@@ -116,6 +120,7 @@ final readonly class AttributeMap
             directories: $data['directories'],
             filter: $data['filter'],
             visibilityFilter: $data['visibilityFilter'] ?? 0,
+            classesKey: $data['classesKey'] ?? null,
         );
     }
 
@@ -174,7 +179,7 @@ final readonly class AttributeMap
      *         extends: ?string,
      *         results: list<array{
      *             attribute: string,
-     *             arguments: list<mixed>,
+     *             arguments: array<int|string, mixed>,
      *             class: string,
      *             target: string,
      *             method: ?string,
@@ -186,7 +191,8 @@ final readonly class AttributeMap
      *     generatedAt: int,
      *     directories: list<string>,
      *     filter: list<string>,
-     *     visibilityFilter?: int
+     *     visibilityFilter?: int,
+     *     classesKey?: null|string
      * }
      */
     public function toCache(): array
@@ -224,6 +230,7 @@ final readonly class AttributeMap
             'directories' => $this->directories,
             'filter' => $this->filter,
             'visibilityFilter' => $this->visibilityFilter,
+            'classesKey' => $this->classesKey,
         ];
     }
 }

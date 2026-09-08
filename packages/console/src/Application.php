@@ -14,6 +14,7 @@ namespace PHPdot\Console;
 use PHPdot\Console\Cache\CommandCache;
 use PHPdot\Console\Discovery\CommandDiscovery;
 use PHPdot\Console\Exception\ConsoleException;
+use PHPdot\Pool\PoolRegistry;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use Symfony\Component\Console\Application as SymfonyApplication;
@@ -258,7 +259,44 @@ final class Application
      */
     public function run(null|InputInterface $input = null, null|OutputInterface $output = null): int
     {
-        return $this->symfony->run($input, $output);
+        $exit = $this->symfony->run($input, $output);
+
+        $this->releasePools();
+
+        return $exit;
+    }
+
+    /**
+     * Unpin the event loop from any pool timers the command built.
+     *
+     * A command that resolves a pooled connection starts the pool's idle and
+     * heartbeat ticks — and nothing on the console path ever suspends them
+     * (the server suspends pools on worker exit; a CLI has no worker). The
+     * ticks hold the process open after the command answers, and the shell
+     * hangs on a command that already printed its output. Suspending — never
+     * closing — matches the worker-exit behavior: connections stay valid for
+     * anything still reading them, and the OS reclaims them at exit.
+     *
+     * Soft-coupled: a no-op without phpdot/pool or without a registry in the
+     * container.
+     *
+     * @return void
+     */
+    private function releasePools(): void
+    {
+        if ($this->container === null || !class_exists(PoolRegistry::class)) {
+            return;
+        }
+
+        if (!$this->container->has(PoolRegistry::class)) {
+            return;
+        }
+
+        $registry = $this->container->get(PoolRegistry::class);
+
+        if ($registry instanceof PoolRegistry) {
+            $registry->suspendAll();
+        }
     }
 
     /**

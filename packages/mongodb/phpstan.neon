@@ -5,3 +5,14 @@ parameters:
     level: max
     paths:
         - src
+    # The 1.19 pairing — the last driver generation that speaks to MongoDB 3.6, and a
+    # supported half of this package's `^1.19 || ^2.1` line — ships no MongoDB\Builder\Pipeline.
+    # The union types naming it are written so the class is never loaded there (see
+    # Collection::aggregate), but analysis on that line still cannot resolve it. Ignoring
+    # only the errors that name the class keeps the package self-checkable on both majors;
+    # on 2.x the class resolves and none of these match, hence reportUnmatchedIgnoredErrors.
+    ignoreErrors:
+        -
+            message: '#MongoDB\\Builder\\Pipeline#'
+            path: src/Collection/Collection.php
+    reportUnmatchedIgnoredErrors: false

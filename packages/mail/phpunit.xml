@@ -19,4 +19,10 @@
             <directory>src</directory>
         </include>
     </source>
+    <!-- Compose-stack defaults (docker-compose.yml shifts host ports off the local
+         defaults); the env vars override for other environments. -->
+    <php>
+        <env name="MAILPIT_SMTP_PORT" value="1026"/>
+        <env name="MAILPIT_HTTP_PORT" value="8026"/>
+    </php>
 </phpunit>

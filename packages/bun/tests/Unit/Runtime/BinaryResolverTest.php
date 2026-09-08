@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
 
 final class BinaryResolverTest extends TestCase
 {
-    private const string VERSION = '1.3.14';
+    private const string VERSION = '1.4.0';
 
     private string $runtimeDir;
 
@@ -31,20 +31,23 @@ final class BinaryResolverTest extends TestCase
 
     protected function tearDown(): void
     {
-        if (!is_dir($this->runtimeDir)) {
+        $this->removeTree($this->runtimeDir);
+    }
+
+    private function removeTree(string $dir): void
+    {
+        if (!is_dir($dir)) {
             return;
         }
         // scandir lists hidden entries (the .lock file) and is portable; GLOB_BRACE is glibc-only.
-        foreach ((array) scandir($this->runtimeDir) as $entry) {
+        foreach ((array) scandir($dir) as $entry) {
             if ($entry === '.' || $entry === '..') {
                 continue;
             }
-            $path = $this->runtimeDir . DIRECTORY_SEPARATOR . $entry;
-            if (is_file($path)) {
-                @unlink($path);
-            }
+            $path = $dir . DIRECTORY_SEPARATOR . $entry;
+            is_dir($path) ? $this->removeTree($path) : @unlink($path);
         }
-        @rmdir($this->runtimeDir);
+        @rmdir($dir);
     }
 
     public function testResolvesAndCachesWhenStandardBinaryWorks(): void
@@ -57,16 +60,17 @@ final class BinaryResolverTest extends TestCase
         $stdUrl = 'https://example.test/std.tgz';
         $this->mapPackage($http, $platform->npmPackage(), $stdUrl, $stdTgz);
 
-        $runner = new FakeProcessRunner([$this->valid(), $this->valid()]);
+        $runner = new FakeProcessRunner([$this->valid()]);
         $resolver = $this->resolver($http, $detector, $runner);
 
         $path = $resolver->resolve();
 
-        self::assertSame($this->runtimeDir . DIRECTORY_SEPARATOR . $platform->binaryFilename(), $path);
+        self::assertSame($this->runtimeDir . DIRECTORY_SEPARATOR . '.bun' . DIRECTORY_SEPARATOR . 'runtime' . DIRECTORY_SEPARATOR . $platform->binaryFilename(), $path);
         self::assertSame('STD-BINARY', file_get_contents($path));
 
-        // Second resolve finds a valid cached binary and must not re-download.
+        // Second resolve answers from the memo: no second probe subprocess, no re-download.
         $resolver->resolve();
+        self::assertCount(1, $runner->calls, 'the version probe runs once for the process, not once per resolve');
         self::assertSame(1, $http->hits[$stdUrl] ?? 0);
     }
 
@@ -123,7 +127,7 @@ final class BinaryResolverTest extends TestCase
     private function resolver(FakeHttpClient $http, PlatformDetector $detector, FakeProcessRunner $runner): BinaryResolver
     {
         $factory = new Psr17Factory();
-        $config = new BunConfig(runtimeDir: $this->runtimeDir);
+        $config = new BunConfig(resourcesDir: $this->runtimeDir, outputDir: $this->runtimeDir);
         $downloader = new BinaryDownloader($http, $factory, new NpmRegistryClient($http, $factory, $config));
 
         return new BinaryResolver($config, $detector, $downloader, $runner, new RuntimeLock());

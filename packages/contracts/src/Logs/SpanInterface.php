@@ -49,6 +49,16 @@ interface SpanInterface
     public function setStatus(string $status, string $description = ''): static;
 
     /**
+     * The current outcome status — 'unset', 'ok', or 'error'.
+     *
+     * Readers use it to preserve an explicitly set status: the engine stamps
+     * 'ok' on spans it closes cleanly, but never over a status the caller set.
+     *
+     * @return string
+     */
+    public function status(): string;
+
+    /**
      * The trace identity of this span — for propagation and correlation.
      *
      * @return SpanContextInterface
@@ -82,6 +92,19 @@ interface SpanInterface
     public function info(string $message, array $context = []): PendingLogInterface;
 
     /**
+     * Emit a notice-level log line correlated to this span.
+     *
+     * Returns a pending handle written when released; call secure() to encrypt
+     * the line — $span->notice('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function notice(string $message, array $context = []): PendingLogInterface;
+
+    /**
      * Emit a warning-level log line correlated to this span.
      *
      * Returns a pending handle written when released; call secure() to encrypt
@@ -106,6 +129,45 @@ interface SpanInterface
      * @return PendingLogInterface
      */
     public function error(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit a critical-level log line correlated to this span.
+     *
+     * Returns a pending handle written when released; call secure() to encrypt
+     * the line — $span->critical('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function critical(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit an alert-level log line correlated to this span.
+     *
+     * Returns a pending handle written when released; call secure() to encrypt
+     * the line — $span->alert('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function alert(string $message, array $context = []): PendingLogInterface;
+
+    /**
+     * Emit an emergency-level log line correlated to this span.
+     *
+     * Returns a pending handle written when released; call secure() to encrypt
+     * the line — $span->emergency('...')->secure().
+     *
+     * @param array<string, mixed> $context
+     * @param string $message
+     *
+     * @return PendingLogInterface
+     */
+    public function emergency(string $message, array $context = []): PendingLogInterface;
 
     /**
      * End the span: stamp its end time and export it to the writer. Idempotent.

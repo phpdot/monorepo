@@ -36,4 +36,15 @@ final class MailboxTest extends TestCase
 
         new Mailbox('alice @example.com');
     }
+
+    public function testTheRejectionMessageStaysOneLineForAHostileAddress(): void
+    {
+        try {
+            new Mailbox("bad address\r\nBcc: evil@example.com");
+            self::fail('a malformed address must throw');
+        } catch (MailException $e) {
+            self::assertStringNotContainsString("\n", $e->getMessage());
+            self::assertStringNotContainsString("\r", $e->getMessage());
+        }
+    }
 }

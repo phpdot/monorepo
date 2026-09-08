@@ -30,7 +30,7 @@ final class BuildTest extends TestCase
             self::markTestSkipped('symfony/http-client is required for the integration test');
         }
         $this->dir = sys_get_temp_dir() . '/phpdot-bun-build-' . uniqid();
-        mkdir($this->dir, 0755, true);
+        mkdir($this->dir, 0o755, true);
     }
 
     protected function tearDown(): void
@@ -110,7 +110,7 @@ final class BuildTest extends TestCase
     private function writeWatchRunner(): string
     {
         $autoload = dirname((new \ReflectionClass(\Composer\Autoload\ClassLoader::class))->getFileName(), 2) . '/autoload.php';
-        $runtimeDir = sys_get_temp_dir() . '/phpdot-bun-it-runtime';
+        $resourcesDir = sys_get_temp_dir() . '/phpdot-bun-it-resources';
         // Drive the real Bun service in a subprocess via the test factory, which constructs the graph
         // directly (no container) — same wiring as the rest of the suite. Nowdoc keeps the template
         // readable; strtr injects the paths.
@@ -120,12 +120,12 @@ final class BuildTest extends TestCase
 
             use PHPdot\Bun\Tests\Support\IntegrationBun;
 
-            exit(IntegrationBun::create('{{RUNTIME}}')->watch('entry.ts', fn ($b) => $b->outDir('dist'), '{{PROJECT}}'));
+            exit(IntegrationBun::create('{{RESOURCES}}')->watch('entry.ts', fn ($b) => $b->outDir('dist'), '{{PROJECT}}'));
             PHP;
 
         $code = strtr($template, [
             '{{AUTOLOAD}}' => $autoload,
-            '{{RUNTIME}}' => $runtimeDir,
+            '{{RESOURCES}}' => $resourcesDir,
             '{{PROJECT}}' => $this->dir,
         ]);
 

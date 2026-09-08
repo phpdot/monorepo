@@ -50,6 +50,24 @@ final class ReflectionScannerTest extends TestCase
     }
 
     #[Test]
+    public function argumentsPreserveNamedKeys(): void
+    {
+        $map = $this->scanner->scan([AnnotatedController::class]);
+
+        $class = $map->getClass(AnnotatedController::class);
+        self::assertNotNull($class);
+
+        $route = $class->methodAttributes()[0];
+        self::assertSame(Route::class, $route->attribute);
+        self::assertSame('index', $route->method);
+        self::assertSame(
+            ['/users', 'methods' => ['GET'], 'name' => 'users.index'],
+            $route->arguments,
+        );
+        self::assertSame('users.index', $route->instance->name);
+    }
+
+    #[Test]
     public function scanSetsDirectoriesOnMap(): void
     {
         $map = $this->scanner->scan([AnnotatedController::class], directories: ['/src']);

@@ -19,7 +19,7 @@ consumers depend on the contract, not the implementation.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/contracts` | `^0.2` |
+| `phpdot/contracts` | `^0.3` |
 | `psr/http-message` | `^2.0` |
 | `psr/http-server-handler` | `^1.0` |
 | `psr/http-server-middleware` | `^1.0` |

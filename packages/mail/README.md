@@ -64,7 +64,9 @@ final class Welcome
 
 Every message needs a sender: set `fromEmail` in `MailConfig` so chains can omit `->from()`, or call
 `->from('you@example.com', 'You')` explicitly. `cc()`, `bcc()`, `replyTo()`, `attach()`/`attachData()`,
-`priority()`, and `header()` round out the builder.
+`priority()`, and `header()` round out the builder. Header names must be RFC 5322 field names —
+printable ASCII without a colon — so `->header("X-Bad\r\nBcc: …", …)` throws
+`InvalidHeaderNameException` where it is set instead of injecting lines onto the wire.
 
 ### Composing without sending
 
@@ -80,9 +82,13 @@ $base->to('bob@example.com')->subject('Hi')->send();   // $base is untouched
 
 ### Outcomes
 
-`send()` returns a `Receipt` (with the message id) when the transport **accepts** the message, and throws
+`send()` returns a `Receipt` (the message id plus the transport's debug transcript — the SMTP session
+log when the wire talks SMTP) when the transport **accepts** the message, and throws
 `TransportException` when it is rejected — every Symfony failure is translated into the package's own
-`MailException` hierarchy, so no Symfony type leaks into your code. Accepted is not the same as delivered:
+`MailException` hierarchy, so no Symfony type leaks into your code. The exceptions are shaped for
+trace logs: messages are single-line with offending values escaped, and context getters
+(`getScheme()` on `TransportException`, `getHeaderName()` on `InvalidHeaderNameException`) expose the
+facts a log line wants — never the DSN, which holds credentials. Accepted is not the same as delivered:
 a `Receipt` means the transport took responsibility, not that the mailbox received it.
 
 ## Architecture
@@ -98,11 +104,15 @@ graph TD
     MESSAGE["Message<br/><br/>immutable fluent builder"]
     TRANSPORT["Transport<br/><br/>per-send, one-shot socket"]
     FACTORY["EmailFactory<br/><br/>Message → symfony/mime Email"]
+    CONFIG["MailConfig<br/><br/>#[Config('mail')] — DSN, fallback sender"]
     SYMFONY["symfony/mailer + symfony/mime"]
-    RECEIPT["Receipt<br/><br/>message id (accepted)"]
+    RECEIPT["Receipt<br/><br/>message id + debug (accepted)"]
 
     MAILER --> MESSAGE
+    MAILER --> TRANSPORT
     MESSAGE --> TRANSPORT
+    CONFIG --> TRANSPORT
+    CONFIG --> FACTORY
     TRANSPORT --> FACTORY
     FACTORY --> SYMFONY
     TRANSPORT --> SYMFONY

@@ -23,6 +23,7 @@ use PHPdot\Pool\Exception\PoolClosedException;
 use Swoole\Coroutine;
 use Swoole\Coroutine\Channel;
 use Swoole\Timer;
+use Throwable;
 
 final class Pool
 {
@@ -39,6 +40,18 @@ final class Pool
     private array $borrowed = [];
 
     private bool $closed = false;
+
+    /**
+     * Set at worker exit: timers stop AND the release path closes instead of
+     * validating. A liveness ping on release is a SOCKET READ, and a read
+     * parked on a silent socket outlives every configured timeout under the
+     * coroutine hooks — the parked release then holds the worker drain for
+     * its full window. Closing answers instantly, and a borrower that still
+     * needs a connection during the drain gets a fresh one.
+     */
+    private bool $draining = false;
+
+    private bool $initialized = false;
 
     private null|int $idleTimerId = null;
 
@@ -72,12 +85,21 @@ final class Pool
     /**
      * Initialize the pool: create minConnections and start timers.
      *
+     * Idempotent — a second call is a no-op, so the explicit call and the
+     * first-borrow self-initialisation can never double-arm the timers.
+     *
      * MUST be called inside a Swoole coroutine context.
      *
      * @return void
      */
     public function init(): void
     {
+        if ($this->initialized) {
+            return;
+        }
+
+        $this->initialized = true;
+
         $now = microtime(true);
 
         for ($i = 0; $i < $this->config->minConnections; $i++) {
@@ -86,7 +108,7 @@ final class Pool
                 $this->channel->push(new PooledItem($connection, $now));
                 $this->currentCount++;
                 $this->createCount++;
-            } catch (\Throwable) {
+            } catch (Throwable) {
             }
         }
 
@@ -95,6 +117,11 @@ final class Pool
 
     /**
      * Borrow a connection from the pool.
+     *
+     * The first borrow initialises the pool: minimum connections are created
+     * and the maintenance timers start, inside the coroutine the borrow runs
+     * in — so a pool that is merely constructed and used is never a pool
+     * whose sizing and idle configuration silently do nothing.
      *
      * When the pool grows on demand, the slot is reserved (`currentCount++`) before
      * the yielding `connect()` call, so concurrent coroutines cannot both pass the
@@ -109,6 +136,10 @@ final class Pool
     {
         if ($this->closed) {
             throw new PoolClosedException('Connection pool is closed');
+        }
+
+        if (!$this->initialized) {
+            $this->init();
         }
 
         $deadline = microtime(true) + $this->config->borrowTimeout;
@@ -134,7 +165,7 @@ final class Pool
                     $this->createCount++;
 
                     return $this->markBorrowed($connection);
-                } catch (\Throwable $e) {
+                } catch (Throwable $e) {
                     $this->currentCount--;
 
                     throw $e;
@@ -186,7 +217,7 @@ final class Pool
      */
     private function validateBorrowedItem(PooledItem $item): object|null
     {
-        if (!$this->shouldValidateOnBorrow($item)) {
+        if ($this->draining || !$this->shouldValidateOnBorrow($item)) {
             return $item->connection;
         }
 
@@ -240,7 +271,7 @@ final class Pool
         unset($this->borrowed[$id]);
         $this->releaseCount++;
 
-        if ($this->closed) {
+        if ($this->closed || $this->draining) {
             $this->closeConnection($connection);
 
             return;
@@ -350,6 +381,24 @@ final class Pool
     }
 
     /**
+     * The worker-exit call: stop the maintenance timers AND stop validating.
+     *
+     * Validation is a socket read, and under the coroutine hooks a read
+     * parked on a silent socket outlives every timeout — one parked
+     * release-ping measurably holds a worker drain for its full window.
+     * Releasing closes instead; a borrower that still needs a connection
+     * during the drain gets a fresh one.
+     *
+     * @return void
+     */
+    public function drain(): void
+    {
+        $this->draining = true;
+
+        $this->stopTimers();
+    }
+
+    /**
      * Check if the pool has been closed.
      *
      * @return bool
@@ -398,7 +447,7 @@ final class Pool
     {
         try {
             $this->connector->close($connection);
-        } catch (\Throwable) {
+        } catch (Throwable) {
         }
 
         $this->currentCount--;
@@ -549,7 +598,7 @@ final class Pool
                 $this->channel->push(new PooledItem($connection, $now));
                 $this->currentCount++;
                 $this->createCount++;
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 break;
             }
         }

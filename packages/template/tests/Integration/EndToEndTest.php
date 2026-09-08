@@ -43,7 +43,7 @@ final class EndToEndTest extends TestCase
 
     public function test_renders_with_discovered_extension(): void
     {
-        $config = new TemplateConfig(paths: ['__main__' => [$this->viewsDir]]);
+        $config = new TemplateConfig(paths: ['__main__' => [$this->viewsDir]], format: false);
 
         $container = new ArrayContainer();
         $container->set(GreetingExtension::class, new GreetingExtension());
@@ -76,6 +76,7 @@ final class EndToEndTest extends TestCase
         $config = new TemplateConfig(
             paths: ['__main__' => [$this->uniqueViewsDir]],
             cache: $this->cacheDir,
+            format: false,
         );
 
         $view = $this->makeView($config);

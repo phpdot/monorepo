@@ -20,6 +20,8 @@ final class TemplateConfigTest extends TestCase
         self::assertSame('UTF-8', $config->charset);
         self::assertFalse($config->autoReload);
         self::assertSame('html', $config->autoescape);
+        self::assertTrue($config->format);
+        self::assertSame([], $config->formatOptions);
     }
 
     public function test_constructor_accepts_all_fields(): void

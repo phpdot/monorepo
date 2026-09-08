@@ -68,6 +68,6 @@ final class SearchCommandTest extends TestCase
     {
         $factory = new Psr17Factory();
 
-        return new NpmRegistryClient($http, $factory, new BunConfig());
+        return new NpmRegistryClient($http, $factory, new BunConfig(resourcesDir: "/tmp/bun-test", outputDir: "/tmp/bun-test"));
     }
 }

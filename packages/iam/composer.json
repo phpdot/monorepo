@@ -1,0 +1,72 @@
+{
+    "name": "phpdot/iam",
+    "description": "Identity and access management for the PHPdot ecosystem — staged policy-driven authentication, typed permissions, and policy-class authorization. No policy engine, no DSL.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Omar Hamdan",
+            "email": "omar@phpdot.com"
+        }
+    ],
+    "keywords": [
+        "iam",
+        "identity",
+        "authentication",
+        "authorization",
+        "auth",
+        "rbac",
+        "permissions",
+        "phpdot"
+    ],
+    "require": {
+        "php": ">=8.5",
+        "ext-mbstring": "*",
+        "phpdot/attribute": "^0.3",
+        "phpdot/console": "^0.3",
+        "phpdot/contracts": "^0.3",
+        "psr/clock": "^1.0",
+        "psr/container": "^2.0",
+        "symfony/console": "^8.0"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpdot/container": "^0.3",
+        "phpstan/phpstan": "^2.0",
+        "phpstan/phpstan-strict-rules": "^2.0",
+        "phpunit/phpunit": "^13.0"
+    },
+    "suggest": {
+        "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
+        "phpdot/http": "PSR-7/17 message plumbing for hosts wiring the authorization edge as middleware.",
+        "phpdot/session": "Session-backed authenticator and pending-auth store (SessionAuthenticator, SessionPendingAuthStore) over any SessionInterface implementation."
+    },
+    "autoload": {
+        "psr-4": {
+            "PHPdot\\Iam\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "PHPdot\\Iam\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "analyse": "phpstan analyse --memory-limit=256M",
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "check": [
+            "@test",
+            "@analyse",
+            "@cs-check"
+        ]
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "support": {
+        "source": "https://github.com/phpdot/iam",
+        "issues": "https://github.com/phpdot/monorepo/issues"
+    }
+}

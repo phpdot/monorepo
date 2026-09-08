@@ -14,6 +14,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Message;
 
+use PHPdot\Mail\Exception\InvalidHeaderNameException;
 use PHPdot\Mail\Exception\MailException;
 use PHPdot\Mail\Receipt;
 
@@ -247,15 +248,23 @@ final class Message
     }
 
     /**
-     * Returns a copy of the message with a custom header set.
+     * Returns a copy of the message with a custom header set. The name must
+     * be an RFC 5322 field name — printable ASCII without a colon — so a
+     * name carrying a line break is rejected here, not injected onto the wire.
      *
      * @param string $name
      * @param string $value
+     *
+     * @throws InvalidHeaderNameException when the name cannot be a header name
      *
      * @return self
      */
     public function header(string $name, string $value): self
     {
+        if (preg_match('/^[\x21-\x39\x3B-\x7E]+$/', $name) !== 1) {
+            throw InvalidHeaderNameException::notAFieldName($name);
+        }
+
         $clone = clone $this;
         $clone->headers[$name] = $value;
 

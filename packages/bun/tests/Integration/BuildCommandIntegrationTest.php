@@ -30,7 +30,7 @@ final class BuildCommandIntegrationTest extends TestCase
             self::markTestSkipped('symfony/http-client is required for the integration test');
         }
         $this->dir = sys_get_temp_dir() . '/phpdot-bun-cmd-' . uniqid();
-        mkdir($this->dir, 0755, true);
+        mkdir($this->dir, 0o755, true);
         // The command runs bun with cwd=null, so the throwaway metafile resolves against the process
         // cwd; run inside the fixture dir so it lands in temp instead of the repo.
         $this->cwd = (string) getcwd();

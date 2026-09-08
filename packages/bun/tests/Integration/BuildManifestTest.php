@@ -32,7 +32,7 @@ final class BuildManifestTest extends TestCase
             self::markTestSkipped('symfony/http-client is required for the integration test');
         }
         $this->dir = sys_get_temp_dir() . '/phpdot-bun-manifest-' . uniqid();
-        mkdir($this->dir, 0755, true);
+        mkdir($this->dir, 0o755, true);
     }
 
     protected function tearDown(): void
@@ -56,7 +56,7 @@ final class BuildManifestTest extends TestCase
         $manifest = $this->dir . '/public/build/manifest.json';    // the single, deployable file
         self::assertFileExists($manifest, 'the trimmed, deployable manifest');
         self::assertFileDoesNotExist(
-            $this->dir . '/.phpdot/build/metafile.json',
+            $this->dir . '/resources/.bun/build/metafile.json',
             'the verbose metafile is a throwaway, removed after distilling',
         );
 
@@ -75,7 +75,7 @@ final class BuildManifestTest extends TestCase
         );
         self::assertCount(1, $withToken, 'shared dependency must be deduped into exactly one chunk');
 
-        $resolver = new Manifest($manifest, '/build');
+        $resolver = new Manifest($manifest, '/build', $this->dir);
         $indexJs = $resolver->js('index.ts');
         $crmJs = $resolver->js('crm.ts');
 
@@ -87,7 +87,7 @@ final class BuildManifestTest extends TestCase
 
     private function bun(): Bun
     {
-        return IntegrationBun::create();
+        return IntegrationBun::create(resourcesDir: $this->dir);
     }
 
     private function deleteTree(string $path): void

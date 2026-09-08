@@ -333,6 +333,52 @@ final class Psr3WriterTest extends TestCase
     }
 
     #[Test]
+    public function aSensitiveSpanKeepsItsFullShapeInsideTheCiphertext(): void
+    {
+        $logger = $this->logger();
+
+        (new Psr3Writer($logger, $this->encryptor()))->write([
+            'type' => 'span', 'name' => 'charge', 'kind' => 'server',
+            'channel' => 'billing', 'trace_id' => 't1', 'span_id' => 's1',
+            'status' => 'error', 'status_message' => 'declined',
+            'duration_ms' => 12.5, 'attributes' => ['card' => '4111111111111111'],
+            'events' => [['name' => 'retry']],
+            'secure' => true,
+        ]);
+
+        self::assertCount(1, $logger->calls);
+        $call = $logger->calls[0];
+        self::assertSame('info', $call['level']);
+        self::assertTrue($call['context']['encrypted']);
+        self::assertSame('billing', $call['context']['channel']);
+        self::assertSame('t1', $call['context']['trace_id']);
+        self::assertArrayNotHasKey('attributes', $call['context'], 'the span shape travels inside the ciphertext, not plaintext');
+
+        $sealed = json_decode($this->encryptor()->decrypt($call['message']), true);
+        self::assertIsArray($sealed);
+        self::assertSame('span charge', $sealed['message']);
+        self::assertSame('server', $sealed['context']['kind']);
+        self::assertSame('error', $sealed['context']['status']);
+        self::assertSame('declined', $sealed['context']['status_message']);
+        self::assertSame(12.5, $sealed['context']['duration_ms']);
+        self::assertSame('4111111111111111', $sealed['context']['attributes']['card']);
+        self::assertSame([['name' => 'retry']], $sealed['context']['events']);
+    }
+
+    #[Test]
+    public function aSensitiveSpanWithoutAnEncryptorIsDroppedNeverPlaintext(): void
+    {
+        $logger = $this->logger();
+
+        (new Psr3Writer($logger))->write([
+            'type' => 'span', 'name' => 'charge', 'secure' => true,
+            'attributes' => ['card' => '4111111111111111'],
+        ]);
+
+        self::assertSame([], $logger->calls, 'fail-closed: nothing forwarded without an encryptor');
+    }
+
+    #[Test]
     public function aFailingEncryptorDropsTheRecordAndNeverThrows(): void
     {
         $logger    = $this->logger();

@@ -208,6 +208,38 @@ final class ScannerTest extends TestCase
     }
 
     #[Test]
+    public function cacheForDifferentClassListIsNotReused(): void
+    {
+        $cache = new FileCache($this->cachePath);
+        $manager = new Scanner(cache: $cache);
+        $manager->scanClasses([AnnotatedController::class]);
+
+        $manager2 = new Scanner(cache: $cache);
+        $registry = $manager2->scanClasses([AnnotatedService::class]);
+
+        self::assertNotNull($registry->findByClass(AnnotatedService::class));
+        self::assertNull($registry->findByClass(AnnotatedController::class));
+    }
+
+    #[Test]
+    public function corruptCacheIsARescanNotACrash(): void
+    {
+        $fixturesDir = dirname(__DIR__) . '/Fixtures/Classes';
+        $cache = new FileCache($this->cachePath);
+        $scanner = new Scanner(cache: $cache);
+        $scanner->scan([$fixturesDir]);
+        self::assertTrue($cache->has());
+
+        file_put_contents($this->cachePath, '<?php return 42;');
+
+        $scanner2 = new Scanner(cache: $cache);
+        $registry = $scanner2->scan([$fixturesDir]);
+
+        self::assertNotNull($registry->findByClass(AnnotatedController::class));
+        self::assertTrue($cache->has());
+    }
+
+    #[Test]
     public function clearCacheDeletesFile(): void
     {
         $cache = new FileCache($this->cachePath);

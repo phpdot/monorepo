@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace PHPdot\Pool;
 
 use PHPdot\Container\Attribute\Config;
+use PHPdot\Pool\Exception\PoolException;
 
 #[Config('pool')]
 final readonly class PoolConfig
@@ -43,5 +44,11 @@ final readonly class PoolConfig
         public float $heartbeatInterval = 0.0,
         public float $validateOnBorrowAfterIdle = 5.0,
         public bool $validateOnReturn = true,
-    ) {}
+    ) {
+        if ($minConnections > $maxConnections) {
+            throw new PoolException(
+                "Pool configuration: minConnections ({$minConnections}) cannot exceed maxConnections ({$maxConnections})",
+            );
+        }
+    }
 }

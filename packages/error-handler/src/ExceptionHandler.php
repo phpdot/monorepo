@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PHPdot\ErrorHandler;
 
+use PHPdot\Contracts\Logs\TracerInterface;
 use PHPdot\ErrorHandler\Context\ContextTab;
 use PHPdot\ErrorHandler\Context\ErrorContext;
 use PHPdot\ErrorHandler\Context\StackTrace;
@@ -19,11 +20,16 @@ use PHPdot\ErrorHandler\Contract\RendererInterface;
 use PHPdot\ErrorHandler\Contract\SolutionProviderInterface;
 use PHPdot\ErrorHandler\Solution\Solution;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Log\LoggerInterface;
-use Psr\Log\LogLevel;
 
 final class ExceptionHandler
 {
+    /**
+     * Client navigation statuses that are logged as notices rather than
+     * warnings: the server behaved correctly, the client simply asked for
+     * something absent, disallowed, or gone.
+     */
+    private const ROUTINE_CLIENT_STATUSES = [404, 405, 410];
+
     /**
      * @var list<ContextProviderInterface>
      */
@@ -50,14 +56,18 @@ final class ExceptionHandler
      * @param RendererInterface $devRenderer Renderer for the development HTML debug page
      * @param RendererInterface $prodRenderer Renderer for the production HTML page
      * @param RendererInterface $jsonRenderer Renderer for RFC 9457 JSON responses
-     * @param ?LoggerInterface $logger PSR-3 logger; when null, exceptions are not logged
+     * @param ?TracerInterface $tracer The engine every handled exception is logged through,
+     *                                 at the status-mapped level, and whose active span is
+     *                                 marked 'error' — the converted throwable never crosses
+     *                                 the trace boundary itself. When null, exceptions are
+     *                                 neither logged nor marked.
      */
     public function __construct(
         private readonly string $environment,
         private RendererInterface $devRenderer,
         private RendererInterface $prodRenderer,
         private RendererInterface $jsonRenderer,
-        private null|LoggerInterface $logger = null,
+        private null|TracerInterface $tracer = null,
     ) {}
 
     /**
@@ -72,6 +82,7 @@ final class ExceptionHandler
     {
         $context = $this->buildContext($exception, $request);
 
+        $this->markSpan($exception);
         $this->log($exception, $context);
 
         if ($this->wantsJson($request)) {
@@ -112,15 +123,15 @@ final class ExceptionHandler
     }
 
     /**
-     * Set PSR-3 logger.
+     * Set the tracer exceptions are logged and marked through.
      *
-     * @param LoggerInterface $logger
+     * @param TracerInterface $tracer
      *
      * @return void
      */
-    public function setLogger(LoggerInterface $logger): void
+    public function setTracer(TracerInterface $tracer): void
     {
-        $this->logger = $logger;
+        $this->tracer = $tracer;
     }
 
     /**
@@ -224,6 +235,7 @@ final class ExceptionHandler
             context: $this->collectContext($exception, $request),
             solutions: $this->collectSolutions($exception),
             isDevelopment: $this->environment === 'development',
+            traceId: $this->tracer?->context()->traceId(),
         );
     }
 
@@ -330,31 +342,79 @@ final class ExceptionHandler
      */
     private function log(\Throwable $exception, ErrorContext $context): void
     {
-        if ($this->logger === null) {
+        if ($this->tracer === null) {
             return;
         }
 
-        $level = $this->getLogLevel($context->statusCode);
-
-        $this->logger->log($level, $exception->getMessage(), [
-            'exception' => $exception,
+        $level  = $this->getLogLevel($context->statusCode);
+        $record = [
+            'exception'   => $this->exceptionContext($exception),
             'status_code' => $context->statusCode,
-        ]);
+        ];
+
+        match ($level) {
+            'error' => $this->tracer->error($exception->getMessage(), $record),
+            'warning' => $this->tracer->warning($exception->getMessage(), $record),
+            'notice' => $this->tracer->notice($exception->getMessage(), $record),
+        };
     }
 
     /**
-     * Map HTTP status code to PSR-3 log level.
+     * The canonical engine exception shape — the same keys `_e()` produces —
+     * built locally so this package depends on contracts alone, not the engine.
+     *
+     * @param \Throwable $exception
+     *
+     * @return array<string, string|int|null>
+     */
+    private function exceptionContext(\Throwable $exception): array
+    {
+        return [
+            'class'   => $exception::class,
+            'message' => $exception->getMessage(),
+            'code'    => $exception->getCode(),
+            'file'    => $exception->getFile(),
+            'line'    => $exception->getLine(),
+        ];
+    }
+
+    /**
+     * Mark the active span 'error' — the span the exception was raised in.
+     *
+     * This handler is a converting boundary: the throwable it renders never
+     * crosses the trace boundary, so without this stamp a rendered 500 and a
+     * healthy response export the identical span status. Without a tracer the
+     * stamp is simply skipped.
+     *
+     * @param \Throwable $exception
+     *
+     * @return void
+     */
+    private function markSpan(\Throwable $exception): void
+    {
+        $this->tracer?->current()->setStatus('error', $exception->getMessage());
+    }
+
+    /**
+     * Map HTTP status code onto the tracer's own level vocabulary.
+     *
+     * The tokens are tracer method names — this package carries no PSR-3
+     * dependency. Routine client navigations (404, 405, 410) are notices —
+     * facts about the client's request, not incidents on our side. Every other
+     * 4xx stays a warning: validation and auth failures deserve operator
+     * attention even though the server behaved correctly.
      *
      * @param int $statusCode
      *
-     * @return string
+     * @return 'error'|'warning'|'notice'
      */
     private function getLogLevel(int $statusCode): string
     {
         return match (true) {
-            $statusCode >= 500 => LogLevel::ERROR,
-            $statusCode >= 400 => LogLevel::WARNING,
-            default => LogLevel::NOTICE,
+            $statusCode >= 500 => 'error',
+            in_array($statusCode, self::ROUTINE_CLIENT_STATUSES, true) => 'notice',
+            $statusCode >= 400 => 'warning',
+            default => 'notice',
         };
     }
 

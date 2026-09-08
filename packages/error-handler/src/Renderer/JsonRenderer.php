@@ -30,6 +30,10 @@ final class JsonRenderer implements RendererInterface
                 : self::getSafeMessage($context->statusCode),
         ];
 
+        if ($context->traceId !== null) {
+            $body['trace_id'] = $context->traceId;
+        }
+
         if ($context->isDevelopment) {
             $body['exception'] = [
                 'class' => $context->exception::class,
