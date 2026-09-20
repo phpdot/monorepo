@@ -89,7 +89,8 @@ services:
       retries: 30
 
   minio:
-    image: minio/minio
+    # Docker Hub deleted the minio/* repositories; quay.io is MinIO's official mirror
+    image: quay.io/minio/minio
     command: ["server", "/data", "--console-address", ":9001"]
     ports:
       - "9002:9000"
