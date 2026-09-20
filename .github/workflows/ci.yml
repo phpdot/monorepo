@@ -150,33 +150,40 @@ jobs:
       - name: README Requirements tables match composer.json
         run: php .github/scripts/readme-requirements-check.php
 
+      # MinIO never runs on GitHub Actions (2026-09-20 ruling): it stays a
+      # local docker-compose service, so only the Hub-backed services are
+      # pulled and started here, and the S3 suite is excluded below.
       - name: Pull test images (Docker Hub anonymous limits are per-runner per-hour; retry)
         run: |
           set -uo pipefail
+          SERVICES="mysql postgres rabbitmq mongodb mailpit redis redis-auth"
           for i in 1 2 3 4 5; do
-            docker compose pull && exit 0
+            docker compose pull $SERVICES && exit 0
             echo "pull attempt $i failed; retrying in $((i * 20))s"
             sleep $((i * 20))
           done
-          docker compose pull
+          docker compose pull $SERVICES
 
       - name: Start test services
         run: |
           set -euo pipefail
-          docker compose up -d --quiet-pull
+          docker compose up -d --quiet-pull mysql postgres rabbitmq mongodb mailpit redis redis-auth
           UNHEALTHY=pending
           for i in $(seq 1 90); do
-            UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy | grep -v minio-init || true)
+            UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy || true)
             [ -z "$UNHEALTHY" ] && break
             sleep 2
           done
           docker compose ps -a
           [ -z "$UNHEALTHY" ] || { echo "::error::services failed to become healthy: ${UNHEALTHY}"; exit 1; }
 
+      # A CLI --exclude-group replaces the phpunit.xml <groups><exclude> list
+      # rather than extending it, so `live` is restated beside the CI-only
+      # `s3` exclusion (local root runs keep the S3 suite against MinIO).
       - name: Tests
         env:
           DB_TESTS_REQUIRED: "1"
-        run: composer test
+        run: composer test -- --exclude-group live --exclude-group s3
 
       - name: Static analysis
         run: composer analyse
