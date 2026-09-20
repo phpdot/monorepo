@@ -18,9 +18,9 @@ the listener set is resolved through a repository so it can be persisted and tog
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/attribute` | `^0.3` |
-| `phpdot/console` | `^0.3` |
-| `phpdot/contracts` | `^0.3` |
+| `phpdot/attribute` | `^0.4` |
+| `phpdot/console` | `^0.4` |
+| `phpdot/contracts` | `^0.4` |
 | `psr/container` | `^2.0` |
 | `psr/event-dispatcher` | `^1.0` |
 | `symfony/console` | `^8.0` |

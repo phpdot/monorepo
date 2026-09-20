@@ -21,7 +21,7 @@ contract.
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-intl` | `*` |
-| `phpdot/contracts` | `^0.3` |
+| `phpdot/contracts` | `^0.4` |
 | `psr/simple-cache` | `^3.0` |
 
 `phpdot/container` is a dev-only suggestion — the `#[Config('i18n')]` / binding attributes are inert

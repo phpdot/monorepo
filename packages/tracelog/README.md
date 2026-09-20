@@ -29,7 +29,7 @@ It is a **peer** of [phpdot/psr3-bridge](https://github.com/phpdot/psr3-bridge) 
 |---|---|
 | PHP | `>= 8.5` |
 | ext-openssl | `*` — record encryption |
-| `phpdot/contracts` | `^0.3` |
+| `phpdot/contracts` | `^0.4` |
 
 `phpdot/container`, `phpdot/console`, `phpdot/logs`, `psr/container`, and `symfony/console` are
 `require-dev` + `suggest` entries, never `require`: the container attributes stay inert until a

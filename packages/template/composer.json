@@ -17,7 +17,7 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/package": "^0.3",
+        "phpdot/package": "^0.4",
         "psr/container": "^2.0",
         "twig/twig": "^3.10"
     },
@@ -29,9 +29,9 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/config": "^0.3",
-        "phpdot/console": "^0.3",
-        "phpdot/container": "^0.3",
+        "phpdot/config": "^0.4",
+        "phpdot/console": "^0.4",
+        "phpdot/container": "^0.4",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",

@@ -9,7 +9,14 @@
             "email": "omar@phpdot.com"
         }
     ],
-    "keywords": ["mail", "mailer", "email", "smtp", "swoole", "phpdot"],
+    "keywords": [
+        "mail",
+        "mailer",
+        "email",
+        "smtp",
+        "swoole",
+        "phpdot"
+    ],
     "require": {
         "php": ">=8.5",
         "symfony/mailer": "^8.0",
@@ -17,7 +24,7 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.3",
+        "phpdot/container": "^0.4",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"

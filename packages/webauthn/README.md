@@ -28,7 +28,7 @@ as one stage.
 | `ext-json` | `*` |
 | `ext-openssl` | `*` |
 | `paragonie/constant_time_encoding` | `^2.6 \|\| ^3.0` |
-| `phpdot/contracts` | `^0.3` |
+| `phpdot/contracts` | `^0.4` |
 | `psr/clock` | `^1.0` |
 | `symfony/serializer` | `^8.0` |
 | `web-auth/cose-lib` | `^4.7` |
