@@ -24,6 +24,11 @@
         </exclude>
     </groups>
     <php>
+        <!-- The root run executes ~2,000 tests in one process; integration suites
+             (multipart chunks, streamed uploads) collide with the default 128M limit
+             once earlier suites' allocations are resident — the historical
+             "order-dependent premature end" crashes were this exhaustion. -->
+        <ini name="memory_limit" value="1G"/>
         <!-- factories the vendored PSR-7 conformance suite builds its inputs from -->
         <const name="URI_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
         <const name="STREAM_FACTORY" value="PHPdot\Http\Factory\ResponseFactory"/>
