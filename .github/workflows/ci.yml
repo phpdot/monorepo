@@ -150,6 +150,16 @@ jobs:
       - name: README Requirements tables match composer.json
         run: php .github/scripts/readme-requirements-check.php
 
+      - name: Pull test images (Docker Hub anonymous limits are per-runner per-hour; retry)
+        run: |
+          set -uo pipefail
+          for i in 1 2 3 4 5; do
+            docker compose pull && exit 0
+            echo "pull attempt $i failed; retrying in $((i * 20))s"
+            sleep $((i * 20))
+          done
+          docker compose pull
+
       - name: Start test services
         run: |
           set -euo pipefail
