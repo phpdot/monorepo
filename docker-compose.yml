@@ -104,7 +104,8 @@ services:
       retries: 30
 
   minio-init:
-    image: minio/mc
+    # Docker Hub deleted the minio/mc repository; quay.io is MinIO's official mirror
+    image: quay.io/minio/mc
     depends_on:
       minio:
         condition: service_healthy
