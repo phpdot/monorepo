@@ -20,7 +20,7 @@ the factory threads any registered message translator into the bag automatically
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-mbstring` | `*` |
-| `phpdot/error` | `^0.4` |
+| `phpdot/error` | `^0.5` |
 
 `phpdot/container` is a dev-only suggestion for auto-wiring `ValidatorFactory`.
 

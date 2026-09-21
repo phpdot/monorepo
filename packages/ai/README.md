@@ -25,7 +25,7 @@ the part worth owning.
 | PHP | `>= 8.5` |
 | `ext-curl` | `*` |
 | `ext-json` | `*` |
-| `phpdot/config` | `^0.4` |
+| `phpdot/config` | `^0.5` |
 
 `phpdot/container` (dev-only suggestion) autowires the `#[Singleton]` accessors;
 `ext-swoole` is the runtime the client is proven under — the concurrency suite runs with

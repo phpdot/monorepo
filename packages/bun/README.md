@@ -28,7 +28,7 @@ JavaScript ever lands in the project root.
 | PHP | `>= 8.5` |
 | `ext-mbstring` | `*` |
 | `nyholm/psr7` | `^1.8` |
-| `phpdot/console` | `^0.4` |
+| `phpdot/console` | `^0.5` |
 | `psr/http-client` | `^1.0` |
 | `psr/http-factory` | `^1.0` |
 | `psr/http-message` | `^1.1 \|\| ^2.0` |

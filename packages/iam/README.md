@@ -25,9 +25,9 @@ you wrote.
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-mbstring` | `*` |
-| `phpdot/attribute` | `^0.4` |
-| `phpdot/console` | `^0.4` |
-| `phpdot/contracts` | `^0.4` |
+| `phpdot/attribute` | `^0.5` |
+| `phpdot/console` | `^0.5` |
+| `phpdot/contracts` | `^0.5` |
 | `psr/clock` | `^1.0` |
 | `psr/container` | `^2.0` |
 | `symfony/console` | `^8.0` |

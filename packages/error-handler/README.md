@@ -20,7 +20,7 @@ fully wired request pipeline.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/contracts` | `^0.4` |
+| `phpdot/contracts` | `^0.5` |
 | `psr/http-factory` | `^1.0` |
 | `psr/http-message` | `^2.0` |
 | `psr/http-server-middleware` | `^1.0` |

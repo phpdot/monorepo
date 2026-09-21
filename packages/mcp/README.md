@@ -28,9 +28,9 @@ including the host's own assistant — sees the same door.
 | `ext-json` | `*` |
 | `mcp/sdk` | `^0.8` |
 | `php-http/discovery` | `^1.20` |
-| `phpdot/attribute` | `^0.4` |
-| `phpdot/cache` | `^0.4` |
-| `phpdot/http` | `^0.4` |
+| `phpdot/attribute` | `^0.5` |
+| `phpdot/cache` | `^0.5` |
+| `phpdot/http` | `^0.5` |
 | `psr/container` | `^2.0` |
 | `psr/http-message` | `^2.0` |
 | `psr/http-server-handler` | `^1.0` |
