@@ -18,18 +18,18 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/attribute": "^0.4",
+        "phpdot/attribute": "^0.5",
         "psr/container": "^2.0",
         "symfony/console": "^8.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
+        "phpdot/container": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",
         "swoole/ide-helper": "^6.0",
-        "phpdot/pool": "^0.4"
+        "phpdot/pool": "^0.5"
     },
     "suggest": {
         "ext-swoole": "Activates the coroutine-aware helpers in Command (guarded by extension_loaded('swoole') at runtime); everything else works without it.",

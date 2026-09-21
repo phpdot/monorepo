@@ -1,6 +1,6 @@
 {
     "name": "phpdot/event",
-    "description": "PSR-14 event dispatcher with attribute-discovered listeners, ordering, an async seam with a sync fallback, and host-owned persistence \u2014 observability through phpdot/contracts spans.",
+    "description": "PSR-14 event dispatcher with attribute-discovered listeners, ordering, an async seam with a sync fallback, and host-owned persistence — observability through phpdot/contracts spans.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -19,16 +19,16 @@
     ],
     "require": {
         "php": ">=8.5",
-        "phpdot/attribute": "^0.4",
-        "phpdot/console": "^0.4",
-        "phpdot/contracts": "^0.4",
+        "phpdot/attribute": "^0.5",
+        "phpdot/console": "^0.5",
+        "phpdot/contracts": "^0.5",
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
         "symfony/console": "^8.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
+        "phpdot/container": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"

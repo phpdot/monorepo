@@ -21,7 +21,7 @@
         "ext-mbstring": "*",
         "nyholm/psr7": "^1.8",
         "php": ">=8.5",
-        "phpdot/console": "^0.4",
+        "phpdot/console": "^0.5",
         "psr/http-client": "^1.0",
         "psr/http-factory": "^1.0",
         "psr/http-message": "^1.1 || ^2.0",
@@ -31,8 +31,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
-        "phpdot/package": "^0.4",
+        "phpdot/container": "^0.5",
+        "phpdot/package": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -41,7 +41,7 @@
     "suggest": {
         "ext-curl": "Lets symfony/http-client use its curl transport for Bun runtime downloads; without it the native-stream transport is used.",
         "phpdot/container": "Autowires the #[Singleton]/#[Binds] services and the #[Config('bun')] DTO (the attributes stay inert until reflected, so standalone consumers don't need it installed).",
-        "phpdot/package": "Discovers BunInstaller at composer time \u2014 the hook that fills config/bun.php directory keys with portable absolute paths. Without it, set the three directory keys yourself.",
+        "phpdot/package": "Discovers BunInstaller at composer time — the hook that fills config/bun.php directory keys with portable absolute paths. Without it, set the three directory keys yourself.",
         "phpdot/config": "Populates BunConfig from config/bun.php when used with phpdot/package.",
         "ext-pcntl": "Forwards SIGINT/SIGTERM to long-lived child processes (bun run dev server, build --watch) for clean shutdown."
     },

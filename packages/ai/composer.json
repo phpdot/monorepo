@@ -1,6 +1,6 @@
 {
     "name": "phpdot/ai",
-    "description": "LLM client layer for the PHPdot ecosystem \u2014 one streaming turn API over the two wire shapes that matter (Anthropic /messages and OpenAI-compatible /chat/completions), with tools, usage, and mid-turn cancellation, on ext-curl that yields coroutines under Swoole hooks.",
+    "description": "LLM client layer for the PHPdot ecosystem — one streaming turn API over the two wire shapes that matter (Anthropic /messages and OpenAI-compatible /chat/completions), with tools, usage, and mid-turn cancellation, on ext-curl that yields coroutines under Swoole hooks.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -24,11 +24,11 @@
         "php": ">=8.5",
         "ext-curl": "*",
         "ext-json": "*",
-        "phpdot/config": "^0.4"
+        "phpdot/config": "^0.5"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
+        "phpdot/container": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",
@@ -36,7 +36,7 @@
     },
     "suggest": {
         "phpdot/container": "Autowires the #[Singleton] Drivers accessor (the attribute stays inert until reflected, so standalone consumers don't need it installed) (^0.3).",
-        "ext-swoole": "The runtime the client is proven under \u2014 with SWOOLE_HOOK_ALL and SWOOLE_HOOK_NATIVE_CURL on, each turn's curl yields the coroutine instead of blocking the worker for the minutes a hard prompt can take."
+        "ext-swoole": "The runtime the client is proven under — with SWOOLE_HOOK_ALL and SWOOLE_HOOK_NATIVE_CURL on, each turn's curl yields the coroutine instead of blocking the worker for the minutes a hard prompt can take."
     },
     "autoload": {
         "psr-4": {

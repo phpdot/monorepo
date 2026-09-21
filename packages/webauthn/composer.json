@@ -1,6 +1,6 @@
 {
     "name": "phpdot/webauthn",
-    "description": "WebAuthn and passkeys for the PHPdot ecosystem \u2014 a production wrap of web-auth/webauthn-lib: ceremony orchestration, single-use challenges, duplicate-credential refusal, counter discipline, and an exception fence, with host-owned storage.",
+    "description": "WebAuthn and passkeys for the PHPdot ecosystem — a production wrap of web-auth/webauthn-lib: ceremony orchestration, single-use challenges, duplicate-credential refusal, counter discipline, and an exception fence, with host-owned storage.",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -22,7 +22,7 @@
         "ext-json": "*",
         "ext-openssl": "*",
         "paragonie/constant_time_encoding": "^2.6 || ^3.0",
-        "phpdot/contracts": "^0.4",
+        "phpdot/contracts": "^0.5",
         "psr/clock": "^1.0",
         "symfony/serializer": "^8.0",
         "web-auth/cose-lib": "^4.7",
@@ -30,14 +30,14 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
-        "phpdot/iam": "^0.4",
+        "phpdot/container": "^0.5",
+        "phpdot/iam": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"
     },
     "suggest": {
-        "phpdot/iam": "Enables the WebauthnStage bridge \u2014 WebAuthn as an AuthenticationStageInterface factor in the iam engine (^0.3).",
+        "phpdot/iam": "Enables the WebauthnStage bridge — WebAuthn as an AuthenticationStageInterface factor in the iam engine (^0.3).",
         "phpdot/container": "Autowires the container-attribute services and #[Config] DTOs declared in src (the attributes stay inert until reflected, so standalone consumers don't need it installed)."
     },
     "autoload": {

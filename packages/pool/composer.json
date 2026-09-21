@@ -19,13 +19,13 @@
     "require": {
         "ext-swoole": ">=6.2",
         "php": ">=8.5",
-        "phpdot/config": "^0.4",
-        "phpdot/contracts": "^0.4",
+        "phpdot/config": "^0.5",
+        "phpdot/contracts": "^0.5",
         "psr/container": "^2.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.4",
+        "phpdot/container": "^0.5",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0",
