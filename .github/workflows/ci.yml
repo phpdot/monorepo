@@ -64,7 +64,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/swoole/swoole.so
-          key: swoole-6.2.2-php8.5-nopgsqlhook-${{ runner.os }}
+          key: swoole-6.2.3-php8.5-nopgsqlhook-${{ runner.os }}
 
       - name: Build Swoole without the pgsql hook
         if: steps.swoole-cache.outputs.cache-hit != 'true'
@@ -72,7 +72,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -q
           sudo apt-get install -y -q --no-install-recommends libssl-dev libcurl4-openssl-dev
-          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.2
+          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.3
           mkdir -p ~/swoole
           cp "$(php -r 'echo ini_get("extension_dir");')/swoole.so" ~/swoole/swoole.so
 
@@ -218,7 +218,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/swoole/swoole.so
-          key: swoole-6.2.2-php8.5-nopgsqlhook-${{ runner.os }}
+          key: swoole-6.2.3-php8.5-nopgsqlhook-${{ runner.os }}
 
       - name: Build Swoole without the pgsql hook
         if: steps.swoole-cache.outputs.cache-hit != 'true'
@@ -226,7 +226,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update -q
           sudo apt-get install -y -q --no-install-recommends libssl-dev libcurl4-openssl-dev
-          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.2
+          sudo pecl install --configureoptions 'enable-sockets="yes" enable-openssl="yes" enable-http2="yes" enable-swoole-curl="yes" enable-mysqlnd="no" enable-cares="no" enable-brotli="no" enable-zstd="no" enable-swoole-pgsql="no" enable-swoole-odbc="no" enable-swoole-oracle="no" enable-swoole-sqlite="no" enable-swoole-thread="no" enable-iouring="no"' swoole-6.2.3
           mkdir -p ~/swoole
           cp "$(php -r 'echo ini_get("extension_dir");')/swoole.so" ~/swoole/swoole.so
 
