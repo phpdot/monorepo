@@ -13,6 +13,28 @@ namespace PHPdot\MongoDB\Config;
 
 use PHPdot\Container\Attribute\Config;
 
+/**
+ * @phpstan-type UriOptionsShape = array{
+ *     readPreference?: string,
+ *     readConcernLevel?: string,
+ *     w?: string|int,
+ *     wtimeoutMS?: int,
+ *     journal?: bool,
+ *     retryWrites?: bool,
+ *     retryReads?: bool,
+ *     ssl?: bool,
+ *     tls?: bool,
+ *     authSource?: string,
+ *     authMechanism?: string,
+ *     replicaSet?: string,
+ *     appname?: string,
+ *     loadBalanced?: bool,
+ *     directConnection?: bool,
+ *     serverSelectionTimeoutMS?: int,
+ *     maxPoolSize?: int,
+ *     minPoolSize?: int,
+ * } & array<string, mixed>
+ */
 #[Config('mongodb')]
 final readonly class MongoConfig
 {
@@ -36,7 +58,7 @@ final readonly class MongoConfig
      * @param bool $retryReads Enable retryable reads
      * @param int $maxRetries Maximum reconnection retries
      * @param string $authSource Authentication database (empty = driver default)
-     * @param array<string, mixed> $options Additional URI options
+     * @param UriOptionsShape $options Additional URI options
      */
     public function __construct(
         public string|array $hosts = 'localhost',
@@ -81,9 +103,11 @@ final readonly class MongoConfig
     }
 
     /**
-     * Build the URI options array for the MongoDB\Client constructor.
+     * Build the URI options array for the MongoDB\Client constructor. The
+     * known keys carry the same vocabulary on both supported driver lines,
+     * and the shape stays open for whatever the configuration passes through.
      *
-     * @return array<string, mixed>
+     * @return UriOptionsShape
      */
     public function buildUriOptions(): array
     {
