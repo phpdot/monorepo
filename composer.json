@@ -28,7 +28,7 @@
         "doctrine/dbal": "^4.4",
         "dragonmantank/cron-expression": "^3.0",
         "league/mime-type-detection": "^1.16",
-        "mcp/sdk": "^0.8",
+        "mcp/sdk": "^0.8 || ^0.9",
         "mongodb/mongodb": "^2.1",
         "nyholm/psr7": "^1.8",
         "php-amqplib/php-amqplib": "^3.0",
