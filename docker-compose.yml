@@ -41,7 +41,7 @@ services:
       retries: 30
 
   mongodb:
-    image: mongo:8
+    image: mongo:8.3
     # single-node replica set so transaction tests work
     command: ["mongod", "--replSet", "rs0", "--port", "27018", "--bind_ip_all"]
     ports:
