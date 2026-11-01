@@ -175,7 +175,11 @@ jobs:
             sleep 2
           done
           docker compose ps -a
+          docker compose logs mongodb --tail 60 || true
           [ -z "$UNHEALTHY" ] || { echo "::error::services failed to become healthy: ${UNHEALTHY}"; exit 1; }
+          sleep 5
+          UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy || true)
+          [ -z "$UNHEALTHY" ] || { echo "::error::a service died right after becoming healthy: ${UNHEALTHY}"; docker compose logs mongodb --tail 80 || true; exit 1; }
 
       # A CLI --exclude-group replaces the phpunit.xml <groups><exclude> list
       # rather than extending it, so `live` is restated beside the CI-only
