@@ -12,7 +12,8 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Content;
 
-use PHPdot\Mail\Parser\Exception\CharsetConversionException;
+use ValueError;
+
 
 final class CharsetConverter
 {
@@ -40,6 +41,13 @@ final class CharsetConverter
         'utf-32be' => 'UTF-32BE',
         'utf-32le' => 'UTF-32LE',
 
+'iso-8859-8-i' => 'ISO-8859-8',
+        'iso-8859-8-i' => 'ISO-8859-8',
+        'x-gbk' => 'GBK',
+        'gbk' => 'GBK',
+        'gb2312' => 'GBK',
+        'iso-8859-11' => 'ISO-8859-11',
+        'windows-874' => 'ISO-8859-11',
         'iso-8859-1' => 'ISO-8859-1',
         'iso8859-1' => 'ISO-8859-1',
         'iso_8859-1' => 'ISO-8859-1',
@@ -298,14 +306,8 @@ final class CharsetConverter
     private function convertWithMb(string $content, string $fromCharset): string
     {
         try {
-            $result = mb_convert_encoding($content, 'UTF-8', $fromCharset);
-            if ($result === false) {
-                throw new CharsetConversionException(
-                    sprintf('mb_convert_encoding failed for charset "%s"', $fromCharset),
-                );
-            }
-            return $result;
-        } catch (\ValueError $e) {
+            return mb_convert_encoding($content, 'UTF-8', $fromCharset);
+        } catch (ValueError) {
 
             return $this->convertWithIconv($content, $fromCharset);
         }
@@ -321,9 +323,7 @@ final class CharsetConverter
                 return $content;
             }
 
-            throw new CharsetConversionException(
-                sprintf('Failed to convert from charset "%s" to UTF-8', $fromCharset),
-            );
+            return $this->convertWithMb($content, 'Windows-1252');
         }
 
         return $result;

@@ -60,7 +60,7 @@ final class MailParser
         return $parser->parseEmail($raw);
     }
 
-    public function parseEmail(string $raw): Email
+    public function parseEmail(string $raw, int $depth = 0): Email
     {
 
         if ($this->config->maxMessageSize > 0 && strlen($raw) > $this->config->maxMessageSize) {
@@ -80,7 +80,7 @@ final class MailParser
 
         $rootNode = $this->mimeParser->parse($body, $contentType, $headers);
 
-        return $this->buildEmail($headers, $rootNode);
+        return $this->buildEmail($headers, $rootNode, $depth);
     }
 
     /**
@@ -140,7 +140,7 @@ final class MailParser
         return new MimeHeader('text/plain', ['charset' => 'us-ascii']);
     }
 
-    private function buildEmail(HeaderCollection $headers, MimeNode $rootNode): Email
+    private function buildEmail(HeaderCollection $headers, MimeNode $rootNode, int $depth = 0): Email
     {
 
         $fromAddresses = $this->getAddresses($headers, 'From');
@@ -164,7 +164,7 @@ final class MailParser
         $calendar = null;
         $attachments = [];
 
-        $this->walkMimeTree($rootNode, $text, $html, $calendar, $attachments);
+        $this->walkMimeTree($rootNode, $text, $html, $calendar, $attachments, $depth);
 
         $receivedParser = new ReceivedHeaderParser($this->headerParser->getDateParser());
         $received = array_map(
@@ -280,6 +280,7 @@ final class MailParser
         string|null &$html,
         string|null &$calendar,
         array &$attachments,
+        int $depth = 0,
     ): void {
         $mimeType = $node->getMimeType();
         $disposition = $node->getDisposition();
@@ -288,11 +289,11 @@ final class MailParser
             $subType = $node->getSubType();
 
             if ($subType === 'alternative') {
-                $this->walkAlternative($node, $text, $html, $calendar, $attachments);
+                $this->walkAlternative($node, $text, $html, $calendar, $attachments, $depth);
             } else {
 
                 foreach ($node->children as $child) {
-                    $this->walkMimeTree($child, $text, $html, $calendar, $attachments);
+                    $this->walkMimeTree($child, $text, $html, $calendar, $attachments, $depth);
                 }
             }
 
@@ -301,11 +302,13 @@ final class MailParser
 
         if ($mimeType === 'message/rfc822') {
             $nestedEmail = null;
-            try {
-                $nestedParser = new self($this->config);
-                $nestedEmail = $nestedParser->parseEmail($node->getRawBody());
-            } catch (\Throwable) {
+            if ($depth < $this->config->maxNestingDepth) {
+                try {
+                    $nestedParser = new self($this->config);
+                    $nestedEmail = $nestedParser->parseEmail($node->getRawBody(), $depth + 1);
+                } catch (Throwable) {
 
+                }
             }
 
             $attachments[] = new Attachment(
@@ -379,6 +382,7 @@ final class MailParser
         string|null &$html,
         string|null &$calendar,
         array &$attachments,
+        int $depth = 0,
     ): void {
 
         foreach ($node->children as $child) {
@@ -391,7 +395,7 @@ final class MailParser
             }
 
             if ($child->isMultipart()) {
-                $this->walkMimeTree($child, $text, $html, $calendar, $attachments);
+                $this->walkMimeTree($child, $text, $html, $calendar, $attachments, $depth);
                 continue;
             }
 

@@ -219,15 +219,17 @@ final class AddressParser
     private function skipSourceRoute(): void
     {
 
-        if ($this->pos < $this->length && $this->input[$this->pos] === '@') {
-            $colonPos = strpos($this->input, ':', $this->pos);
-            if ($colonPos !== false) {
+        if ($this->pos >= $this->length || $this->input[$this->pos] !== '@') {
+            return;
+        }
 
-                $segment = substr($this->input, $this->pos, $colonPos - $this->pos);
-                if (!str_contains($segment, '<')) {
-                    $this->pos = $colonPos + 1;
-                }
-            }
+        $closePos = strpos($this->input, '>', $this->pos);
+        $windowEnd = $closePos === false ? $this->length : $closePos;
+        $window = substr($this->input, $this->pos, $windowEnd - $this->pos);
+
+        $colonPos = strpos($window, ':');
+        if ($colonPos !== false && !str_contains(substr($window, 0, $colonPos), '<')) {
+            $this->pos += $colonPos + 1;
         }
     }
 

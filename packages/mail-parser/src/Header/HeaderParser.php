@@ -105,6 +105,7 @@ final class HeaderParser
         $lines = explode("\r\n", $headerBlock);
         $headers = [];
         $currentLine = null;
+        $limit = $this->config->maxHeaderCount;
 
         foreach ($lines as $line) {
             if ($line === '') {
@@ -123,6 +124,10 @@ final class HeaderParser
 
             if ($currentLine !== null) {
                 $headers[] = $this->splitHeaderLine($currentLine);
+
+                if ($limit > 0 && count($headers) >= $limit) {
+                    break;
+                }
             }
             $currentLine = $line;
         }

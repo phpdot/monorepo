@@ -18,6 +18,8 @@ final readonly class ParserConfig
         public int $maxNestingDepth = 50,
         /** Maximum total header block size in bytes (2 MiB). */
         public int $maxHeaderSize = 2_097_152,
+        /** Maximum number of headers per block (0 = unlimited). */
+        public int $maxHeaderCount = 1000,
         /** Maximum individual attachment size in bytes (50 MiB). 0 = unlimited. */
         public int $maxAttachmentSize = 52_428_800,
         /** Maximum total message size in bytes (100 MiB). 0 = unlimited. */

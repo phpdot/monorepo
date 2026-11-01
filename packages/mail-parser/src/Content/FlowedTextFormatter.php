@@ -27,21 +27,10 @@ final class FlowedTextFormatter
 
         foreach ($lines as $line) {
 
-            $quoteDepth = 0;
-            $content = $line;
-
-            while ($content !== '' && $content[0] === '>') {
-                $quoteDepth++;
-                $content = substr($content, 1);
-
-                if ($content !== '' && $content[0] === ' ') {
-                    $content = substr($content, 1);
-                }
-            }
-
-            if ($content !== '' && $content[0] === ' ') {
-                $content = substr($content, 1);
-            }
+            $quoteDepth = strspn($line, '>');
+            $offset = $quoteDepth;
+            $offset += strspn($line, ' ', $offset);
+            $content = substr($line, $offset);
 
             if ($content === '-- ') {
 

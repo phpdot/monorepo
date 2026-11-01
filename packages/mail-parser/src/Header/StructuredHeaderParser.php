@@ -127,36 +127,42 @@ final class StructuredHeaderParser
     private function parseParams(string $paramString): array
     {
         $params = [];
-        $remaining = trim($paramString);
+        $length = strlen($paramString);
+        $i = 0;
 
-        while ($remaining !== '') {
+        while (true) {
+            while ($i < $length && strpos(" \t\r\n;", $paramString[$i]) !== false) {
+                $i++;
+            }
 
-            $remaining = ltrim($remaining, " \t\r\n;");
-
-            if ($remaining === '') {
+            if ($i >= $length) {
                 break;
             }
 
-            $eqPos = strpos($remaining, '=');
+            $eqPos = strpos($paramString, '=', $i);
             if ($eqPos === false) {
                 break;
             }
 
-            $key = strtolower(trim(substr($remaining, 0, $eqPos)));
-            $remaining = ltrim(substr($remaining, $eqPos + 1));
+            $key = strtolower(trim(substr($paramString, $i, $eqPos - $i)));
+            $i = $eqPos + 1;
 
-            if ($remaining === '') {
+            while ($i < $length && strpos(" \t", $paramString[$i]) !== false) {
+                $i++;
+            }
+
+            if ($i >= $length) {
                 $params[$key] = '';
                 break;
             }
 
-            if ($remaining[0] === '"') {
+            if ($paramString[$i] === '"') {
+                $i++;
                 $value = '';
-                $i = 1;
                 $escaped = false;
 
-                for ($len = strlen($remaining); $i < $len; $i++) {
-                    $char = $remaining[$i];
+                for (; $i < $length; $i++) {
+                    $char = $paramString[$i];
 
                     if ($escaped) {
                         $value .= $char;
@@ -178,15 +184,18 @@ final class StructuredHeaderParser
                 }
 
                 $params[$key] = $value;
-                $remaining = substr($remaining, $i);
             } else {
+                $start = $i;
 
-                if (preg_match('/^([^\s;]+)/', $remaining, $m) === 1) {
-                    $params[$key] = $m[1];
-                    $remaining = substr($remaining, strlen($m[1]));
-                } else {
+                while ($i < $length && strpos(" \t\r\n\x0B\x0C;", $paramString[$i]) === false) {
+                    $i++;
+                }
+
+                if ($i === $start) {
                     break;
                 }
+
+                $params[$key] = substr($paramString, $start, $i - $start);
             }
         }
 
