@@ -1,0 +1,30 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Multipart alternative email
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <alt456@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="boundary_alt"
+
+--boundary_alt
+Content-Type: text/plain; charset=utf-8
+
+Hello Jane,
+
+This is the plain text version.
+
+Best regards,
+John
+
+--boundary_alt
+Content-Type: text/html; charset=utf-8
+
+<html>
+<body>
+<p>Hello Jane,</p>
+<p>This is the <strong>HTML</strong> version.</p>
+<p>Best regards,<br>John</p>
+</body>
+</html>
+
+--boundary_alt--

@@ -1,0 +1,8 @@
+From: =?UTF-8?Q?Jos=C3=A9_Garc=C3=ADa?= <jose@example.com>
+To: =?UTF-8?Q?Fran=C3=A7ois_M=C3=BCller?= <francois@example.com>
+Subject: =?UTF-8?Q?H=C3=A9llo_W=C3=B6rld?=
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Body with normal UTF-8 content.

@@ -1,0 +1,23 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Forwarded message
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="outer"
+
+--outer
+Content-Type: text/plain
+
+See the forwarded message below.
+
+--outer
+Content-Type: message/rfc822
+
+From: original@example.com
+To: sender@example.com
+Subject: Original message
+Date: Mon, 01 Jan 2024 12:00:00 +0000
+Content-Type: text/plain
+
+This is the original message body.
+
+--outer--

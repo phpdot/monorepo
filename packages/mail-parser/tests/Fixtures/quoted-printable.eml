@@ -1,0 +1,12 @@
+From: =?ISO-8859-1?Q?Ren=E9?= <rene@example.fr>
+To: Jane Smith <jane@example.com>
+Subject: Quoted-printable body test
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <qp001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+Caf=E9 au lait is a wonderful drink.=0D=0A=
+This line continues from the previous one using a soft line break.
+R=E9sum=E9 of the meeting: everything went well.

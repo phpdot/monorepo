@@ -1,0 +1,22 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: RFC 2231 parameter test
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <rfc2231@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary_2231"
+
+--boundary_2231
+Content-Type: text/plain; charset=utf-8
+
+See the attached file with encoded filename.
+
+--boundary_2231
+Content-Type: application/octet-stream
+Content-Disposition: attachment;
+	filename*=utf-8''%C3%A9l%C3%A8ves%20rapport%20final.pdf
+Content-Transfer-Encoding: base64
+
+AQIDBAUG
+
+--boundary_2231--

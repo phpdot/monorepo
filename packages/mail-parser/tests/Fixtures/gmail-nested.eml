@@ -1,0 +1,43 @@
+From: sender@gmail.com
+To: recipient@example.com
+Subject: Gmail-style nested email
+Date: Mon, 15 Jan 2024 10:00:00 +0000
+Message-ID: <gmail001@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mixed_boundary"
+
+--mixed_boundary
+Content-Type: multipart/alternative; boundary="alt_boundary"
+
+--alt_boundary
+Content-Type: text/plain; charset=utf-8
+
+This is the plain text version from Gmail.
+
+--alt_boundary
+Content-Type: multipart/related; boundary="rel_boundary"
+
+--rel_boundary
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>HTML with <img src="cid:img1"> inline.</p></body></html>
+
+--rel_boundary
+Content-Type: image/gif; name="pixel.gif"
+Content-Transfer-Encoding: base64
+Content-ID: <img1>
+Content-Disposition: inline; filename="pixel.gif"
+
+R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7
+
+--rel_boundary--
+
+--alt_boundary--
+
+--mixed_boundary
+Content-Type: text/plain; name="notes.txt"
+Content-Disposition: attachment; filename="notes.txt"
+
+These are some notes.
+
+--mixed_boundary--

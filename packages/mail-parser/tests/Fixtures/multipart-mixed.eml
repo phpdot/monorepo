@@ -1,0 +1,28 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Email with attachment
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <mixed789@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary_mixed"
+
+--boundary_mixed
+Content-Type: text/plain; charset=utf-8
+
+Hello Jane,
+
+Please find the attached file.
+
+Best regards,
+John
+
+--boundary_mixed
+Content-Type: application/pdf; name="report.pdf"
+Content-Disposition: attachment; filename="report.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5k
+b2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4K
+ZW5kb2JqCg==
+
+--boundary_mixed--

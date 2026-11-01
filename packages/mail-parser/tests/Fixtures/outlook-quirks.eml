@@ -1,0 +1,22 @@
+From: user@outlook.com
+To: recipient@example.com
+Subject: Outlook quirks test
+Date: Thu, 13 Feb 2020 15:47:25 -0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="----=_NextPart_001"
+
+------=_NextPart_001
+Content-Type: text/plain; charset="us-ascii"
+
+Outlook email body with quirks.
+
+------=_NextPart_001
+Content-Type: application/octet-stream;
+	name="file.dat"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+	filename="file.dat"
+
+AQIDBA==
+
+------=_NextPart_001--

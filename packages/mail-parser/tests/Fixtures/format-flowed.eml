@@ -1,0 +1,21 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Format=flowed test
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <flowed001@example.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
+
+This is a long paragraph that has been wrapped using format=flowed.
+Each line that ends with a space is "flowed" and should be joined
+with the next line to form a single paragraph.
+
+This is a new paragraph that is not flowed.
+
+> This is a quoted line that is flowed and should be
+> joined together.
+
+> This is another quoted paragraph.
+
+--
+John Doe

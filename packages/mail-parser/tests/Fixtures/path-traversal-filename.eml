@@ -1,0 +1,20 @@
+From: attacker@evil.com
+To: victim@example.com
+Subject: Path traversal test
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="boundary_pt"
+
+--boundary_pt
+Content-Type: text/plain; charset=utf-8
+
+See attachment.
+
+--boundary_pt
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="../../etc/passwd"
+Content-Transfer-Encoding: base64
+
+dGVzdA==
+
+--boundary_pt--

@@ -29,6 +29,8 @@ parameters:
         - packages/http-middleware/src
         - packages/logs/src
         - packages/mail/src
+        - packages/imap/src
+        - packages/mail-parser/src
         - packages/mcp/src
         - packages/mongodb/src
         - packages/package/src
@@ -46,6 +48,7 @@ parameters:
         - packages/template/src
         - packages/session/src
         - packages/sheets/src
+        - packages/smtp-gateway/src
         - packages/totp/src
         - packages/tracelog/src
         - packages/validator/src

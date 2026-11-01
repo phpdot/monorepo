@@ -1,0 +1,58 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Many received headers
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server0.example.com by server1.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server1.example.com by server2.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server2.example.com by server3.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server3.example.com by server4.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server4.example.com by server5.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server5.example.com by server6.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server6.example.com by server7.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server7.example.com by server8.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server8.example.com by server9.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server9.example.com by server10.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server10.example.com by server11.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server11.example.com by server12.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server12.example.com by server13.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server13.example.com by server14.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server14.example.com by server15.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server15.example.com by server16.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server16.example.com by server17.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server17.example.com by server18.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server18.example.com by server19.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server19.example.com by server20.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server20.example.com by server21.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server21.example.com by server22.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server22.example.com by server23.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server23.example.com by server24.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server24.example.com by server25.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server25.example.com by server26.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server26.example.com by server27.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server27.example.com by server28.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server28.example.com by server29.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server29.example.com by server30.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server30.example.com by server31.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server31.example.com by server32.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server32.example.com by server33.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server33.example.com by server34.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server34.example.com by server35.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server35.example.com by server36.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server36.example.com by server37.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server37.example.com by server38.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server38.example.com by server39.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server39.example.com by server40.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server40.example.com by server41.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server41.example.com by server42.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server42.example.com by server43.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server43.example.com by server44.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server44.example.com by server45.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server45.example.com by server46.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server46.example.com by server47.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server47.example.com by server48.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server48.example.com by server49.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+Received: from server49.example.com by server50.example.com; Thu, 13 Feb 2020 15:47:25 +0000
+MIME-Version: 1.0
+Content-Type: text/plain
+
+Body after many headers.

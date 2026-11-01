@@ -1,0 +1,4 @@
+Subject: Minimal email
+
+This email has minimal headers - no From, no Date, no Content-Type.
+It should still parse using RFC defaults (text/plain, us-ascii).

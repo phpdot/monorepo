@@ -1,0 +1,25 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: Email with authentication headers
+Date: Mon, 15 Jan 2024 10:00:00 +0000
+Message-ID: <auth001@example.com>
+MIME-Version: 1.0
+Received: from mail-sor-f41.google.com (mail-sor-f41.google.com [209.85.220.41])
+        by mx.example.com (Postfix) with ESMTPS id ABC123DEF
+        for <recipient@example.com>; Mon, 15 Jan 2024 10:00:00 +0000
+Received: from sender-server.example.com ([192.168.1.100])
+        by mail-sor-f41.google.com with SMTP id xyz789
+        for <recipient@example.com>; Mon, 15 Jan 2024 09:59:58 +0000
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+        d=example.com; s=selector2024;
+        h=from:to:subject:date:message-id;
+        bh=2jUSOH9NhtVGCQWNr9BrIAPreKQjO6Sn7XIkfJVOzv8=;
+        b=dGVzdHNpZ25hdHVyZXZhbHVl
+Received-SPF: pass (google.com: domain of sender@example.com designates 209.85.220.41 as permitted sender) client-ip=209.85.220.41; envelope-from=sender@example.com; helo=mail-sor-f41.google.com;
+Authentication-Results: mx.example.com;
+        dkim=pass header.d=example.com header.s=selector2024 header.b=dGVzdHNp;
+        spf=pass (google.com: domain of sender@example.com) smtp.mailfrom=sender@example.com;
+        dmarc=pass (p=REJECT sp=REJECT) header.from=example.com
+Content-Type: text/plain; charset=utf-8
+
+This email has full authentication headers for testing.

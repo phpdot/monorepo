@@ -1,0 +1,9 @@
+From: =?UTF-8?B?5bGx55Sw5aSq6YOO?= <yamada@example.jp>
+To: =?ISO-8859-1?Q?Ren=E9_Dupont?= <rene@example.fr>
+Subject: =?UTF-8?B?44GT44KT44Gr44Gh44Gv?= =?UTF-8?B?5LiW55WM?=
+Date: Mon, 15 Mar 2021 10:30:00 +0900
+Message-ID: <encoded001@example.jp>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+This email tests RFC 2047 encoded words in headers.

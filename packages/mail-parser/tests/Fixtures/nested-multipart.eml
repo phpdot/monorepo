@@ -1,0 +1,31 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Nested multipart email
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <nested001@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="outer_boundary"
+
+--outer_boundary
+Content-Type: multipart/alternative; boundary="inner_boundary"
+
+--inner_boundary
+Content-Type: text/plain; charset=utf-8
+
+This is the plain text version inside nested multipart.
+
+--inner_boundary
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>This is the <b>HTML</b> version inside nested multipart.</p></body></html>
+
+--inner_boundary--
+
+--outer_boundary
+Content-Type: application/octet-stream; name="data.bin"
+Content-Disposition: attachment; filename="data.bin"
+Content-Transfer-Encoding: base64
+
+AQIDBAUG
+
+--outer_boundary--

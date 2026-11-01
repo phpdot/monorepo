@@ -1,0 +1,29 @@
+From: John Doe <john@example.com>
+To: Jane Smith <jane@example.com>
+Subject: Email with inline image
+Date: Thu, 13 Feb 2020 15:47:25 +0000
+Message-ID: <related101@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="boundary_related"
+
+--boundary_related
+Content-Type: text/html; charset=utf-8
+
+<html>
+<body>
+<p>Hello Jane,</p>
+<p>Here is an inline image:</p>
+<img src="cid:image001@example.com" alt="test image">
+<p>Best regards,<br>John</p>
+</body>
+</html>
+
+--boundary_related
+Content-Type: image/png; name="test.png"
+Content-Transfer-Encoding: base64
+Content-ID: <image001@example.com>
+Content-Disposition: inline; filename="test.png"
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==
+
+--boundary_related--
