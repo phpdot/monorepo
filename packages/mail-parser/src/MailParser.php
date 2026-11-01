@@ -33,6 +33,7 @@ use PHPdot\Mail\Parser\Result\AttachmentList;
 use PHPdot\Mail\Parser\Result\Email;
 use PHPdot\Mail\Parser\Result\MimeHeader;
 use PHPdot\Mail\Parser\Streaming\StreamingParser;
+use Throwable;
 
 final class MailParser
 {

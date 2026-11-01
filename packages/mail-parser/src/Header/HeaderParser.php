@@ -149,9 +149,7 @@ final class HeaderParser
         $value = str_replace(["\r", "\n", "\x00"], '', $value);
 
         if (!mb_check_encoding($value, 'UTF-8')) {
-            $converted = mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
-
-            return $converted === false ? '' : $converted;
+            return mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
         }
 
         return $value;

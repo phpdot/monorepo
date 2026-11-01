@@ -14,7 +14,6 @@ namespace PHPdot\Mail\Parser\Content;
 
 use ValueError;
 
-
 final class CharsetConverter
 {
     /** @var array<string, bool> */
@@ -44,12 +43,8 @@ final class CharsetConverter
         'utf-32be' => 'UTF-32BE',
         'utf-32le' => 'UTF-32LE',
 
-'iso-8859-8-i' => 'ISO-8859-8',
         'iso-8859-8-i' => 'ISO-8859-8',
         'x-gbk' => 'GBK',
-        'gbk' => 'GBK',
-        'gb2312' => 'GBK',
-        'iso-8859-11' => 'ISO-8859-11',
         'windows-874' => 'ISO-8859-11',
         'iso-8859-1' => 'ISO-8859-1',
         'iso8859-1' => 'ISO-8859-1',
@@ -316,7 +311,9 @@ final class CharsetConverter
     private function convertWithMb(string $content, string $fromCharset): string
     {
         try {
-            return mb_convert_encoding($content, 'UTF-8', $fromCharset);
+            $converted = mb_convert_encoding($content, 'UTF-8', $fromCharset);
+
+            return $converted === false ? $content : $converted;
         } catch (ValueError) {
 
             return $this->convertWithIconv($content, $fromCharset);
