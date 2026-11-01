@@ -170,7 +170,13 @@ jobs:
           docker compose up -d --quiet-pull mysql postgres rabbitmq mongodb mailpit redis redis-auth
           UNHEALTHY=pending
           for i in $(seq 1 90); do
-            UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy || true)
+            if ! STATUS=$(docker compose ps -a --format '{{.Name}}|{{.State}}|{{.Health}}'); then
+              echo "::error::docker compose ps failed — cannot verify service health"; exit 1
+            fi
+            COUNT=$(printf '%s\n' "$STATUS" | grep -c . )
+            UNHEALTHY=$(printf '%s\n' "$STATUS" | awk -F'|' '$2 != "running" || $3 != "healthy"')
+            [ "$COUNT" -eq 7 ] || UNHEALTHY="${UNHEALTHY}
+            expected 7 started services, ps -a lists ${COUNT}"
             [ -z "$UNHEALTHY" ] && break
             sleep 2
           done
@@ -178,7 +184,13 @@ jobs:
           docker compose logs mongodb --tail 60 || true
           [ -z "$UNHEALTHY" ] || { echo "::error::services failed to become healthy: ${UNHEALTHY}"; exit 1; }
           sleep 5
-          UNHEALTHY=$(docker compose ps --format '{{.Name}} {{.Health}}' | grep -v healthy || true)
+          if ! STATUS=$(docker compose ps -a --format '{{.Name}}|{{.State}}|{{.Health}}'); then
+            echo "::error::docker compose ps failed — cannot verify service health"; exit 1
+          fi
+          COUNT=$(printf '%s\n' "$STATUS" | grep -c . )
+          UNHEALTHY=$(printf '%s\n' "$STATUS" | awk -F'|' '$2 != "running" || $3 != "healthy"')
+          [ "$COUNT" -eq 7 ] || UNHEALTHY="${UNHEALTHY}
+          expected 7 started services, ps -a lists ${COUNT}"
           [ -z "$UNHEALTHY" ] || { echo "::error::a service died right after becoming healthy: ${UNHEALTHY}"; docker compose logs mongodb --tail 80 || true; exit 1; }
 
       # A CLI --exclude-group replaces the phpunit.xml <groups><exclude> list
