@@ -93,7 +93,10 @@ final class StreamServer implements ServerInterface
     /**
      * Enable implicit TLS (SMTPS, port 465): the listener binds ssl:// and the
      * TLS handshake runs before the SMTP greeting is sent. STARTTLS is never
-     * advertised and the session is TLS-active from birth.
+     * advertised and the session is TLS-active from birth; the listener binds
+     * plain TCP and drives the handshake per connection, never ssl:// — the
+     * transport would negotiate during accept and the manual enable would
+     * double-encrypt, which some PHP builds reject by closing the connection.
      */
     public function enableImplicitTls(string $certFile, string $keyFile): void
     {
@@ -108,8 +111,7 @@ final class StreamServer implements ServerInterface
             throw new RuntimeException('Implicit TLS requires a certificate and key.');
         }
 
-        $scheme = $this->implicitTls ? 'ssl' : 'tcp';
-        $address = "{$scheme}://{$this->host}:{$this->port}";
+        $address = "tcp://{$this->host}:{$this->port}";
         $errno = 0;
         $errstr = '';
 
