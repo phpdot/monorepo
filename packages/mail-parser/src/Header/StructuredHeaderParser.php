@@ -52,12 +52,13 @@ final class StructuredHeaderParser
         $result = '';
         $depth = 0;
         $escaped = false;
+        $inQuotes = false;
 
         for ($i = 0, $len = strlen($value); $i < $len; $i++) {
             $char = $value[$i];
 
             if ($escaped) {
-                if ($depth === 0) {
+                if ($inQuotes || $depth === 0) {
                     $result .= $char;
                 }
                 $escaped = false;
@@ -65,10 +66,26 @@ final class StructuredHeaderParser
             }
 
             if ($char === '\\') {
+                if ($inQuotes) {
+                    $result .= $char;
+                    $escaped = true;
+                    continue;
+                }
                 $escaped = true;
                 if ($depth === 0) {
                     $result .= $char;
                 }
+                continue;
+            }
+
+            if ($char === '"') {
+                $inQuotes = !$inQuotes;
+                $result .= $char;
+                continue;
+            }
+
+            if ($inQuotes) {
+                $result .= $char;
                 continue;
             }
 

@@ -81,8 +81,8 @@ final class MalformedEmailTest extends TestCase
         $this->assertNotNull($email->text);
         $this->assertStringContainsString('See attachment', $email->text);
         $this->assertCount(1, $email->attachments);
-        // Parser stores filename as-is; sanitization is caller's responsibility
-        $this->assertSame('../../etc/passwd', $email->attachments[0]->filename);
+        // The parser keeps only the final path segment; a filename is display data
+        $this->assertSame('passwd', $email->attachments[0]->filename);
     }
 
     public function testManyReceivedHeaders(): void

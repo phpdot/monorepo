@@ -88,19 +88,29 @@ final class MimeNode
     {
 
         $disposition = $this->headers->get('Content-Disposition');
+        $filename = null;
+
         if ($disposition !== null && $disposition->structured !== null) {
             $filename = $disposition->structured->getParam('filename');
-            if ($filename !== null) {
-                return $filename;
-            }
         }
 
-        $name = $this->contentType->getParam('name');
-        if ($name !== null) {
-            return $name;
-        }
+        $filename ??= $this->contentType->getParam('name');
 
-        return null;
+        return $filename === null ? null : $this->sanitizeFilename($filename);
+    }
+
+    /**
+     * A filename is display data, never a path and never bidi tricks: keep
+     * the final path segment only, and drop control characters and the
+     * right-to-left override.
+     */
+    private function sanitizeFilename(string $filename): string
+    {
+        $base = basename(str_replace('\\', '/', $filename));
+        $stripped = str_replace(["\x00", "\xe2\x80\xae"], '', $base);
+        $clean = preg_replace('/[\x00-\x1f]/', '', $stripped) ?? $stripped;
+
+        return $clean;
     }
 
     public function getContentId(): string|null

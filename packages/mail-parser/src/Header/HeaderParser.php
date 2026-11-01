@@ -140,6 +140,24 @@ final class HeaderParser
     }
 
     /**
+     * A decoded header value must never carry line breaks or NULs, and must
+     * always be valid UTF-8 — raw 8-bit bytes convert best-effort from
+     * Windows-1252 so downstream storage never rejects them.
+     */
+    private function sanitizeValue(string $value): string
+    {
+        $value = str_replace(["\r", "\n", "\x00"], '', $value);
+
+        if (!mb_check_encoding($value, 'UTF-8')) {
+            $converted = mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
+
+            return $converted === false ? '' : $converted;
+        }
+
+        return $value;
+    }
+
+    /**
      * @return array{string, string}|null
      */
     private function splitHeaderLine(string $line): array|null
@@ -179,7 +197,7 @@ final class HeaderParser
     {
         $lowerName = strtolower($name);
 
-        $decodedValue = $this->encodedWordDecoder->decode($rawValue);
+        $decodedValue = $this->sanitizeValue($this->encodedWordDecoder->decode($rawValue));
 
         $structured = null;
         $addresses = null;
