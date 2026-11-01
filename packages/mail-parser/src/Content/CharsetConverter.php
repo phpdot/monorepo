@@ -17,6 +17,9 @@ use ValueError;
 
 final class CharsetConverter
 {
+    /** @var array<string, bool> */
+    private array $convertible = [];
+
     private const CHARSET_ALIASES = [
 
         'us-ascii' => 'ASCII',
@@ -277,7 +280,14 @@ final class CharsetConverter
             return $this->convertWithMb($content, $canonical);
         }
 
-        return $this->convertWithIconv($content, $canonical);
+        if (!array_key_exists($canonical, $this->convertible)) {
+            $probe = @iconv($canonical, 'UTF-8//IGNORE', 'a');
+            $this->convertible[$canonical] = $probe !== false;
+        }
+
+        return $this->convertible[$canonical]
+            ? $this->convertWithIconv($content, $canonical)
+            : $this->convertWithMb($content, 'Windows-1252');
     }
 
     public function normalizeCharset(string $charset): string
