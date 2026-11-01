@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Result;
 
+use DateTimeImmutable;
+
 final readonly class ReceivedHop
 {
     public function __construct(
@@ -23,7 +25,7 @@ final readonly class ReceivedHop
         public string|null $with,
         public string|null $id,
         public string|null $for,
-        public \DateTimeImmutable|null $date,
+        public DateTimeImmutable|null $date,
         public string $raw,
     ) {}
 }

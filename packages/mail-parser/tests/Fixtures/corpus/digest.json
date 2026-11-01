@@ -1,0 +1,28 @@
+{
+    "subject": "digest",
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": null,
+    "html": null,
+    "textBody": [],
+    "htmlBody": [],
+    "attachments": [
+        {
+            "type": "message/rfc822",
+            "filename": null,
+            "disposition": "attachment",
+            "size": 21,
+            "sha256": "9289269e0119fa181472fea5d6b2fe481a5a1b04dde8ced41fdfb82ff8e2bb35",
+            "nested": "first"
+        },
+        {
+            "type": "message/rfc822",
+            "filename": null,
+            "disposition": "attachment",
+            "size": 22,
+            "sha256": "02ffe53c8da0a8fab966c2143b951dd568224611924daf903afab0f5e8d30314",
+            "nested": "second"
+        }
+    ]
+}

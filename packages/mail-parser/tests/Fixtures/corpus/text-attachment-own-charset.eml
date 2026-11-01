@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary=b
+
+--b
+Content-Type: text/plain
+
+hi
+--b
+Content-Type: text/plain; charset=windows-1256
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename=note.txt
+
+0+HH4w==
+--b--

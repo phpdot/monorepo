@@ -13,14 +13,14 @@ declare(strict_types=1);
 namespace PHPdot\Mail\Parser\Content;
 
 use PHPdot\Mail\Parser\Exception\InvalidMimeStructureException;
+use PHPdot\Mail\Parser\Source\StringSource;
 
 final class ContentDecoder
 {
     public function decode(string $content, string $encoding, bool $strict = false): string
     {
         return match (strtolower(trim($encoding))) {
-            'base64' => $this->decodeBase64($content),
-            'quoted-printable' => $this->decodeQuotedPrintable($content),
+            'base64', 'quoted-printable' => self::decoded($content, $encoding),
             '7bit', '8bit', 'binary', '' => $content,
             default => $strict
                 ? throw new InvalidMimeStructureException(
@@ -30,31 +30,13 @@ final class ContentDecoder
         };
     }
 
-    private function decodeBase64(string $content): string
+    private static function decoded(string $content, string $encoding): string
     {
-
-        $cleaned = preg_replace('/[^A-Za-z0-9+\/=]/', '', $content) ?? $content;
-        $result = base64_decode($cleaned, true);
-
-        if ($result !== false) {
-            return $result;
-        }
-
         $decoded = '';
-        foreach (explode('=', $cleaned) as $segment) {
-            if ($segment === '') {
-                continue;
-            }
-            $padded = str_pad($segment, strlen($segment) + (4 - strlen($segment) % 4) % 4, '=');
-            $part = base64_decode($padded, true);
-            $decoded .= $part === false ? '' : $part;
-        }
+        TransferDecoder::decode(new StringSource($content, false), 0, strlen($content), $encoding, static function (string $bytes) use (&$decoded): void {
+            $decoded .= $bytes;
+        });
 
         return $decoded;
-    }
-
-    private function decodeQuotedPrintable(string $content): string
-    {
-        return quoted_printable_decode($content);
     }
 }

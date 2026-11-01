@@ -17,7 +17,9 @@ use PHPdot\Mail\Parser\Exception\SecurityLimitException;
 use PHPdot\Mail\Parser\ParserConfig;
 use PHPdot\Mail\Parser\Result\Address;
 use PHPdot\Mail\Parser\Result\AddressGroup;
+use PHPdot\Mail\Parser\Result\MimeHeader;
 use PHPdot\Mail\Parser\Rfc2231\ParameterDecoder;
+use PHPdot\Mail\Parser\Source\LineEndings;
 
 final class HeaderParser
 {
@@ -49,7 +51,6 @@ final class HeaderParser
 
     public function parse(string $headerBlock): HeaderCollection
     {
-
         if ($this->config->maxHeaderSize > 0 && strlen($headerBlock) > $this->config->maxHeaderSize) {
             if ($this->config->strict) {
                 throw new SecurityLimitException(
@@ -88,11 +89,7 @@ final class HeaderParser
 
     private function normalizeLineEndings(string $text): string
     {
-
-        $text = str_replace("\r\n", "\n", $text);
-        $text = str_replace("\r", "\n", $text);
-
-        return str_replace("\n", "\r\n", $text);
+        return LineEndings::canonical($text);
     }
 
     /**
@@ -109,15 +106,10 @@ final class HeaderParser
 
         foreach ($lines as $line) {
             if ($line === '') {
-
-                if ($currentLine !== null) {
-                    $headers[] = $this->splitHeaderLine($currentLine);
-                }
                 break;
             }
 
             if (($line[0] === ' ' || $line[0] === "\t") && $currentLine !== null) {
-
                 $currentLine .= ' ' . ltrim($line);
                 continue;
             }
@@ -126,6 +118,11 @@ final class HeaderParser
                 $headers[] = $this->splitHeaderLine($currentLine);
 
                 if ($limit > 0 && count($headers) >= $limit) {
+                    if ($this->config->strict) {
+                        throw new SecurityLimitException(sprintf('Header block holds more than %d headers', $limit));
+                    }
+
+                    $currentLine = null;
                     break;
                 }
             }
@@ -140,22 +137,19 @@ final class HeaderParser
     }
 
     /**
-     * A decoded header value must never carry line breaks or NULs, and must
-     * always be valid UTF-8 — raw 8-bit bytes convert best-effort from
-     * Windows-1252 so downstream storage never rejects them.
+     * Drops line breaks and NULs, and reads bytes that are not UTF-8 as Windows-1252, so a value is always one valid line.
      */
     private function sanitizeValue(string $value): string
     {
         $value = str_replace(["\r", "\n", "\x00"], '', $value);
 
-        if (!mb_check_encoding($value, 'UTF-8')) {
-            return mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
-        }
-
-        return $value;
+        return mb_check_encoding($value, 'UTF-8') ? $value : mb_convert_encoding($value, 'UTF-8', 'Windows-1252');
     }
 
     /**
+     * A field's name and value; blanks before the colon are the obsolete form RFC 5322 §4.5.3 still reads, while a
+     * name of anything but printable ASCII (§3.6.8) is no field at all.
+     *
      * @return array{string, string}|null
      */
     private function splitHeaderLine(string $line): array|null
@@ -165,10 +159,10 @@ final class HeaderParser
             return null;
         }
 
-        $name = substr($line, 0, $colonPos);
+        $name = rtrim(substr($line, 0, $colonPos), " \t");
         $value = ltrim(substr($line, $colonPos + 1));
 
-        if (preg_match('/\s/', $name) === 1) {
+        if (preg_match('/^[\x21-\x39\x3b-\x7e]+$/', $name) !== 1) {
             return null;
         }
 
@@ -184,11 +178,33 @@ final class HeaderParser
      */
     private function decodedNames(array $parsed): array
     {
-        $named = fn(Address $one): Address => new Address($one->address, $this->encodedWordDecoder->decode($one->name));
+        $named = fn(Address $one): Address => new Address(
+            $this->sanitizeValue($one->address),
+            $this->sanitizeValue($this->encodedWordDecoder->decode($one->name)),
+        );
 
         return array_map(fn(Address|AddressGroup $one): Address|AddressGroup => $one instanceof AddressGroup
-            ? new AddressGroup($this->encodedWordDecoder->decode($one->name), array_map($named, $one->addresses))
+            ? new AddressGroup($this->sanitizeValue($this->encodedWordDecoder->decode($one->name)), array_map($named, $one->addresses))
             : $named($one), $parsed);
+    }
+
+    /**
+     * The `name` and `filename` parameters made one valid line; lenient mode decodes encoded words in them, as Outlook
+     * and Gmail write filenames though RFC 2047 §5 does not allow them there.
+     */
+    private function decodedParams(MimeHeader $header): MimeHeader
+    {
+        $params = $header->params;
+
+        foreach ($params as $key => $value) {
+            if (in_array(strtolower($key), ['name', 'filename'], true)) {
+                $params[$key] = $this->sanitizeValue(
+                    !$this->config->strict && str_contains($value, '=?') ? $this->encodedWordDecoder->decode($value) : $value,
+                );
+            }
+        }
+
+        return new MimeHeader($header->value, $params);
     }
 
     private function parseHeader(string $name, string $rawValue): Header
@@ -202,7 +218,7 @@ final class HeaderParser
         $dateTime = null;
 
         if (in_array($lowerName, self::STRUCTURED_HEADERS, true)) {
-            $structured = $this->structuredHeaderParser->parse($rawValue);
+            $structured = $this->decodedParams($this->structuredHeaderParser->parse($rawValue));
         }
 
         if (in_array($lowerName, self::ADDRESS_HEADERS, true)) {

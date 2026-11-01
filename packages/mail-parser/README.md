@@ -2,7 +2,7 @@
 
 Zero-dependency, RFC-compliant EML/email parser for PHP 8.2+.
 
-Parses email messages into clean, structured DTOs with full MIME support, streaming for large files, and built-in security limits.
+Parses email messages into clean, structured DTOs with full MIME support, stream input, and built-in security limits.
 
 ## Requirements
 
@@ -50,14 +50,14 @@ $email = MailParser::parse($rawEmlString);
 $email = MailParser::parse(file_get_contents('/path/to/message.eml'));
 ```
 
-### From stream (large emails)
+### From stream
 
 ```php
 $parser = new MailParser();
 $email = $parser->parseStream(fopen('huge-email.eml', 'r'));
 ```
 
-The streaming parser reads line-by-line without loading the entire email into memory. Attachments are buffered via `php://temp` which auto-spills to disk after 2MB.
+`parseStream()` copies the stream, up to `maxMessageSize`, into `php://temp` (memory to 2 MiB, disk past it) and parses it with the same code as `parse()`, so both give the same result for the same bytes. With `ContentStorage::Source` the message's size in memory no longer depends on its attachments: a 97 MB message with a 70 MB attachment parses in about 3 MB.
 
 ### From S3
 
@@ -122,9 +122,10 @@ foreach ($email->attachments as $att) {
     $att->filename;              // "report.pdf"
     $att->mimeType;              // "application/pdf"
     $att->disposition;           // "attachment" or "inline"
-    $att->size;                  // int (bytes)
+    $att->size;                  // int — decoded size in bytes
     $att->contentId;             // for inline images (cid:)
-    $att->content;               // decoded binary string
+    $att->hasContent();          // false when storage kept none or the part is over maxAttachmentSize
+    $att->content();             // ?string — decoded bytes
     $att->nestedEmail;           // ?Email — for message/rfc822 attachments
 }
 
@@ -135,26 +136,38 @@ $email->attachments->isEmpty();  // bool
 $email->attachments->first();   // ?Attachment
 ```
 
-### Attachment Streaming
+### Body Parts
 
-For large attachments, use `stream()` to avoid holding content in memory twice:
+The body follows RFC 8621 §4.1.4, the algorithm JMAP uses: `textBody` and `htmlBody` list the parts to show in order — preferring plain text or HTML where alternatives exist — and `attachments` lists every other part. `text` and `html` join those lists for display; `html` escapes any plain-text piece among the HTML.
 
 ```php
-// Pipe directly to S3
+foreach ($email->htmlBody as $part) {
+    $part->mimeType;        // text/html, text/plain, image/*, audio/*, video/*
+    $part->text;            // ?string — decoded UTF-8 for text parts
+    $part->part->stream();  // the part itself: name, size, content
+}
+```
+
+### Attachment Content
+
+`ParserConfig::$storage` decides where attachment content lives, as MimeKit's `MimeContentStorage` does:
+
+| Storage | Content | Memory |
+|---|---|---|
+| `ContentStorage::Memory` (default) | decoded while parsing, held as a string | grows with the attachments |
+| `ContentStorage::Source` | left in the message, decoded when `content()` or `stream()` is called | headers and text bodies only |
+| `ContentStorage::None` | not kept; `size` and the rest still are | headers and text bodies only |
+
+`stream()` gives the decoded bytes as a rewound stream to copy anywhere without holding them:
+
+```php
+$email = (new MailParser(new ParserConfig(storage: ContentStorage::Source)))->parseStream($stream);
+
 $s3Client->putObject([
     'Bucket' => 'attachments',
     'Key' => $att->filename,
     'Body' => $att->stream(),
 ]);
-
-// Pipe to file
-$source = $att->stream();
-$dest = fopen('/path/to/file', 'w');
-stream_copy_to_stream($source, $dest);
-fclose($dest);
-
-// getContent() works for stream-created attachments too
-$content = $att->getContent();
 ```
 
 ### Headers
@@ -229,14 +242,18 @@ $auth->raw;                              // original header string
 
 ```php
 use PHPdot\Mail\Parser\{MailParser, ParserConfig};
+use PHPdot\Mail\Parser\Content\ContentStorage;
 
 $config = new ParserConfig(
     strict: true,                    // throw on RFC violations (default: false)
-    maxNestingDepth: 50,             // MIME nesting limit (default: 50)
+    maxNestingDepth: 50,             // nesting limit, multipart and message/rfc822 alike (default: 50)
+    maxPartCount: 512,               // MIME parts in a message, nested messages included (default: 512)
+    maxHeaderCount: 1000,            // headers in one block (default: 1000)
+    maxTotalHeaderCount: 16_384,     // headers in a message, every part's included (default: 16384)
     maxHeaderSize: 2_097_152,        // header block size limit in bytes (default: 2 MiB)
     maxAttachmentSize: 52_428_800,   // per-attachment limit in bytes (default: 50 MiB)
     maxMessageSize: 104_857_600,     // total message limit in bytes (default: 100 MiB)
-    attachmentEncoding: 'string',    // 'string', 'base64', or 'none'
+    storage: ContentStorage::Memory, // Memory, Source or None (see Attachment Content)
     decodeFlowed: true,              // process format=flowed text (default: true)
 );
 
@@ -250,7 +267,6 @@ $email = MailParser::parse($raw, $config);
 **Strict mode**: throws specific exceptions on RFC violations:
 - `InvalidHeaderException` — malformed headers
 - `InvalidMimeStructureException` — missing boundaries, unknown encodings
-- `CharsetConversionException` — unknown character sets
 - `SecurityLimitException` — nesting depth, size limits exceeded
 
 ## RFC Compliance
@@ -280,7 +296,7 @@ composer install
 vendor/bin/phpunit
 ```
 
-295 tests, 929 assertions covering unit tests, integration tests, security limits, malformed email resilience, and streaming parity.
+Unit, integration and security suites cover the RFC grammar, malformed and hostile mail, every content storage, and stream parity with `parse()`.
 
 ## License
 

@@ -1,6 +1,6 @@
 {
     "name": "phpdot/mail-parser",
-    "description": "Zero-dependency RFC-compliant EML/email parser for PHP 8.2+",
+    "description": "Zero-dependency RFC-compliant EML/email parser for PHP 8.5+",
     "type": "library",
     "license": "MIT",
     "authors": [
@@ -28,7 +28,8 @@
         "friendsofphp/php-cs-fixer": "^3.94",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpunit/phpunit": "^13.0"
+        "phpunit/phpunit": "^13.0",
+        "ext-intl": "*"
     },
     "autoload": {
         "psr-4": {
@@ -42,5 +43,8 @@
     },
     "config": {
         "sort-packages": true
+    },
+    "suggest": {
+        "ext-intl": "Checks internationalized domains in addresses against IDNA (UTS 46)"
     }
 }

@@ -1,0 +1,21 @@
+{
+    "subject": "shared a post",
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "body\r\n",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "attachments": []
+}

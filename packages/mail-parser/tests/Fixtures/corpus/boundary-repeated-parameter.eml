@@ -1,0 +1,12 @@
+Content-Type: multipart/mixed; boundary=one; boundary=two
+
+--one
+Content-Type: text/plain
+
+first
+--two
+Content-Type: text/plain
+
+last
+--two--
+--one--

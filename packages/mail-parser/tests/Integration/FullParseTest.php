@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Tests\Integration;
 
+use PHPdot\Mail\Parser\Content\ContentStorage;
 use PHPdot\Mail\Parser\MailParser;
 use PHPdot\Mail\Parser\ParserConfig;
 use PHPdot\Mail\Parser\Result\Address;
@@ -66,7 +67,7 @@ final class FullParseTest extends TestCase
         $this->assertSame('report.pdf', $email->attachments[0]->filename);
         $this->assertSame('application/pdf', $email->attachments[0]->mimeType);
         $this->assertSame('attachment', $email->attachments[0]->disposition);
-        $this->assertNotNull($email->attachments[0]->content);
+        $this->assertNotNull($email->attachments[0]->content());
         $this->assertGreaterThan(0, $email->attachments[0]->size);
     }
 
@@ -162,25 +163,24 @@ final class FullParseTest extends TestCase
         $this->assertSame('Simple text email', $email->subject);
     }
 
-    public function testWithBase64AttachmentEncoding(): void
+    public function testWithSourceStorage(): void
     {
-        $config = new ParserConfig(attachmentEncoding: 'base64');
-        $email = MailParser::parse($this->fixture('multipart-mixed.eml'), $config);
+        $memory = MailParser::parse($this->fixture('multipart-mixed.eml'));
+        $source = MailParser::parse($this->fixture('multipart-mixed.eml'), new ParserConfig(storage: ContentStorage::Source));
 
-        $this->assertCount(1, $email->attachments);
-        // Content should be base64-encoded
-        $this->assertNotNull($email->attachments[0]->content);
-        $decoded = base64_decode($email->attachments[0]->content, true);
-        $this->assertNotFalse($decoded);
+        $this->assertCount(1, $source->attachments);
+        $this->assertTrue($source->attachments[0]->hasContent());
+        $this->assertSame($memory->attachments[0]->size, $source->attachments[0]->size);
+        $this->assertSame($memory->attachments[0]->content(), $source->attachments[0]->content());
     }
 
     public function testWithNoAttachmentContent(): void
     {
-        $config = new ParserConfig(attachmentEncoding: 'none');
+        $config = new ParserConfig(storage: ContentStorage::None);
         $email = MailParser::parse($this->fixture('multipart-mixed.eml'), $config);
 
         $this->assertCount(1, $email->attachments);
-        $this->assertNull($email->attachments[0]->content);
+        $this->assertNull($email->attachments[0]->content());
         $this->assertSame('report.pdf', $email->attachments[0]->filename);
     }
 
@@ -314,11 +314,13 @@ final class FullParseTest extends TestCase
 
         $email = MailParser::parse($raw);
 
-        // Inline image with filename but no CID → treated as attachment
-        $this->assertCount(1, $email->attachments);
-        $this->assertSame('photo.png', $email->attachments[0]->filename);
-        $this->assertSame('inline', $email->attachments[0]->disposition);
-        $this->assertNull($email->attachments[0]->contentId);
+        // RFC 8621 §4.1.4: an inline image in a mixed body is shown in both body lists, not attached
+        $this->assertCount(0, $email->attachments);
+        $this->assertSame('image/png', $email->htmlBody[1]->mimeType);
+        $this->assertSame('photo.png', $email->htmlBody[1]->part->filename);
+        $this->assertSame('inline', $email->htmlBody[1]->part->disposition);
+        $this->assertNull($email->htmlBody[1]->part->contentId);
+        $this->assertSame(base64_decode('iVBORw0KGgo=', true), $email->htmlBody[1]->part->content());
     }
 
     public function testGmailNestedIntegration(): void
@@ -359,7 +361,7 @@ final class FullParseTest extends TestCase
         $this->assertSame('image/png', $email->attachments[0]->mimeType);
 
         // Verify byte-for-byte fidelity
-        $decoded = $email->attachments[0]->content;
+        $decoded = $email->attachments[0]->content();
         $this->assertNotNull($decoded);
         $this->assertSame(strlen($originalBinary), strlen($decoded));
         $this->assertSame($originalBinary, $decoded, 'Decoded attachment must be byte-identical to original');
@@ -392,7 +394,7 @@ final class FullParseTest extends TestCase
         fclose($stream);
 
         $this->assertCount(1, $email->attachments);
-        $this->assertSame($originalBinary, $email->attachments[0]->content, 'Streamed decode must be byte-identical');
+        $this->assertSame($originalBinary, $email->attachments[0]->content(), 'Streamed decode must be byte-identical');
     }
 
     public function testLargeEmailMemoryUsage(): void
@@ -444,7 +446,7 @@ final class FullParseTest extends TestCase
         // at once. The attachment content will be in memory (decoded), but the raw
         // base64 string (~2.7MB) should have been streamed through php://temp.
         // We just verify the parse completed successfully with correct results.
-        $this->assertNotNull($email->attachments[0]->content);
+        $this->assertNotNull($email->attachments[0]->content());
     }
 
     public function testLongLineHandlingInStreaming(): void
@@ -490,7 +492,7 @@ final class FullParseTest extends TestCase
         $att = $email->attachments[0];
 
         // content property works as before
-        $this->assertSame($originalBinary, $att->content);
+        $this->assertSame($originalBinary, $att->content());
 
         // stream() returns a readable resource
         $stream = $att->stream();
@@ -509,40 +511,12 @@ final class FullParseTest extends TestCase
 
     public function testAttachmentStreamNullWhenNoContent(): void
     {
-        $config = new ParserConfig(attachmentEncoding: 'none');
+        $config = new ParserConfig(storage: ContentStorage::None);
         $email = MailParser::parse($this->fixture('multipart-mixed.eml'), $config);
 
         $att = $email->attachments[0];
-        $this->assertNull($att->content);
+        $this->assertNull($att->content());
         $this->assertNull($att->stream());
-    }
-
-    public function testAttachmentGetContentFallsBackToStream(): void
-    {
-        // Create an attachment via fromStream
-        $data = "Hello from stream";
-        $stream = fopen('php://temp', 'r+');
-        fwrite($stream, $data);
-        rewind($stream);
-
-        $att = \PHPdot\Mail\Parser\Result\Attachment::fromStream(
-            mimeType: 'text/plain',
-            filename: 'test.txt',
-            disposition: 'attachment',
-            stream: $stream,
-            size: strlen($data),
-        );
-
-        // content is null (not loaded)
-        $this->assertNull($att->content);
-
-        // getContent() reads from the stream
-        $this->assertSame($data, $att->getContent());
-
-        // stream() also works
-        $s = $att->stream();
-        $this->assertNotNull($s);
-        $this->assertSame($data, stream_get_contents($s));
     }
 
     public function testAttachmentStreamPipingToFile(): void

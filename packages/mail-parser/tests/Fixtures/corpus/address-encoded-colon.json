@@ -1,0 +1,26 @@
+{
+    "subject": "s",
+    "from": [
+        [
+            "b@example.com",
+            "Bob X: y"
+        ]
+    ],
+    "fromFields": 1,
+    "to": [],
+    "text": "body\r\n",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "attachments": []
+}

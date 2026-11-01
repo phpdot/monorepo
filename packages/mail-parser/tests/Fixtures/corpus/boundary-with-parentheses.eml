@@ -1,0 +1,12 @@
+Content-Type: multipart/mixed; boundary="=_a(b)c"
+
+--=_a(b)c
+Content-Type: text/plain
+
+hello
+--=_a(b)c
+Content-Type: application/pdf; name="Invoice (1).pdf"
+Content-Disposition: attachment; filename="Invoice (1).pdf"
+
+x
+--=_a(b)c--

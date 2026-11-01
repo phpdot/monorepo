@@ -1,0 +1,11 @@
+Content-Type: multipart/alternative; boundary=b
+
+--b
+Content-Type: text/x-amp-html
+
+<html amp4email>amp</html>
+--b
+Content-Type: text/html
+
+<p>html</p>
+--b--

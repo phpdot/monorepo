@@ -67,16 +67,16 @@ final class CharsetConverterTest extends TestCase
     public static function charsetAliasProvider(): array
     {
         return [
-            ['latin1', 'ISO-8859-1'],
-            ['latin-1', 'ISO-8859-1'],
-            ['iso-8859-1', 'ISO-8859-1'],
+            ['latin1', 'Windows-1252'],
+            ['latin-1', 'Windows-1252'],
+            ['iso-8859-1', 'Windows-1252'],
             ['cp1252', 'Windows-1252'],
             ['x-cp1252', 'Windows-1252'],
             ['gb2312', 'GB18030'],
             ['gbk', 'GB18030'],
-            ['shift_jis', 'SJIS'],
-            ['euc-kr', 'EUC-KR'],
-            ['ks_c_5601-1987', 'EUC-KR'],
+            ['shift_jis', 'SJIS-win'],
+            ['euc-kr', 'UHC'],
+            ['ks_c_5601-1987', 'UHC'],
             ['koi8-r', 'KOI8-R'],
             ['utf-8', 'UTF-8'],
             ['utf8', 'UTF-8'],

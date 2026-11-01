@@ -1,0 +1,30 @@
+{
+    "subject": "outer",
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "see attached",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "see attached"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "see attached"
+        ]
+    ],
+    "attachments": [
+        {
+            "type": "message/rfc822",
+            "filename": null,
+            "disposition": "attachment",
+            "size": 51,
+            "sha256": "6dc0f56a451d6f300d0cc99c6233e7d26ffbace749ae36f2e3b25e396c072614",
+            "nested": "inner"
+        }
+    ]
+}

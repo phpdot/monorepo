@@ -1,0 +1,39 @@
+{
+    "subject": "s",
+    "from": [
+        [
+            "a@example.com",
+            ""
+        ]
+    ],
+    "fromFields": 1,
+    "to": [
+        [
+            "x@y.example",
+            ""
+        ],
+        {
+            "group": "group",
+            "members": []
+        },
+        [
+            "z@y.example",
+            ""
+        ]
+    ],
+    "text": "body\r\n",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "body\r\n"
+        ]
+    ],
+    "attachments": []
+}

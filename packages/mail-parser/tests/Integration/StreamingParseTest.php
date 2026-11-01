@@ -88,7 +88,7 @@ final class StreamingParseTest extends TestCase
             $this->assertSame($sAtt->disposition, $tAtt->disposition, "Attachment[$i] disposition mismatch for {$fixture}");
             $this->assertSame($sAtt->contentId, $tAtt->contentId, "Attachment[$i] contentId mismatch for {$fixture}");
             $this->assertSame($sAtt->size, $tAtt->size, "Attachment[$i] size mismatch for {$fixture}");
-            $this->assertSame($sAtt->content, $tAtt->content, "Attachment[$i] content mismatch for {$fixture}");
+            $this->assertSame($sAtt->content(), $tAtt->content(), "Attachment[$i] content mismatch for {$fixture}");
         }
     }
 

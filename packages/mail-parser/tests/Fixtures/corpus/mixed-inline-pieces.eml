@@ -1,0 +1,20 @@
+Content-Type: multipart/mixed; boundary=b
+
+--b
+Content-Type: text/html
+
+<p>one</p>
+--b
+Content-Type: image/png
+Content-Disposition: inline; filename=a.png
+
+PNG
+--b
+Content-Type: text/html
+
+<p>two</p>
+--b
+Content-Type: text/plain
+
+first
+--b--

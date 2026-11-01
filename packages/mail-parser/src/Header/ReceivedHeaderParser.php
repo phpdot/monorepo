@@ -84,7 +84,6 @@ final class ReceivedHeaderParser
 
     private function extractHostname(string $clause): string|null
     {
-
         $clause = trim($clause);
 
         $cleaned = preg_replace('/\(.*?\)/s', '', $clause) ?? $clause;
@@ -106,7 +105,6 @@ final class ReceivedHeaderParser
 
     private function extractIp(string $clause): string|null
     {
-
         if (preg_match('/\[?(\d{1,3}(?:\.\d{1,3}){3})\]?/', $clause, $m) === 1) {
             return $m[1];
         }

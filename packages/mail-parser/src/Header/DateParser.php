@@ -12,6 +12,9 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Header;
 
+use DateTimeImmutable;
+use Exception;
+
 final class DateParser
 {
     private const OBSOLETE_ZONES = [
@@ -30,7 +33,7 @@ final class DateParser
         'Z' => '+0000',
     ];
 
-    public function parse(string $value): \DateTimeImmutable|null
+    public function parse(string $value): DateTimeImmutable|null
     {
         $value = $this->cleanValue($value);
 
@@ -48,8 +51,8 @@ final class DateParser
         }
 
         try {
-            return new \DateTimeImmutable($value);
-        } catch (\Exception) {
+            return new DateTimeImmutable($value);
+        } catch (Exception) {
             return null;
         }
     }
@@ -64,7 +67,7 @@ final class DateParser
         return $value;
     }
 
-    private function tryStandardParse(string $value): \DateTimeImmutable|null
+    private function tryStandardParse(string $value): DateTimeImmutable|null
     {
 
         $formats = [
@@ -74,11 +77,11 @@ final class DateParser
             'd M Y H:i:s P',
             'D, d M Y H:i O',
             'd M Y H:i O',
-            \DateTimeImmutable::RFC2822,
+            DateTimeImmutable::RFC2822,
         ];
 
         foreach ($formats as $format) {
-            $result = \DateTimeImmutable::createFromFormat($format, $value);
+            $result = DateTimeImmutable::createFromFormat($format, $value);
             if ($result !== false) {
                 return $result;
             }

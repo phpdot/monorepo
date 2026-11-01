@@ -19,6 +19,23 @@ final class AddressParser
 {
     private const MAX_DEPTH = 50;
 
+    /**
+     * Printable ASCII, or letters, digits and marks after a letter or digit, never a blank-looking one such as U+3164.
+     */
+    private const VISIBLE = '/^(?:[\x20-\x7e]|(?![\x{115F}\x{1160}\x{3164}\x{FFA0}\x{2800}\x{180E}])[\p{L}\p{N}]\p{M}*(?<![\x{034F}\x{FE00}-\x{FE0F}\x{E0100}-\x{E01EF}]))*$/u';
+
+    /**
+     * An RFC 2047 encoded word, read as one token so the `:` or `,` some senders leave unencoded in it stays in the name.
+     */
+    private const ENCODED_WORD = '/\G=\?[^?\s]+\?[BbQq]\?[^?\s]*\?=/';
+
+    /**
+     * An addr-spec once comments and folding are gone (RFC 5322 §3.4.1, its obsolete dots, RFC 6532 UTF-8): a local
+     * part of atoms, dots and quoted strings, one `@`, then a dotted domain or a domain literal.
+     */
+    private const ADDR_SPEC = '/^(?>[A-Za-z0-9!#$%&\'*+\/=?^_`{|}~\x80-\xff.-]|"(?>[^"\\\\\r\n]|\\\\.)*")+'
+        . '@(?>(?>[A-Za-z0-9!#$%&\'*+\/=?^_`{|}~\x80-\xff.-])+|\[(?>[^\[\]\\\\\r\n]|\\\\.)*\])$/';
+
     private string $input;
     private int $pos;
     private int $length;
@@ -60,9 +77,14 @@ final class AddressParser
                 break;
             }
 
+            $before = $this->pos;
             $address = $this->parseAddressOrGroup($depth);
             if ($address !== null) {
                 $addresses[] = $address;
+            }
+
+            if ($this->pos === $before) {
+                $this->skipToNextAddress();
             }
 
             $this->skipWhitespace();
@@ -99,6 +121,11 @@ final class AddressParser
 
             if ($char === '<') {
                 $addrSpec = $this->parseAngleAddr();
+                if ($addrSpec === false) {
+                    $this->skipToNextAddress();
+
+                    return null;
+                }
                 if ($addrSpec !== null) {
                     return new Address($addrSpec, $nameOrAddr);
                 }
@@ -109,19 +136,22 @@ final class AddressParser
         $addrSpec = $this->readAddrSpec();
 
         if ($addrSpec !== null && str_contains($addrSpec, '@')) {
+            if (!self::isAddrSpec($addrSpec)) {
+                $this->skipToNextAddress();
+
+                return null;
+            }
 
             $this->skipWhitespace();
-            $comment = $this->readComment();
-            $name = $comment !== null ? $comment : '';
-            return new Address($addrSpec, $name);
+
+            return new Address($addrSpec, $this->readComment() ?? '');
         }
 
         if ($addrSpec !== null && $addrSpec !== '') {
-
             $this->skipWhitespace();
             if ($this->pos < $this->length && $this->input[$this->pos] === '<') {
                 $addr = $this->parseAngleAddr();
-                if ($addr !== null) {
+                if (is_string($addr)) {
                     return new Address($addr, $addrSpec);
                 }
             }
@@ -160,9 +190,14 @@ final class AddressParser
                 continue;
             }
 
+            $before = $this->pos;
             $address = $this->parseSingleMailbox();
             if ($address !== null) {
                 $addresses[] = $address;
+            }
+
+            if ($this->pos === $before) {
+                $this->skipToGroupItem();
             }
         }
 
@@ -175,10 +210,16 @@ final class AddressParser
         $savedPos = $this->pos;
 
         $nameOrAddr = $this->readDisplayNameOrAddr();
+        $scanEnd = $this->pos;
         $this->skipWhitespace();
 
         if ($this->pos < $this->length && $this->input[$this->pos] === '<') {
             $addr = $this->parseAngleAddr();
+            if ($addr === false) {
+                $this->skipToNextAddress();
+
+                return null;
+            }
             if ($addr !== null) {
                 return new Address($addr, $nameOrAddr);
             }
@@ -187,16 +228,22 @@ final class AddressParser
         $this->pos = $savedPos;
         $addr = $this->readAddrSpec();
 
-        if ($addr !== null && str_contains($addr, '@')) {
+        if ($addr !== null && str_contains($addr, '@') && self::isAddrSpec($addr)) {
             $this->skipWhitespace();
-            $comment = $this->readComment();
-            return new Address($addr, $comment ?? '');
+
+            return new Address($addr, $this->readComment() ?? '');
         }
+
+        $this->pos = max($this->pos, $scanEnd);
 
         return null;
     }
 
-    private function parseAngleAddr(): string|null
+    /**
+     * The address inside `<…>`: null when there is none here, false when the brackets hold anything but one addr-spec,
+     * in which case the reading has moved past the closing bracket.
+     */
+    private function parseAngleAddr(): string|false|null
     {
         if ($this->pos >= $this->length || $this->input[$this->pos] !== '<') {
             return null;
@@ -208,17 +255,19 @@ final class AddressParser
 
         $addr = $this->readAddrSpecInAngle();
 
-        $this->skipWhitespace();
         if ($this->pos < $this->length && $this->input[$this->pos] === '>') {
             $this->pos++;
         }
 
-        return $addr;
+        if ($addr === null) {
+            return null;
+        }
+
+        return $addr !== false && self::isAddrSpec($addr) ? $addr : false;
     }
 
     private function skipSourceRoute(): void
     {
-
         if ($this->pos >= $this->length || $this->input[$this->pos] !== '@') {
             return;
         }
@@ -233,9 +282,14 @@ final class AddressParser
         }
     }
 
-    private function readAddrSpecInAngle(): string|null
+    /**
+     * Reads to the closing `>`, dropping comments and folding white space: false when a bracket, comma, semicolon or
+     * colon shows the brackets do not hold a single address.
+     */
+    private function readAddrSpecInAngle(): string|false|null
     {
         $addr = '';
+        $malformed = false;
 
         while ($this->pos < $this->length) {
             $char = $this->input[$this->pos];
@@ -249,19 +303,51 @@ final class AddressParser
                 continue;
             }
 
-            $addr .= $char;
+            if ($char === '(') {
+                $this->readComment();
+                continue;
+            }
+
+            if (in_array($char, ['<', ',', ';', ':', '\\', ')'], true)) {
+                $malformed = true;
+            } elseif ($char !== ' ' && $char !== "\t" && $char !== "\r" && $char !== "\n") {
+                $addr .= $char;
+            }
+
             $this->pos++;
         }
 
-        $addr = trim($addr);
+        if ($malformed) {
+            return false;
+        }
+
         return $addr !== '' ? $addr : null;
+    }
+
+    /**
+     * Whether a string is one address that can pass for no other: its non-ASCII characters letters, digits or marks
+     * after one, none blank-looking, and its domain valid IDNA (UTS 46) when ext-intl is there to check it.
+     */
+    private static function isAddrSpec(string $addr): bool
+    {
+        if (preg_match(self::ADDR_SPEC, $addr) !== 1 || preg_match(self::VISIBLE, $addr) !== 1) {
+            return false;
+        }
+
+        $domain = substr($addr, (int) strrpos($addr, '@') + 1);
+
+        if (!function_exists('idn_to_ascii') || str_starts_with($domain, '[') || preg_match('/[\x80-\xff]/', $domain) !== 1) {
+            return true;
+        }
+
+        $checks = IDNA_NONTRANSITIONAL_TO_ASCII | IDNA_CHECK_BIDI | IDNA_CHECK_CONTEXTJ | IDNA_USE_STD3_RULES;
+
+        return idn_to_ascii($domain, $checks, INTL_IDNA_VARIANT_UTS46) !== false;
     }
 
     private function readAddrSpec(): string|null
     {
-        $start = $this->pos;
         $addr = '';
-        $inQuotes = false;
 
         while ($this->pos < $this->length) {
             $char = $this->input[$this->pos];
@@ -275,20 +361,7 @@ final class AddressParser
                 break;
             }
 
-            if ($char === ' ' || $char === "\t") {
-
-                $lookAhead = $this->pos + 1;
-                while ($lookAhead < $this->length && ($this->input[$lookAhead] === ' ' || $this->input[$lookAhead] === "\t")) {
-                    $lookAhead++;
-                }
-                if ($lookAhead >= $this->length || in_array($this->input[$lookAhead], [',', ';', '<', '>', '('], true)) {
-                    break;
-                }
-
-                break;
-            }
-
-            if ($char === '(') {
+            if ($char === ' ' || $char === "\t" || $char === '(') {
                 break;
             }
 
@@ -322,6 +395,12 @@ final class AddressParser
                 continue;
             }
 
+            if ($char === '=' && preg_match(self::ENCODED_WORD, $this->input, $word, 0, $this->pos) === 1) {
+                $parts[] = $word[0];
+                $this->pos += strlen($word[0]);
+                continue;
+            }
+
             if ($char === '(') {
                 $comment = $this->readComment();
                 if ($comment !== null) {
@@ -331,14 +410,28 @@ final class AddressParser
             }
 
             $atom = $this->readAtom();
-            if ($atom !== '') {
-                $parts[] = $atom;
-            } else {
+            if ($atom === '') {
+                break;
+            }
+
+            $parts[] = $atom;
+
+            if (str_contains($atom, '@') && !$this->angleFollows()) {
                 break;
             }
         }
 
         return trim(implode(' ', $parts));
+    }
+
+    /**
+     * Whether the next character past blanks opens an angle address, as after a name written as an address.
+     */
+    private function angleFollows(): bool
+    {
+        $at = $this->pos + strspn($this->input, " \t", $this->pos);
+
+        return $at < $this->length && $this->input[$at] === '<';
     }
 
     private function readAtom(): string
@@ -486,6 +579,24 @@ final class AddressParser
             if ($char !== ' ' && $char !== "\t" && $char !== "\r" && $char !== "\n") {
                 break;
             }
+            $this->pos++;
+        }
+    }
+
+    /**
+     * Moves past what no mailbox could be read from, to the next comma or to the semicolon that closes the group.
+     */
+    private function skipToGroupItem(): void
+    {
+        if ($this->input[$this->pos] === '(') {
+            $this->readComment();
+
+            return;
+        }
+
+        $this->pos++;
+
+        while ($this->pos < $this->length && $this->input[$this->pos] !== ',' && $this->input[$this->pos] !== ';') {
             $this->pos++;
         }
     }

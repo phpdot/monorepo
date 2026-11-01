@@ -1,0 +1,21 @@
+{
+    "subject": "“hi”",
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "똠\r\n",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "똠\r\n"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "똠\r\n"
+        ]
+    ],
+    "attachments": []
+}

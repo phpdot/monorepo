@@ -1,0 +1,11 @@
+Content-Type: multipart/alternative; boundary=b
+
+--b
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 7bit
+
+--b
+Content-Type: text/html; charset=utf-8
+
+<p>hi</p>
+--b--

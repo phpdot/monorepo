@@ -1,0 +1,21 @@
+{
+    "subject": null,
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "line1\r\n--abcdef not a boundary\r\nContent-Type: application/x-evil\r\nContent-Disposition: attachment; filename=e.exe\r\n\r\nMZ",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "line1\r\n--abcdef not a boundary\r\nContent-Type: application/x-evil\r\nContent-Disposition: attachment; filename=e.exe\r\n\r\nMZ"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "line1\r\n--abcdef not a boundary\r\nContent-Type: application/x-evil\r\nContent-Disposition: attachment; filename=e.exe\r\n\r\nMZ"
+        ]
+    ],
+    "attachments": []
+}

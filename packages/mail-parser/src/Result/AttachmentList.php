@@ -13,9 +13,9 @@ namespace PHPdot\Mail\Parser\Result;
 
 use ArrayAccess;
 use ArrayIterator;
-use BadMethodCallException;
 use Countable;
 use IteratorAggregate;
+use PHPdot\Mail\Parser\Exception\ImmutableResultException;
 
 /**
  * @implements IteratorAggregate<int, Attachment>
@@ -102,11 +102,11 @@ final readonly class AttachmentList implements IteratorAggregate, Countable, Arr
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        throw new BadMethodCallException('AttachmentList is immutable');
+        throw ImmutableResultException::of('AttachmentList');
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        throw new BadMethodCallException('AttachmentList is immutable');
+        throw ImmutableResultException::of('AttachmentList');
     }
 }

@@ -1,0 +1,12 @@
+Content-Type: multipart/mixed; boundary=abc
+
+--abc
+Content-Type: text/plain
+
+line1
+--abcdef not a boundary
+Content-Type: application/x-evil
+Content-Disposition: attachment; filename=e.exe
+
+MZ
+--abc--

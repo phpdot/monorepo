@@ -31,7 +31,7 @@ final class MimeParserTest extends TestCase
         $config = new ParserConfig();
         $this->headerParser = new HeaderParser($config);
         $this->contentDecoder = new ContentDecoder();
-        $this->parser = new MimeParser($config, $this->headerParser, $this->contentDecoder);
+        $this->parser = new MimeParser($config, $this->headerParser);
     }
 
     public function testSingleTextPartParsing(): void
@@ -105,7 +105,7 @@ final class MimeParserTest extends TestCase
         $headers = new HeaderCollection();
 
         $config = new ParserConfig(strict: false);
-        $parser = new MimeParser($config, $this->headerParser, $this->contentDecoder);
+        $parser = new MimeParser($config, $this->headerParser);
 
         $node = $parser->parse($body, $contentType, $headers);
 
@@ -122,7 +122,7 @@ final class MimeParserTest extends TestCase
         $headers = new HeaderCollection();
 
         $config = new ParserConfig(strict: true);
-        $parser = new MimeParser($config, $this->headerParser, $this->contentDecoder);
+        $parser = new MimeParser($config, $this->headerParser);
 
         $this->expectException(InvalidMimeStructureException::class);
         $parser->parse($body, $contentType, $headers);

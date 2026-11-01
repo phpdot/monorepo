@@ -1,0 +1,9 @@
+Content-Type: multipart/alternative; boundary=b
+
+--b
+Content-Type: text/plain
+charset="utf-8"
+Content-Transfer-Encoding: 8bit
+
+Dear user
+--b--

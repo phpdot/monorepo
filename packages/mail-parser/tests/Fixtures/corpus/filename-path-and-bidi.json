@@ -1,0 +1,20 @@
+{
+    "subject": null,
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": null,
+    "html": null,
+    "textBody": [],
+    "htmlBody": [],
+    "attachments": [
+        {
+            "type": "application/octet-stream",
+            "filename": "evilfdp.exe.pdf",
+            "disposition": "attachment",
+            "size": 1,
+            "sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+            "nested": null
+        }
+    ]
+}

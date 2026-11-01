@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Content;
 
+use Closure;
 use ValueError;
 
 final class CharsetConverter
@@ -44,19 +45,19 @@ final class CharsetConverter
         'utf-32le' => 'UTF-32LE',
 
         'iso-8859-8-i' => 'ISO-8859-8',
-        'x-gbk' => 'GBK',
-        'windows-874' => 'ISO-8859-11',
-        'iso-8859-1' => 'ISO-8859-1',
-        'iso8859-1' => 'ISO-8859-1',
-        'iso_8859-1' => 'ISO-8859-1',
-        'iso_8859-1:1987' => 'ISO-8859-1',
-        'latin1' => 'ISO-8859-1',
-        'latin-1' => 'ISO-8859-1',
-        'l1' => 'ISO-8859-1',
-        'csisolatin1' => 'ISO-8859-1',
-        'iso-ir-100' => 'ISO-8859-1',
-        'ibm819' => 'ISO-8859-1',
-        'cp819' => 'ISO-8859-1',
+        'x-gbk' => 'GB18030',
+        'windows-874' => 'CP874',
+        'iso-8859-1' => 'Windows-1252',
+        'iso8859-1' => 'Windows-1252',
+        'iso_8859-1' => 'Windows-1252',
+        'iso_8859-1:1987' => 'Windows-1252',
+        'latin1' => 'Windows-1252',
+        'latin-1' => 'Windows-1252',
+        'l1' => 'Windows-1252',
+        'csisolatin1' => 'Windows-1252',
+        'iso-ir-100' => 'Windows-1252',
+        'ibm819' => 'Windows-1252',
+        'cp819' => 'Windows-1252',
 
         'iso-8859-2' => 'ISO-8859-2',
         'iso8859-2' => 'ISO-8859-2',
@@ -97,20 +98,20 @@ final class CharsetConverter
         'iso_8859-8' => 'ISO-8859-8',
         'hebrew' => 'ISO-8859-8',
 
-        'iso-8859-9' => 'ISO-8859-9',
-        'iso8859-9' => 'ISO-8859-9',
-        'iso_8859-9' => 'ISO-8859-9',
-        'latin5' => 'ISO-8859-9',
-        'l5' => 'ISO-8859-9',
+        'iso-8859-9' => 'Windows-1254',
+        'iso8859-9' => 'Windows-1254',
+        'iso_8859-9' => 'Windows-1254',
+        'latin5' => 'Windows-1254',
+        'l5' => 'Windows-1254',
 
         'iso-8859-10' => 'ISO-8859-10',
         'iso8859-10' => 'ISO-8859-10',
         'iso_8859-10' => 'ISO-8859-10',
         'latin6' => 'ISO-8859-10',
 
-        'iso-8859-11' => 'ISO-8859-11',
-        'iso8859-11' => 'ISO-8859-11',
-        'tis-620' => 'TIS-620',
+        'iso-8859-11' => 'CP874',
+        'iso8859-11' => 'CP874',
+        'tis-620' => 'CP874',
         'thai' => 'TIS-620',
 
         'iso-8859-13' => 'ISO-8859-13',
@@ -172,27 +173,27 @@ final class CharsetConverter
         'csiso58gb231280' => 'GB18030',
         'chinese' => 'GB18030',
 
-        'big5' => 'BIG-5',
-        'big-5' => 'BIG-5',
-        'csbig5' => 'BIG-5',
-        'big5-hkscs' => 'BIG-5',
-        'cn-big5' => 'BIG-5',
+        'big5' => 'BIG5-HKSCS',
+        'big-5' => 'BIG5-HKSCS',
+        'csbig5' => 'BIG5-HKSCS',
+        'big5-hkscs' => 'BIG5-HKSCS',
+        'cn-big5' => 'BIG5-HKSCS',
 
-        'euc-kr' => 'EUC-KR',
+        'euc-kr' => 'UHC',
         'euckr' => 'EUC-KR',
         'cseuckr' => 'EUC-KR',
-        'ks_c_5601-1987' => 'EUC-KR',
-        'ks_c_5601-1989' => 'EUC-KR',
-        'ksc5601' => 'EUC-KR',
-        'ksc_5601' => 'EUC-KR',
-        'korean' => 'EUC-KR',
+        'ks_c_5601-1987' => 'UHC',
+        'ks_c_5601-1989' => 'UHC',
+        'ksc5601' => 'UHC',
+        'ksc_5601' => 'UHC',
+        'korean' => 'UHC',
 
-        'shift_jis' => 'SJIS',
-        'shift-jis' => 'SJIS',
-        'sjis' => 'SJIS',
-        'x-sjis' => 'SJIS',
-        'csshiftjis' => 'SJIS',
-        'ms_kanji' => 'SJIS',
+        'shift_jis' => 'SJIS-win',
+        'shift-jis' => 'SJIS-win',
+        'sjis' => 'SJIS-win',
+        'x-sjis' => 'SJIS-win',
+        'csshiftjis' => 'SJIS-win',
+        'ms_kanji' => 'SJIS-win',
         'ms932' => 'SJIS-win',
         'cp932' => 'SJIS-win',
         'windows-31j' => 'SJIS-win',
@@ -230,6 +231,14 @@ final class CharsetConverter
         'x-unknown' => 'x-unknown',
         'unknown' => 'x-unknown',
         'default' => 'x-unknown',
+        'dos-874' => 'CP874',
+        'cp874' => 'CP874',
+        'windows-949' => 'UHC',
+        'cp949' => 'UHC',
+        'uhc' => 'UHC',
+        'windows-936' => 'GB18030',
+        'ms936' => 'GB18030',
+        'cp936' => 'GB18030',
     ];
 
     private const MB_CHARSETS = [
@@ -244,7 +253,18 @@ final class CharsetConverter
         'CP866', 'CP850',
     ];
 
+    /**
+     * Decodes content in the charset it names to valid UTF-8; bytes beyond ASCII under an ASCII or missing label are
+     * kept when they are UTF-8 and read as Windows-1252 when not, as browsers read them.
+     */
     public function toUtf8(string $content, string $charset): string
+    {
+        $converted = $this->convert($content, $charset);
+
+        return mb_check_encoding($converted, 'UTF-8') ? $converted : self::replacing(static fn(): string => mb_scrub($converted, 'UTF-8'));
+    }
+
+    private function convert(string $content, string $charset): string
     {
         if ($content === '') {
             return '';
@@ -253,7 +273,7 @@ final class CharsetConverter
         $canonical = $this->normalizeCharset($charset);
 
         if ($canonical === 'ASCII') {
-            return $content;
+            return mb_check_encoding($content, 'UTF-8') ? $content : $this->convertWithMb($content, 'Windows-1252');
         }
 
         if ($canonical === 'UTF-8') {
@@ -261,7 +281,7 @@ final class CharsetConverter
                 return $content;
             }
 
-            return mb_convert_encoding($content, 'UTF-8', 'UTF-8');
+            return self::replacing(static fn(): string => mb_convert_encoding($content, 'UTF-8', 'UTF-8'));
         }
 
         if ($canonical === 'x-unknown') {
@@ -276,7 +296,7 @@ final class CharsetConverter
         }
 
         if (!array_key_exists($canonical, $this->convertible)) {
-            $probe = @iconv($canonical, 'UTF-8//IGNORE', 'a');
+            $probe = @iconv($canonical, 'UTF-8', '');
             $this->convertible[$canonical] = $probe !== false;
         }
 
@@ -298,7 +318,6 @@ final class CharsetConverter
 
     private function guessCanonical(string $lower): string
     {
-
         foreach (self::MB_CHARSETS as $mbCharset) {
             if (strtolower($mbCharset) === $lower) {
                 return $mbCharset;
@@ -308,16 +327,36 @@ final class CharsetConverter
         return $lower;
     }
 
+    /**
+     * Runs a conversion that writes U+FFFD for each byte it cannot read, as the WHATWG decoders do, not mbstring's `?`.
+     *
+     * @template T
+     *
+     * @param Closure(): T $convert
+     *
+     * @return T
+     */
+    private static function replacing(Closure $convert): mixed
+    {
+        $previous = mb_substitute_character();
+        mb_substitute_character(0xFFFD);
+
+        try {
+            return $convert();
+        } finally {
+            mb_substitute_character($previous);
+        }
+    }
+
     private function convertWithMb(string $content, string $fromCharset): string
     {
         try {
-            $converted = mb_convert_encoding($content, 'UTF-8', $fromCharset);
-
-            return $converted === false ? $content : $converted;
+            $converted = self::replacing(static fn(): string|false => mb_convert_encoding($content, 'UTF-8', $fromCharset));
         } catch (ValueError) {
-
             return $this->convertWithIconv($content, $fromCharset);
         }
+
+        return $converted === false ? $this->convertWithIconv($content, $fromCharset) : $converted;
     }
 
     private function convertWithIconv(string $content, string $fromCharset): string
@@ -325,7 +364,6 @@ final class CharsetConverter
         $result = @iconv($fromCharset, 'UTF-8//IGNORE', $content);
 
         if ($result === false) {
-
             if (mb_check_encoding($content, 'UTF-8')) {
                 return $content;
             }

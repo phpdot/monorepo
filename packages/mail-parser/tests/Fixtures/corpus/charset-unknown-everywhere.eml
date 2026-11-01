@@ -1,0 +1,13 @@
+Subject: =?x-nonsense?B?/w==?= ok
+Content-Type: multipart/mixed; boundary=b
+
+--b
+Content-Type: text/plain; charset=x-nonsense
+
+abcÿ
+--b
+Content-Type: application/pdf
+Content-Disposition: attachment; filename*=x-nonsense''%FF.pdf
+
+x
+--b--

@@ -16,7 +16,6 @@ final class FlowedTextFormatter
 {
     public function decode(string $text, bool $delSp = false): string
     {
-
         $text = str_replace("\r\n", "\n", $text);
         $lines = explode("\n", $text);
 
@@ -26,14 +25,12 @@ final class FlowedTextFormatter
         $inParagraph = false;
 
         foreach ($lines as $line) {
-
             $quoteDepth = strspn($line, '>');
             $offset = $quoteDepth;
-            $offset += strspn($line, ' ', $offset);
+            $offset += ($line[$offset] ?? '') === ' ' ? 1 : 0;
             $content = substr($line, $offset);
 
             if ($content === '-- ') {
-
                 if ($inParagraph) {
                     $result[] = $this->formatLine($currentParagraph, $currentQuoteDepth);
                     $inParagraph = false;
@@ -55,14 +52,12 @@ final class FlowedTextFormatter
 
             if ($isFlowed) {
                 if ($delSp) {
-
                     $content = substr($content, 0, -1);
                 }
 
                 $currentParagraph .= $content;
                 $inParagraph = true;
             } else {
-
                 if ($inParagraph) {
                     $currentParagraph .= $content;
                     $result[] = $this->formatLine($currentParagraph, $currentQuoteDepth);

@@ -1,0 +1,21 @@
+{
+    "subject": null,
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "first\r\n--two\r\nContent-Type: text/plain\r\n\r\nlast\r\n--two--",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "first\r\n--two\r\nContent-Type: text/plain\r\n\r\nlast\r\n--two--"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "first\r\n--two\r\nContent-Type: text/plain\r\n\r\nlast\r\n--two--"
+        ]
+    ],
+    "attachments": []
+}

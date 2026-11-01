@@ -21,13 +21,7 @@ final class ParameterDecoder
     ) {}
 
     /**
-     * Decode RFC 2231 extended/continued parameters.
-     *
-     * Handles:
-     * - Simple: filename="report.pdf"
-     * - Extended: filename*=utf-8''report%20%C3%A9.pdf
-     * - Continued: filename*0="report"; filename*1=".pdf"
-     * - Extended + continued: filename*0*=utf-8''report%20; filename*1*=%C3%A9.pdf
+     * Joins RFC 2231 continued sections (`name*0`, `name*1`) and decodes extended ones (`name*=charset''value`).
      *
      * @param array<string, string> $params
      *
@@ -42,7 +36,6 @@ final class ParameterDecoder
             $parsed = $this->parseParameterKey($key);
 
             if ($parsed === null) {
-
                 $regular[$key] = $value;
                 continue;
             }
@@ -56,7 +49,6 @@ final class ParameterDecoder
         }
 
         foreach ($extended as $baseName => $sections) {
-
             ksort($sections, SORT_NUMERIC);
 
             $charset = null;
@@ -67,7 +59,6 @@ final class ParameterDecoder
 
                 if ($info['encoded']) {
                     if ($sectionNum === 0 || $charset === null) {
-
                         $charsetParsed = $this->parseCharsetValue($value);
                         if ($charsetParsed !== null) {
                             $charset = $charsetParsed['charset'];
@@ -94,21 +85,12 @@ final class ParameterDecoder
     }
 
     /**
-     * Parse a parameter key to detect RFC 2231 extensions.
-     *
-     * Returns [baseName, sectionNumber, isEncoded] or null for regular params.
-     *
-     * Examples:
-     *   "filename" -> null (regular)
-     *   "filename*" -> ["filename", 0, true] (extended, no continuation)
-     *   "filename*0" -> ["filename", 0, false] (continuation, not encoded)
-     *   "filename*0*" -> ["filename", 0, true] (continuation, encoded)
+     * A key's base name, section and whether it is encoded: `filename*0*` is `[filename, 0, true]`; a plain key is null.
      *
      * @return array{string, int, bool}|null
      */
     private function parseParameterKey(string $key): array|null
     {
-
         if (preg_match('/^([^*]+)\*$/', $key, $m) === 1) {
             return [$m[1], 0, true];
         }

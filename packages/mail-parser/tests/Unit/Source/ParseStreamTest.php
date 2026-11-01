@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Unit tests for the streaming parser state machine covering all state transitions and edge cases.
+ * parseStream() read through its spool: the same results as parse() for every shape of message the old streamer met.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -9,14 +9,14 @@
 
 declare(strict_types=1);
 
-namespace PHPdot\Mail\Parser\Tests\Unit\Streaming;
+namespace PHPdot\Mail\Parser\Tests\Unit\Source;
 
 use PHPdot\Mail\Parser\Exception\SecurityLimitException;
 use PHPdot\Mail\Parser\MailParser;
 use PHPdot\Mail\Parser\ParserConfig;
 use PHPUnit\Framework\TestCase;
 
-final class StreamingParserTest extends TestCase
+final class ParseStreamTest extends TestCase
 {
     private MailParser $parser;
 
@@ -138,8 +138,9 @@ final class StreamingParserTest extends TestCase
         $email = $this->parser->parseStream($stream);
         fclose($stream);
 
-        // Preamble is discarded per RFC 2046; no parts were found
-        $this->assertNull($email->text);
+        // No delimiter line at all: the body is read as text, exactly as parse() reads it
+        $this->assertSame(MailParser::parse($raw)->text, $email->text);
+        $this->assertSame('This is the preamble, and the stream ends here.', $email->text);
     }
 
     public function testHeaderSizeLimitMidStream(): void
@@ -218,6 +219,6 @@ final class StreamingParserTest extends TestCase
         $this->assertSame('image.png', $att->filename);
         $this->assertSame('image/png', $att->mimeType);
         $this->assertSame(strlen($binaryData), $att->size);
-        $this->assertSame($binaryData, $att->content);
+        $this->assertSame($binaryData, $att->content());
     }
 }

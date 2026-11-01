@@ -14,9 +14,9 @@ namespace PHPdot\Mail\Parser\Result;
 
 use ArrayAccess;
 use ArrayIterator;
-use BadMethodCallException;
 use Countable;
 use IteratorAggregate;
+use PHPdot\Mail\Parser\Exception\ImmutableResultException;
 
 /**
  * @implements IteratorAggregate<int, Address|AddressGroup>
@@ -98,11 +98,11 @@ final readonly class AddressList implements IteratorAggregate, Countable, ArrayA
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        throw new BadMethodCallException('AddressList is immutable');
+        throw ImmutableResultException::of('AddressList');
     }
 
     public function offsetUnset(mixed $offset): void
     {
-        throw new BadMethodCallException('AddressList is immutable');
+        throw ImmutableResultException::of('AddressList');
     }
 }

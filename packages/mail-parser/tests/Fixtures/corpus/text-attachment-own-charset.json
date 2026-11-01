@@ -1,0 +1,30 @@
+{
+    "subject": null,
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "hi",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "hi"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "hi"
+        ]
+    ],
+    "attachments": [
+        {
+            "type": "text/plain",
+            "filename": "note.txt",
+            "disposition": "attachment",
+            "size": 4,
+            "sha256": "46271a5ad344c52527faa294d2b54916e31ba9a3ed0264c6209eba0aabb527d1",
+            "nested": null
+        }
+    ]
+}

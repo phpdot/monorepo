@@ -12,12 +12,15 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Header;
 
+use DateTimeImmutable;
+use PHPdot\Mail\Parser\Result\Address;
+use PHPdot\Mail\Parser\Result\AddressGroup;
 use PHPdot\Mail\Parser\Result\MimeHeader;
 
 final readonly class Header
 {
     /**
-     * @param list<\PHPdot\Mail\Parser\Result\Address|\PHPdot\Mail\Parser\Result\AddressGroup>|null $addresses
+     * @param list<Address|AddressGroup>|null $addresses
      */
     public function __construct(
         public string $name,
@@ -25,6 +28,6 @@ final readonly class Header
         public string $rawValue,
         public MimeHeader|null $structured = null,
         public array|null $addresses = null,
-        public \DateTimeImmutable|null $dateTime = null,
+        public DateTimeImmutable|null $dateTime = null,
     ) {}
 }

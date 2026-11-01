@@ -40,7 +40,6 @@ final class AuthResultsParser
         $methods = array_filter(array_map('trim', explode(';', $rest)), static fn(string $value): bool => $value !== '');
 
         foreach ($methods as $method) {
-
             $clean = preg_replace('/\([^)]*\)/', '', $method) ?? $method;
             $clean = trim($clean);
 

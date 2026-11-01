@@ -1,0 +1,45 @@
+{
+    "subject": null,
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "first",
+    "html": "<p>one</p><p>two</p><div>first</div>",
+    "textBody": [
+        [
+            "text/html",
+            "<p>one</p>"
+        ],
+        [
+            "image/png",
+            null
+        ],
+        [
+            "text/html",
+            "<p>two</p>"
+        ],
+        [
+            "text/plain",
+            "first"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/html",
+            "<p>one</p>"
+        ],
+        [
+            "image/png",
+            null
+        ],
+        [
+            "text/html",
+            "<p>two</p>"
+        ],
+        [
+            "text/plain",
+            "first"
+        ]
+    ],
+    "attachments": []
+}

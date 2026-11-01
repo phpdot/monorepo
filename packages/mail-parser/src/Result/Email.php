@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Result;
 
+use DateTimeImmutable;
 use PHPdot\Mail\Parser\Header\Header;
 use PHPdot\Mail\Parser\Header\HeaderCollection;
 
@@ -22,11 +23,13 @@ final readonly class Email
      * @param list<DkimSignature> $dkim
      * @param list<AuthResult> $authResults
      * @param list<string> $references
+     * @param list<BodyPart> $textBody the parts to show in order, preferring plain text (RFC 8621 §4.1.4)
+     * @param list<BodyPart> $htmlBody the parts to show in order, preferring HTML (RFC 8621 §4.1.4)
      */
     public function __construct(
         public string|null $subject,
         public string|null $messageId,
-        public \DateTimeImmutable|null $date,
+        public DateTimeImmutable|null $date,
         public Address|null $from,
         public AddressList $fromAll,
         public Address|null $sender,
@@ -45,7 +48,17 @@ final readonly class Email
         public SpfResult|null $spf,
         public array $authResults,
         private HeaderCollection $headerCollection,
+        public array $textBody = [],
+        public array $htmlBody = [],
     ) {}
+
+    /**
+     * How many From fields the message carries; RFC 5322 §3.6 allows one, and a message with more names no one sender.
+     */
+    public function fromFieldCount(): int
+    {
+        return count($this->headerCollection->getAll('From'));
+    }
 
     /**
      * Get the decoded value of the first header matching the given name, or null.

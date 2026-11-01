@@ -1,0 +1,30 @@
+{
+    "subject": "ÿ ok",
+    "from": [],
+    "fromFields": 0,
+    "to": [],
+    "text": "abcÿ",
+    "html": null,
+    "textBody": [
+        [
+            "text/plain",
+            "abcÿ"
+        ]
+    ],
+    "htmlBody": [
+        [
+            "text/plain",
+            "abcÿ"
+        ]
+    ],
+    "attachments": [
+        {
+            "type": "application/pdf",
+            "filename": "ÿ.pdf",
+            "disposition": "attachment",
+            "size": 1,
+            "sha256": "2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881",
+            "nested": null
+        }
+    ]
+}

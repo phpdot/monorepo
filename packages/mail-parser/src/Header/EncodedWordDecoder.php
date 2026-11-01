@@ -29,13 +29,13 @@ final class EncodedWordDecoder
         }
 
         $value = preg_replace(
-            '/(=\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)\s+(=\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)/',
-            '$1$2',
+            '/(=\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)\s+(?==\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)/',
+            '$1',
             $value,
         ) ?? $value;
 
         if (preg_match('/(=\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)(=\?[^?]+(?:\*[^?]*)?\?[BbQq]\?[^?]*\?=)/', $value) === 1) {
-            $value = $this->decodeAdjacentWords($value);
+            return $this->decodeAdjacentWords($value);
         }
 
         return preg_replace_callback(
@@ -49,7 +49,7 @@ final class EncodedWordDecoder
     {
         $pattern = '/((?:=\?([^?*]+)(?:\*[^?]*)?\?([BbQq])\?[^?]*\?=)+)/';
 
-        return preg_replace_callback($pattern, function (array $match): string {
+        $decoded = preg_replace_callback($pattern, function (array $match): string {
             $run = $match[0];
 
             preg_match_all(self::ENCODED_WORD_PATTERN, $run, $words, PREG_SET_ORDER);
@@ -86,7 +86,13 @@ final class EncodedWordDecoder
             }
 
             return $result;
-        }, $value) ?? $value;
+        }, $value);
+
+        return $decoded ?? preg_replace_callback(
+            self::ENCODED_WORD_PATTERN,
+            fn(array $m) => $this->decodeSingleWord($m),
+            $value,
+        ) ?? $value;
     }
 
     /**

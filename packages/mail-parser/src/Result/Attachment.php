@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 /**
- * Value object representing a parsed email attachment with MIME type, filename, decoded content,
- * stream access for large files, and optional nested email support.
+ * An attachment of a parsed message: its type, name and decoded size, and its content held in memory, decoded from
+ * the message when read, or not kept, as the parser's content storage chose.
  *
  * @author Omar Hamdan <omar@phpdot.com>
  * @license MIT
@@ -12,118 +12,97 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Parser\Result;
 
+use Closure;
 use PHPdot\Mail\Parser\Header\HeaderCollection;
 
 final class Attachment
 {
     /** @var resource|null */
-    private $streamResource = null;
+    private $stream = null;
 
+    /**
+     * @param string|(Closure(): (resource|null))|null $content the decoded bytes, or what opens them as a stream
+     */
     public function __construct(
         public readonly string $mimeType,
         public readonly string|null $filename,
         public readonly string $disposition,
-        public readonly string|null $content,
         public readonly int $size,
         public readonly string|null $contentId = null,
         public readonly HeaderCollection|null $headers = null,
         public readonly Email|null $nestedEmail = null,
+        private readonly string|Closure|null $content = null,
     ) {}
 
+    public function __destruct()
+    {
+        if (is_resource($this->stream)) {
+            fclose($this->stream);
+        }
+    }
+
     /**
-     * Get the attachment content as a readable stream resource.
+     * Whether the content can be read: false when storage kept none or the attachment was over its size limit.
+     */
+    public function hasContent(): bool
+    {
+        return $this->content !== null;
+    }
+
+    /**
+     * The decoded bytes, read whole; for a large attachment kept in its source, `stream()` reads them without that.
+     */
+    public function content(): string|null
+    {
+        if (!$this->content instanceof Closure) {
+            return $this->content;
+        }
+
+        $stream = $this->stream();
+
+        if ($stream === null) {
+            return null;
+        }
+
+        $bytes = stream_get_contents($stream);
+        rewind($stream);
+
+        return $bytes === false ? null : $bytes;
+    }
+
+    /**
+     * The decoded bytes as a readable stream rewound to its start, to copy to a file or bucket without holding them.
      *
-     * This creates a php://temp stream from the content on first call
-     * and returns it. For large attachments, this avoids holding a second
-     * copy of the content in memory — the stream can be piped directly
-     * to S3, filesystem, or any stream-compatible destination.
-     *
-     * @return resource|null A readable stream, or null if content is not available.
+     * @return resource|null
      */
     public function stream()
     {
+        if (is_resource($this->stream)) {
+            rewind($this->stream);
 
-        if ($this->streamResource !== null && is_resource($this->streamResource)) {
-            rewind($this->streamResource);
-            return $this->streamResource;
+            return $this->stream;
         }
 
         if ($this->content === null) {
             return null;
         }
 
-        $stream = fopen('php://temp', 'r+');
+        if ($this->content instanceof Closure) {
+            $this->stream = ($this->content)();
+
+            return $this->stream;
+        }
+
+        $stream = fopen('php://temp/maxmemory:2097152', 'w+b');
+
         if ($stream === false) {
             return null;
         }
 
         fwrite($stream, $this->content);
         rewind($stream);
-
-        $this->streamResource = $stream;
+        $this->stream = $stream;
 
         return $stream;
-    }
-
-    /**
-     * Create an Attachment with a pre-existing stream resource.
-     *
-     * Used by the streaming parser to avoid loading content into memory.
-     * The content property is lazily read from the stream on first access.
-     *
-     * @param resource $stream
-     */
-    public static function fromStream(
-        string $mimeType,
-        string|null $filename,
-        string $disposition,
-        $stream,
-        int $size,
-        string|null $contentId = null,
-        HeaderCollection|null $headers = null,
-        Email|null $nestedEmail = null,
-    ): self {
-        $attachment = new self(
-            mimeType: $mimeType,
-            filename: $filename,
-            disposition: $disposition,
-            content: null,
-            size: $size,
-            contentId: $contentId,
-            headers: $headers,
-            nestedEmail: $nestedEmail,
-        );
-
-        $attachment->streamResource = $stream;
-
-        return $attachment;
-    }
-
-    /**
-     * Get content from the stream if content property is null but stream exists.
-     *
-     * This is useful when an Attachment was created via fromStream() —
-     * calling getContent() reads the stream into a string.
-     */
-    public function getContent(): string|null
-    {
-        if ($this->content !== null) {
-            return $this->content;
-        }
-
-        if ($this->streamResource !== null && is_resource($this->streamResource)) {
-            rewind($this->streamResource);
-            $content = stream_get_contents($this->streamResource);
-            return $content !== false ? $content : null;
-        }
-
-        return null;
-    }
-
-    public function __destruct()
-    {
-        if ($this->streamResource !== null && is_resource($this->streamResource)) {
-            fclose($this->streamResource);
-        }
     }
 }

@@ -17,13 +17,17 @@ use PHPdot\Mail\Parser\Rfc2231\ParameterDecoder;
 
 final class StructuredHeaderParser
 {
+    /**
+     * The most parameters one header reads, kept or not; a long filename's RFC 2231 sections number a few dozen.
+     */
+    private const int MAX_PARAMETERS = 1000;
+
     public function __construct(
         private readonly ParameterDecoder $parameterDecoder,
     ) {}
 
     public function parse(string $headerValue): MimeHeader
     {
-
         $headerValue = $this->stripComments($headerValue);
         $headerValue = trim($headerValue);
 
@@ -48,7 +52,6 @@ final class StructuredHeaderParser
 
     private function stripComments(string $value): string
     {
-
         $result = '';
         $depth = 0;
         $escaped = false;
@@ -139,6 +142,18 @@ final class StructuredHeaderParser
     }
 
     /**
+     * Keeps a parameter at its first occurrence; a name of digits alone is dropped, as PHP would make it an integer key.
+     *
+     * @param array<string, string> $params
+     */
+    private static function keep(array &$params, string $key, string $value): void
+    {
+        if (preg_match('/^-?[0-9]+(\*|$)/', $key) !== 1 && !array_key_exists($key, $params)) {
+            $params[$key] = $value;
+        }
+    }
+
+    /**
      * @return array<string, string>
      */
     private function parseParams(string $paramString): array
@@ -147,7 +162,7 @@ final class StructuredHeaderParser
         $length = strlen($paramString);
         $i = 0;
 
-        while (true) {
+        for ($read = 0; $read < self::MAX_PARAMETERS; $read++) {
             while ($i < $length && strpos(" \t\r\n;", $paramString[$i]) !== false) {
                 $i++;
             }
@@ -156,9 +171,15 @@ final class StructuredHeaderParser
                 break;
             }
 
-            $eqPos = strpos($paramString, '=', $i);
-            if ($eqPos === false) {
+            $eqPos = $i + strcspn($paramString, '=;', $i);
+
+            if ($eqPos >= $length) {
                 break;
+            }
+
+            if ($paramString[$eqPos] === ';') {
+                $i = $eqPos + 1;
+                continue;
             }
 
             $key = strtolower(trim(substr($paramString, $i, $eqPos - $i)));
@@ -169,7 +190,7 @@ final class StructuredHeaderParser
             }
 
             if ($i >= $length) {
-                $params[$key] = '';
+                self::keep($params, $key, '');
                 break;
             }
 
@@ -200,7 +221,7 @@ final class StructuredHeaderParser
                     $value .= $char;
                 }
 
-                $params[$key] = $value;
+                self::keep($params, $key, $value);
             } else {
                 $start = $i;
 
@@ -212,7 +233,7 @@ final class StructuredHeaderParser
                     break;
                 }
 
-                $params[$key] = substr($paramString, $start, $i - $start);
+                self::keep($params, $key, substr($paramString, $start, $i - $start));
             }
         }
 
