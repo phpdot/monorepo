@@ -32,7 +32,7 @@ final class ApcuDriver implements DriverInterface
         $success = false;
         $value = \apcu_fetch($this->prefix . $key, $success);
 
-        return $success ? $value : null;
+        return $success === true ? $value : null;
     }
 
     /**
