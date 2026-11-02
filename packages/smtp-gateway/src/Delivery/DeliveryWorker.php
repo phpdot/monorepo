@@ -11,10 +11,14 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Gateway\Delivery;
 
+use DateTimeImmutable;
+use PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope;
 use PHPdot\Mail\Gateway\DataType\Enum\QueueState;
 use PHPdot\Mail\Gateway\Exception\DeliveryException;
+use PHPdot\Mail\Gateway\Exception\PermanentDeliveryException;
 use PHPdot\Mail\Gateway\Exception\StorageException;
 use PHPdot\Mail\Gateway\Storage\StorageInterface;
+use Throwable;
 
 /**
  * Processes the message queue: picks up pending/retryable messages and delivers them.
@@ -114,13 +118,17 @@ final class DeliveryWorker
     }
 
     /**
-     * Process a single message.
+     * Claim one pending message and send it once: a refusal for good fails it, a callback error never re-sends it.
      */
     public function processOne(string $id): void
     {
         try {
             $envelope = $this->storage->getEnvelope($id);
         } catch (StorageException) {
+            return;
+        }
+
+        if ($envelope->state !== QueueState::Pending) {
             return;
         }
 
@@ -140,17 +148,25 @@ final class DeliveryWorker
 
         try {
             $providerMessageId = $this->transport->send($eml, $envelope->sender, $envelope->recipients);
-
-            $sent = $sending->withState(QueueState::Sent);
-            $this->storage->updateEnvelope($sent);
-
-            if ($this->onDelivered !== null) {
-                ($this->onDelivered)($id, $providerMessageId, $this->transport->name());
-            }
+        } catch (PermanentDeliveryException $e) {
+            $this->markFailed($sending, $e->getMessage());
+            return;
         } catch (DeliveryException $e) {
             $this->handleDeliveryFailure($sending, $e->getMessage());
-        } catch (\Throwable $e) {
+            return;
+        } catch (Throwable $e) {
             $this->handleDeliveryFailure($sending, 'Unexpected error: ' . $e->getMessage());
+            return;
+        }
+
+        try {
+            $this->storage->updateEnvelope($sending->withState(QueueState::Sent));
+        } catch (StorageException) {
+            return;
+        }
+
+        if ($this->onDelivered !== null) {
+            ($this->onDelivered)($id, $providerMessageId, $this->transport->name());
         }
     }
 
@@ -184,7 +200,7 @@ final class DeliveryWorker
         $this->onRetry = $callback;
     }
 
-    private function handleDeliveryFailure(\PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope $envelope, string $error): void
+    private function handleDeliveryFailure(MessageEnvelope $envelope, string $error): void
     {
         $attempts = $envelope->attempts + 1;
 
@@ -195,7 +211,7 @@ final class DeliveryWorker
 
         $delayIndex = min($attempts - 1, count(self::BACKOFF_DELAYS) - 1);
         $delay = self::BACKOFF_DELAYS[$delayIndex];
-        $nextRetry = new \DateTimeImmutable('+' . $delay . ' seconds');
+        $nextRetry = new DateTimeImmutable('+' . $delay . ' seconds');
 
         $retryEnvelope = $envelope->withRetry($error, $nextRetry);
 
@@ -212,8 +228,7 @@ final class DeliveryWorker
     }
 
     /**
-     * Recover messages stuck in Sending state (from crashed workers).
-     * Moves them back to Pending so they can be retried.
+     * Move a message back to Pending once it has been in Sending longer than the timeout, counted from its claim.
      */
     private function recoverStuckMessages(): void
     {
@@ -223,22 +238,17 @@ final class DeliveryWorker
             return;
         }
 
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
 
         foreach ($sendingIds as $id) {
             try {
                 $envelope = $this->storage->getEnvelope($id);
+                $startedAt = $envelope->sendingStartedAt ?? $envelope->receivedAt;
 
-                $sendingDuration = $now->getTimestamp() - $envelope->receivedAt->getTimestamp();
-                if ($envelope->attempts > 0) {
-
-                    $sendingDuration = $this->sendingTimeout + 1;
-                }
-
-                if ($sendingDuration > $this->sendingTimeout) {
+                if ($now->getTimestamp() - $startedAt->getTimestamp() > $this->sendingTimeout) {
                     $retry = $envelope->withRetry(
                         'Recovered from stuck Sending state',
-                        new \DateTimeImmutable(),
+                        new DateTimeImmutable(),
                     );
                     $this->storage->updateEnvelope($retry);
                 }
@@ -248,9 +258,9 @@ final class DeliveryWorker
         }
     }
 
-    private function markFailed(\PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope $envelope, string $error): void
+    private function markFailed(MessageEnvelope $envelope, string $error): void
     {
-        $failed = new \PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope(
+        $failed = new MessageEnvelope(
             id: $envelope->id,
             sender: $envelope->sender,
             recipients: $envelope->recipients,
@@ -263,6 +273,7 @@ final class DeliveryWorker
             lastError: $error,
             nextRetryAt: null,
             sentAt: null,
+            sendingStartedAt: $envelope->sendingStartedAt,
         );
 
         try {

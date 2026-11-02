@@ -34,7 +34,7 @@ final class SaslDecoder
     {
         $decoded = base64_decode($base64Token, true);
         if ($decoded === false) {
-            throw new \PHPdot\Mail\Gateway\Exception\InvalidSaslSyntaxException('Invalid base64 in AUTH PLAIN');
+            throw new InvalidSaslSyntaxException('Invalid base64 in AUTH PLAIN');
         }
 
         $parts = explode("\0", $decoded);
@@ -42,11 +42,14 @@ final class SaslDecoder
             throw new InvalidSaslSyntaxException('Invalid AUTH PLAIN format: expected 3 NUL-separated parts');
         }
 
-        $username = $parts[1];
-        $password = $parts[2];
+        [$authzid, $username, $password] = $parts;
 
         if ($username === '' || $password === '') {
             throw new AuthenticationException('Empty username or password in AUTH PLAIN');
+        }
+
+        if ($authzid !== '' && $authzid !== $username) {
+            throw new AuthenticationException('Authorization identity must match the username');
         }
 
         return new AuthCredentials(AuthMechanism::Plain, $username, $password);
@@ -61,7 +64,7 @@ final class SaslDecoder
         $password = base64_decode($base64Password, true);
 
         if ($username === false || $password === false) {
-            throw new \PHPdot\Mail\Gateway\Exception\InvalidSaslSyntaxException('Invalid base64 in AUTH LOGIN');
+            throw new InvalidSaslSyntaxException('Invalid base64 in AUTH LOGIN');
         }
 
         if ($username === '' || $password === '') {
@@ -80,7 +83,7 @@ final class SaslDecoder
     {
         $decoded = base64_decode($base64Token, true);
         if ($decoded === false) {
-            throw new \PHPdot\Mail\Gateway\Exception\InvalidSaslSyntaxException('Invalid base64 in AUTH XOAUTH2');
+            throw new InvalidSaslSyntaxException('Invalid base64 in AUTH XOAUTH2');
         }
 
         if (preg_match('/^user=([^\x01]+)\x01auth=Bearer ([^\x01]+)\x01\x01$/', $decoded, $m) !== 1) {

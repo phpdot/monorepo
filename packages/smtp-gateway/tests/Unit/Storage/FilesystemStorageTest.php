@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Gateway\Tests\Unit\Storage;
 
+use DateTimeImmutable;
 use PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope;
 use PHPdot\Mail\Gateway\DataType\Enum\QueueState;
 use PHPdot\Mail\Gateway\Exception\StorageException;
@@ -197,6 +198,72 @@ final class FilesystemStorageTest extends TestCase
     }
 
     // === Helpers ===
+
+    #[Test]
+    public function readyMessageIsFoundBehindManyBackingOff(): void
+    {
+        for ($i = 0; $i < 20; $i++) {
+            $this->storage->store($this->waiting(sprintf('0%02d', $i)), "x\r\n");
+        }
+        $this->storage->store($this->createEnvelope('fff-new'), "x\r\n");
+
+        self::assertSame(['fff-new'], $this->storage->listRetryable(10));
+    }
+
+    #[Test]
+    public function halfWrittenMetadataIsAStorageException(): void
+    {
+        file_put_contents($this->tempDir . '/pending/broken.json', '{"id":"broken","sen');
+
+        $this->expectException(StorageException::class);
+        $this->storage->getEnvelope('broken');
+    }
+
+    #[Test]
+    public function metadataWithAnUnknownStateIsAStorageException(): void
+    {
+        file_put_contents($this->tempDir . '/pending/odd.json', '{"id":"odd","state":"lost"}');
+
+        $this->expectException(StorageException::class);
+        $this->storage->getEnvelope('odd');
+    }
+
+    #[Test]
+    public function queuedMailIsReadableByItsOwnerAlone(): void
+    {
+        $this->storage->store($this->createEnvelope('private'), "x\r\n");
+
+        self::assertSame(0o700, fileperms($this->tempDir . '/pending') & 0o777);
+        self::assertSame(0o600, fileperms($this->tempDir . '/pending/private.eml') & 0o777);
+        self::assertSame(0o600, fileperms($this->tempDir . '/pending/private.json') & 0o777);
+    }
+
+    #[Test]
+    public function onlyOneClaimOfAPendingMessageSucceeds(): void
+    {
+        $envelope = $this->createEnvelope('claimed');
+        $this->storage->store($envelope, "x\r\n");
+        $this->storage->updateEnvelope($envelope->withState(QueueState::Sending));
+
+        $this->expectException(StorageException::class);
+        $this->storage->updateEnvelope($envelope->withState(QueueState::Sending));
+    }
+
+    private function waiting(string $id): MessageEnvelope
+    {
+        return new MessageEnvelope(
+            id: $id,
+            sender: 'a@b.test',
+            recipients: ['c@d.test'],
+            size: 3,
+            state: QueueState::Pending,
+            authUser: 'u',
+            clientIp: '127.0.0.1',
+            receivedAt: new DateTimeImmutable(),
+            attempts: 1,
+            nextRetryAt: new DateTimeImmutable('+1 hour'),
+        );
+    }
 
     private function createEnvelope(string $id): MessageEnvelope
     {

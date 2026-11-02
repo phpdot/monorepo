@@ -34,6 +34,7 @@ readonly class MessageEnvelope
         public string|null $lastError = null,
         public \DateTimeImmutable|null $nextRetryAt = null,
         public \DateTimeImmutable|null $sentAt = null,
+        public \DateTimeImmutable|null $sendingStartedAt = null,
     ) {}
 
     /**
@@ -56,6 +57,7 @@ readonly class MessageEnvelope
         $lastError = is_string($data['last_error'] ?? null) ? $data['last_error'] : null;
         $nextRetryAt = is_string($data['next_retry_at'] ?? null) ? $data['next_retry_at'] : null;
         $sentAt = is_string($data['sent_at'] ?? null) ? $data['sent_at'] : null;
+        $sendingStartedAt = is_string($data['sending_started_at'] ?? null) ? $data['sending_started_at'] : null;
 
         return new self(
             id: $id,
@@ -70,6 +72,7 @@ readonly class MessageEnvelope
             lastError: $lastError,
             nextRetryAt: $nextRetryAt !== null ? new \DateTimeImmutable($nextRetryAt) : null,
             sentAt: $sentAt !== null ? new \DateTimeImmutable($sentAt) : null,
+            sendingStartedAt: $sendingStartedAt !== null ? new \DateTimeImmutable($sendingStartedAt) : null,
         );
     }
 
@@ -91,6 +94,7 @@ readonly class MessageEnvelope
             'last_error' => $this->lastError,
             'next_retry_at' => $this->nextRetryAt?->format('c'),
             'sent_at' => $this->sentAt?->format('c'),
+            'sending_started_at' => $this->sendingStartedAt?->format('c'),
         ];
     }
 
@@ -109,6 +113,7 @@ readonly class MessageEnvelope
             lastError: $this->lastError,
             nextRetryAt: $this->nextRetryAt,
             sentAt: $state === QueueState::Sent && $this->sentAt === null ? new \DateTimeImmutable() : $this->sentAt,
+            sendingStartedAt: $state === QueueState::Sending ? new \DateTimeImmutable() : $this->sendingStartedAt,
         );
     }
 

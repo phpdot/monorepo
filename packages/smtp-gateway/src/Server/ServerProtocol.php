@@ -16,6 +16,7 @@ use PHPdot\Mail\Gateway\DataType\DTO\AuthCredentials;
 use PHPdot\Mail\Gateway\DataType\DTO\ParsedCommand;
 use PHPdot\Mail\Gateway\DataType\Enum\AuthMechanism;
 use PHPdot\Mail\Gateway\DataType\Enum\ReplyCode;
+use PHPdot\Mail\Gateway\DataType\Enum\SessionState;
 use PHPdot\Mail\Gateway\DataType\Enum\SmtpCommand;
 use PHPdot\Mail\Gateway\Exception\AuthenticationException;
 use PHPdot\Mail\Gateway\Exception\InvalidSaslSyntaxException;
@@ -45,6 +46,18 @@ use PHPdot\Mail\Gateway\Server\Event\RcptToEvent;
  */
 final class ServerProtocol
 {
+    /** Longest command line, CRLF excluded (RFC 5321 Section 4.5.3.1.4). */
+    private const int MAX_COMMAND_LINE = 510;
+
+    /** Longest AUTH line or SASL response, CRLF excluded (RFC 4954 Section 4). */
+    private const int MAX_AUTH_LINE = 12288;
+
+    /** Longest DATA line kept when no message size limit is set. */
+    private const int MAX_DATA_LINE = 28_311_552;
+
+    /** @var list<string> Reply codes counted toward the bad-command limit. */
+    private const array BAD_REPLY_CODES = ['500', '501', '503', '504', '530', '535'];
+
     private readonly LineParser $lineParser;
     private readonly CommandParser $commandParser;
     private readonly ReplyBuilder $replyBuilder;
@@ -60,16 +73,18 @@ final class ServerProtocol
     /** @var list<string> */
     private array $recipients = [];
     private bool $inData = false;
+    private bool $dataTooLarge = false;
     private string $dataBuffer = '';
     private int $dataSize = 0;
     private int $badCommandCount = 0;
     private string|null $authUser = null;
     private bool $tlsActive = false;
+    private bool $tlsPending = false;
 
     /** @var list<AuthMechanism> Mechanisms offered in EHLO and accepted by AUTH. */
     private readonly array $authMechanisms;
 
-    private bool $awaitingLoginUsername = false;
+    private AuthMechanism|null $awaitingSasl = null;
     private bool $awaitingLoginPassword = false;
     private string $loginUsername = '';
 
@@ -91,6 +106,7 @@ final class ServerProtocol
         StateMachine|null $stateMachine = null,
         bool $implicitTls = false,
         array|null $authMechanisms = null,
+        private readonly string $clientIp = '',
     ) {
         $this->authMechanisms = $authMechanisms ?? AuthMechanism::cases();
         $this->lineParser = new LineParser();
@@ -139,54 +155,36 @@ final class ServerProtocol
      */
     public function onData(string $bytes): array
     {
+        if ($this->tlsPending || $this->stateMachine->state() === SessionState::Closing) {
+            return [];
+        }
+
+        $this->lineParser->append($bytes);
         $responses = [];
-        $data = $bytes;
 
-        while ($data !== '') {
-            if ($this->inData) {
-                $lines = $this->lineParser->feedData($data);
-                $data = '';
+        while (!$this->tlsPending && $this->stateMachine->state() !== SessionState::Closing) {
+            $line = $this->lineParser->next($this->inData ? $this->maxDataLine() : self::MAX_AUTH_LINE);
 
-                foreach ($lines as $i => $line) {
-                    $result = $this->processDataLine($line);
-                    if ($result !== null) {
-                        $responses[] = $result;
-                    }
-
-                    if (!$this->inData) {
-                        $remaining = array_slice($lines, $i + 1);
-                        if ($remaining !== []) {
-                            $data = implode("\r\n", $remaining) . "\r\n";
-                            $pending = $this->lineParser->pending();
-                            if ($pending !== '') {
-                                $data .= $pending;
-                                $this->lineParser->reset();
-                            }
-                        }
-                        break;
-                    }
-                }
-            } else {
-                $lines = $this->lineParser->feed($data);
-                $data = '';
-
-                foreach ($lines as $i => $line) {
-                    $responses[] = $this->processCommandLine($line);
-
-                    if ($this->inData) {
-                        $remaining = array_slice($lines, $i + 1);
-                        if ($remaining !== []) {
-                            $data = implode("\r\n", $remaining) . "\r\n";
-                            $pending = $this->lineParser->pending();
-                            if ($pending !== '') {
-                                $data .= $pending;
-                                $this->lineParser->reset();
-                            }
-                        }
-                        break;
-                    }
-                }
+            if ($line === null) {
+                break;
             }
+
+            if ($this->inData) {
+                $reply = $line === false ? $this->dropOversizeData() : $this->processDataLine($line);
+                if ($reply !== null) {
+                    $responses[] = $reply;
+                }
+                continue;
+            }
+
+            $reply = $line === false
+                ? $this->replyBuilder->syntaxError('Line too long')
+                : $this->processCommandLine($line);
+            $responses[] = $this->countBad($reply);
+        }
+
+        if ($this->tlsPending) {
+            $this->lineParser->reset();
         }
 
         return $responses;
@@ -200,8 +198,7 @@ final class ServerProtocol
      */
     public function needsTlsUpgrade(): bool
     {
-        return $this->tlsActive === false
-            && $this->stateMachine->state() === \PHPdot\Mail\Gateway\DataType\Enum\SessionState::Secured;
+        return $this->tlsPending;
     }
 
     /**
@@ -210,7 +207,10 @@ final class ServerProtocol
     public function tlsUpgraded(): void
     {
         $this->tlsActive = true;
+        $this->tlsPending = false;
         $this->lineParser->reset();
+        $this->clearSasl();
+        $this->resetTransactionState();
     }
 
     public function isInData(): bool
@@ -218,7 +218,7 @@ final class ServerProtocol
         return $this->inData;
     }
 
-    public function state(): \PHPdot\Mail\Gateway\DataType\Enum\SessionState
+    public function state(): SessionState
     {
         return $this->stateMachine->state();
     }
@@ -243,29 +243,28 @@ final class ServerProtocol
      */
     private function processCommandLine(string $line): string
     {
-
-        if ($this->awaitingLoginUsername) {
-            return $this->processLoginUsername($line);
+        if (strpbrk($line, "\r\n") !== false) {
+            $this->clearSasl();
+            return $this->replyBuilder->syntaxError('Bare CR or LF not allowed');
         }
-        if ($this->awaitingLoginPassword) {
-            return $this->processLoginPassword($line);
+
+        if ($this->awaitingSasl !== null) {
+            return $this->processSaslResponse($line);
+        }
+
+        if (strlen($line) > self::MAX_COMMAND_LINE && strncasecmp($line, 'AUTH ', 5) !== 0) {
+            return $this->replyBuilder->syntaxError('Line too long');
         }
 
         try {
             $command = $this->commandParser->parse($line);
         } catch (ProtocolException) {
-            $this->badCommandCount++;
-            if ($this->badCommandCount >= $this->maxBadCommands) {
-                return $this->replyBuilder->serviceUnavailable('Too many unrecognized commands');
-            }
             return $this->replyBuilder->syntaxError();
         }
 
         if (!$this->stateMachine->isAllowed($command->verb)) {
             return $this->handleDisallowedCommand($command);
         }
-
-        $this->badCommandCount = 0;
 
         return match ($command->verb) {
             SmtpCommand::Ehlo => $this->handleEhlo($command),
@@ -281,8 +280,30 @@ final class ServerProtocol
         };
     }
 
+    /**
+     * Count a failing reply toward the bad-command limit, closing the session with 421 once it is reached.
+     */
+    private function countBad(string $reply): string
+    {
+        if (!in_array(substr($reply, 0, 3), self::BAD_REPLY_CODES, true)) {
+            return $reply;
+        }
+
+        $this->badCommandCount++;
+
+        if ($this->maxBadCommands > 0 && $this->badCommandCount >= $this->maxBadCommands) {
+            $this->stateMachine->closing();
+            return $this->replyBuilder->serviceUnavailable('Too many bad commands, closing');
+        }
+
+        return $reply;
+    }
+
     private function handleDisallowedCommand(ParsedCommand $command): string
     {
+        if ($command->verb === SmtpCommand::MailFrom && $this->stateMachine->state() === SessionState::Transaction) {
+            return $this->replyBuilder->badSequence('Sender already specified');
+        }
 
         if ($command->verb === SmtpCommand::Auth && $this->isAuthenticated()) {
             return $this->replyBuilder->badSequence('Already authenticated');
@@ -313,17 +334,9 @@ final class ServerProtocol
             return $this->replyBuilder->paramError('EHLO requires a hostname');
         }
 
-        $this->resetTransactionState();
+        $this->regreet();
 
-        $extensions = $this->buildCapabilities();
-
-        if ($this->tlsActive) {
-            $this->stateMachine->regreeted();
-        } else {
-            $this->stateMachine->greeted();
-        }
-
-        return $this->replyBuilder->ehlo($extensions);
+        return $this->replyBuilder->ehlo($this->buildCapabilities());
     }
 
     private function handleHelo(ParsedCommand $command): string
@@ -333,15 +346,25 @@ final class ServerProtocol
             return $this->replyBuilder->paramError('HELO requires a hostname');
         }
 
+        $this->regreet();
+
+        return $this->replyBuilder->ok($this->hostname . ' Hello ' . $hostname);
+    }
+
+    /**
+     * EHLO or HELO resets the transaction; a signed-in session stays signed in, as RFC 4954 Section 4 leaves it.
+     */
+    private function regreet(): void
+    {
         $this->resetTransactionState();
 
-        if ($this->tlsActive) {
+        if ($this->isAuthenticated()) {
+            $this->stateMachine->authenticated();
+        } elseif ($this->tlsActive) {
             $this->stateMachine->regreeted();
         } else {
             $this->stateMachine->greeted();
         }
-
-        return $this->replyBuilder->ok($this->hostname . ' Hello ' . $hostname);
     }
 
     private function handleStartTls(): string
@@ -351,6 +374,7 @@ final class ServerProtocol
         }
 
         $this->stateMachine->secured();
+        $this->tlsPending = true;
 
         return $this->replyBuilder->readyForTls();
     }
@@ -361,6 +385,10 @@ final class ServerProtocol
         $parts = explode(' ', $command->argument, 2);
         $mechanismStr = strtoupper(trim($parts[0]));
         $initialResponse = isset($parts[1]) ? trim($parts[1]) : null;
+
+        if ($initialResponse === '=') {
+            $initialResponse = '';
+        }
 
         $mechanism = AuthMechanism::fromString($mechanismStr);
 
@@ -377,8 +405,8 @@ final class ServerProtocol
 
     private function handleAuthPlain(string|null $initialResponse): string
     {
-        if ($initialResponse === null || $initialResponse === '') {
-
+        if ($initialResponse === null) {
+            $this->awaitingSasl = AuthMechanism::Plain;
             return $this->replyBuilder->authChallenge('');
         }
 
@@ -398,38 +426,55 @@ final class ServerProtocol
 
     private function handleAuthLogin(string|null $initialResponse): string
     {
-        if ($initialResponse !== null && $initialResponse !== '') {
+        $this->awaitingSasl = AuthMechanism::Login;
 
+        if ($initialResponse !== null && $initialResponse !== '') {
             $this->loginUsername = $initialResponse;
             $this->awaitingLoginPassword = true;
             return $this->replyBuilder->authChallenge(base64_encode('Password:'));
         }
 
-        $this->awaitingLoginUsername = true;
         return $this->replyBuilder->authChallenge(base64_encode('Username:'));
     }
 
-    private function processLoginUsername(string $line): string
+    /**
+     * Answer the client's reply to a 334 challenge for the mechanism it started.
+     */
+    private function processSaslResponse(string $line): string
     {
-        $this->awaitingLoginUsername = false;
+        $mechanism = $this->awaitingSasl;
+        $response = trim($line);
 
-        if (trim($line) === '*') {
+        if ($response === '*') {
+            $this->clearSasl();
             return $this->replyBuilder->reply(ReplyCode::SyntaxParamError, 'Authentication cancelled');
         }
 
-        $this->loginUsername = trim($line);
-        $this->awaitingLoginPassword = true;
-        return $this->replyBuilder->authChallenge(base64_encode('Password:'));
+        if ($mechanism === AuthMechanism::Login && !$this->awaitingLoginPassword) {
+            $this->loginUsername = $response;
+            $this->awaitingLoginPassword = true;
+            return $this->replyBuilder->authChallenge(base64_encode('Password:'));
+        }
+
+        $this->awaitingSasl = null;
+
+        return match ($mechanism) {
+            AuthMechanism::Plain => $this->handleAuthPlain($response),
+            AuthMechanism::XOAuth2 => $this->handleAuthXOAuth2($response),
+            default => $this->processLoginPassword($response),
+        };
+    }
+
+    private function clearSasl(): void
+    {
+        $this->awaitingSasl = null;
+        $this->awaitingLoginPassword = false;
+        $this->loginUsername = '';
     }
 
     private function processLoginPassword(string $line): string
     {
         $this->awaitingLoginPassword = false;
-
-        if (trim($line) === '*') {
-            $this->loginUsername = '';
-            return $this->replyBuilder->reply(ReplyCode::SyntaxParamError, 'Authentication cancelled');
-        }
 
         try {
             $credentials = $this->saslDecoder->decodeLogin($this->loginUsername, trim($line));
@@ -446,7 +491,8 @@ final class ServerProtocol
 
     private function handleAuthXOAuth2(string|null $initialResponse): string
     {
-        if ($initialResponse === null || $initialResponse === '') {
+        if ($initialResponse === null) {
+            $this->awaitingSasl = AuthMechanism::XOAuth2;
             return $this->replyBuilder->authChallenge('');
         }
 
@@ -487,15 +533,15 @@ final class ServerProtocol
     private function handleMailFrom(ParsedCommand $command): string
     {
 
-        $argument = $command->argument;
+        $path = CommandParser::parsePath($command->argument, 'FROM');
 
-        if (stripos($argument, 'FROM:') !== 0) {
+        if ($path === null) {
             return $this->replyBuilder->paramError('MAIL requires FROM:<address>');
         }
 
-        $address = CommandParser::extractAddress($argument);
-        $declaredSize = CommandParser::extractSize($argument);
-        $bodyType = CommandParser::extractBodyType($argument);
+        [$address, $parameters] = $path;
+        $declaredSize = CommandParser::extractSize($parameters);
+        $bodyType = CommandParser::extractBodyType($parameters);
 
         if ($declaredSize !== null && $declaredSize > $this->maxMessageSize) {
             return $this->replyBuilder->messageTooLarge($this->maxMessageSize);
@@ -518,13 +564,13 @@ final class ServerProtocol
 
     private function handleRcptTo(ParsedCommand $command): string
     {
-        $argument = $command->argument;
+        $path = CommandParser::parsePath($command->argument, 'TO');
 
-        if (stripos($argument, 'TO:') !== 0) {
+        if ($path === null) {
             return $this->replyBuilder->paramError('RCPT requires TO:<address>');
         }
 
-        $address = CommandParser::extractAddress($argument);
+        $address = $path[0];
 
         if ($address === '') {
             return $this->replyBuilder->paramError('Empty recipient address');
@@ -557,6 +603,7 @@ final class ServerProtocol
         }
 
         $this->inData = true;
+        $this->dataTooLarge = false;
         $this->dataBuffer = '';
         $this->dataSize = 0;
         $this->stateMachine->data();
@@ -575,24 +622,25 @@ final class ServerProtocol
      */
     private function processDataLine(string $line): string|null
     {
-
         if ($line === '.') {
             return $this->completeData();
+        }
+
+        if ($this->dataTooLarge) {
+            return null;
         }
 
         if (str_starts_with($line, '.')) {
             $line = substr($line, 1);
         }
 
+        if (strpbrk($line, "\r\n") !== false) {
+            $line = strtr($line, ["\r" => "\r\n", "\n" => "\r\n"]);
+        }
+
         $lineLen = strlen($line) + 2;
         if ($this->maxMessageSize > 0 && ($this->dataSize + $lineLen) > $this->maxMessageSize) {
-
-            $this->inData = false;
-            $this->dataBuffer = '';
-            $this->dataSize = 0;
-            $this->stateMachine->dataComplete();
-            $this->resetTransactionState();
-            return $this->replyBuilder->messageTooLarge($this->maxMessageSize);
+            return $this->dropOversizeData();
         }
 
         $this->dataBuffer .= $line . "\r\n";
@@ -601,8 +649,31 @@ final class ServerProtocol
         return null;
     }
 
+    /**
+     * Past the size limit the rest of the message is read and dropped up to its final dot, then refused (RFC 1870).
+     */
+    private function dropOversizeData(): null
+    {
+        $this->dataTooLarge = true;
+        $this->dataBuffer = '';
+        $this->dataSize = 0;
+
+        return null;
+    }
+
+    private function maxDataLine(): int
+    {
+        return $this->maxMessageSize > 0 ? $this->maxMessageSize : self::MAX_DATA_LINE;
+    }
+
     private function completeData(): string
     {
+        if ($this->dataTooLarge) {
+            $this->stateMachine->dataComplete();
+            $this->resetTransactionState();
+            return $this->replyBuilder->messageTooLarge($this->maxMessageSize);
+        }
+
         $this->inData = false;
         $message = $this->dataBuffer;
         $size = $this->dataSize;
@@ -618,7 +689,7 @@ final class ServerProtocol
             message: $message,
             size: $size,
             authUser: $this->authUser ?? '',
-            clientIp: '',
+            clientIp: $this->clientIp,
         );
         $this->lastEmittedEvent = $event;
         $this->emitter->emit($event);
@@ -672,7 +743,6 @@ final class ServerProtocol
 
         $caps[] = '8BITMIME';
         $caps[] = 'PIPELINING';
-        $caps[] = 'ENHANCEDSTATUSCODES';
 
         foreach ($this->capabilities as $cap) {
             $caps[] = $cap;
@@ -696,6 +766,7 @@ final class ServerProtocol
         $this->dataBuffer = '';
         $this->dataSize = 0;
         $this->inData = false;
+        $this->dataTooLarge = false;
     }
 
     private function generateMessageId(): string

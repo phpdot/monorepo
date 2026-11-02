@@ -44,10 +44,43 @@ final class LineParserTest extends TestCase
     }
 
     #[Test]
-    public function handlesBareLineFeed(): void
+    public function bareLineFeedNeverEndsALine(): void
     {
-        $lines = $this->parser->feed("NOOP\n");
-        self::assertSame(['NOOP'], $lines);
+        self::assertSame([], $this->parser->feed("NOOP\n"));
+        self::assertSame(["NOOP\nRSET"], $this->parser->feed("RSET\r\n"));
+    }
+
+    #[Test]
+    public function bareCarriageReturnNeverEndsALine(): void
+    {
+        self::assertSame(["a\rb"], $this->parser->feed("a\rb\r\n"));
+    }
+
+    #[Test]
+    public function overlongLineIsDroppedWholeUpToItsEnd(): void
+    {
+        $parser = new LineParser(maxLineLength: 10);
+
+        self::assertSame([], $parser->feed(str_repeat('A', 40)));
+        self::assertSame(['NOOP'], $parser->feed("AAAA RSET\r\nNOOP\r\n"));
+    }
+
+    #[Test]
+    public function nextReportsAnOverlongLineOnce(): void
+    {
+        $parser = new LineParser();
+        $parser->append(str_repeat('A', 30) . "\r\nQUIT\r\n");
+
+        self::assertFalse($parser->next(10));
+        self::assertSame('QUIT', $parser->next(10));
+        self::assertNull($parser->next(10));
+    }
+
+    #[Test]
+    public function crlfSplitAcrossReadsStillEndsTheLine(): void
+    {
+        self::assertSame([], $this->parser->feed("NOOP\r"));
+        self::assertSame(['NOOP'], $this->parser->feed("\n"));
     }
 
     #[Test]
@@ -72,12 +105,7 @@ final class LineParserTest extends TestCase
     {
         $parser = new LineParser(maxLineLength: 512, maxBufferSize: 1024);
 
-        // Send data exceeding buffer limit without any CRLF
-        $lines = $parser->feedData(str_repeat('X', 2000));
-        self::assertCount(1, $lines);
-        self::assertSame(1024, strlen($lines[0]));
-
-        // Buffer should be cleared after flush
+        self::assertSame([], $parser->feedData(str_repeat('X', 2000)));
         self::assertSame('', $parser->pending());
     }
 

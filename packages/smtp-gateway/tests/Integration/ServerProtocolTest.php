@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace PHPdot\Mail\Gateway\Tests\Integration;
 
 use PHPdot\Mail\Gateway\DataType\Enum\AuthMechanism;
+use PHPdot\Mail\Gateway\DataType\Enum\SessionState;
 use PHPdot\Mail\Gateway\Server\Event\AuthEvent;
 use PHPdot\Mail\Gateway\Server\Event\MailFromEvent;
 use PHPdot\Mail\Gateway\Server\Event\MessageEvent;
@@ -514,8 +515,11 @@ final class ServerProtocolTest extends TestCase
         $server->onData("RCPT TO:<c@d.com>\r\n");
         $server->onData("DATA\r\n");
 
-        // Send data exceeding the 100-byte limit
-        $responses = $server->onData(str_repeat('A', 120) . "\r\n");
+        self::assertSame([], $server->onData(str_repeat('A', 120) . "\r\n"));
+        self::assertSame([], $server->onData("RCPT TO:<attacker@evil.test>\r\n"));
+
+        $responses = $server->onData(".\r\n");
+        self::assertCount(1, $responses);
         self::assertStringStartsWith('552 ', $responses[0]);
     }
 
@@ -573,7 +577,238 @@ final class ServerProtocolTest extends TestCase
         self::assertStringContainsString('CHUNKING', $responses[0]);
     }
 
-    // === Helpers ===
+    #[Test]
+    public function startTlsDiscardsCommandsPipelinedBehindIt(): void
+    {
+        $server = $this->tlsServer();
+        $server->onData("EHLO test\r\n");
+
+        $token = base64_encode("\0omar\0secret");
+        self::assertSame(["220 Ready to start TLS\r\n"], $server->onData("STARTTLS\r\nAUTH PLAIN $token\r\n"));
+        self::assertTrue($server->needsTlsUpgrade());
+        self::assertFalse($server->isAuthenticated());
+        self::assertSame([], $server->onData("MAIL FROM:<a@b.test>\r\n"));
+
+        $server->tlsUpgraded();
+        $server->onData("EHLO test\r\n");
+        self::assertStringStartsWith('235 ', $server->onData("AUTH PLAIN $token\r\n")[0]);
+    }
+
+    #[Test]
+    public function tlsUpgradeForgetsAnAuthLoginStartedBeforeIt(): void
+    {
+        $server = $this->tlsServer();
+        $server->onData("EHLO test\r\n");
+        $server->onData("STARTTLS\r\n");
+        $server->tlsUpgraded();
+
+        self::assertStringStartsWith('250-', $server->onData("EHLO client.example\r\n")[0]);
+    }
+
+    #[Test]
+    public function oversizeMessageIsReadToItsDotBeforeItIsRefused(): void
+    {
+        $server = new ServerProtocol(hostname: 'test', maxMessageSize: 100, tlsRequired: false, authRequired: false);
+        $delivered = [];
+        $server->on(MessageEvent::class, function (MessageEvent $e) use (&$delivered): void {
+            $delivered[] = $e->recipients;
+            $e->accept();
+        });
+
+        $server->onData("EHLO test\r\nMAIL FROM:<a@b.test>\r\nRCPT TO:<c@d.test>\r\nDATA\r\n");
+        $responses = $server->onData(
+            str_repeat('X', 120) . "\r\nMAIL FROM:<a@b.test>\r\nRCPT TO:<attacker@evil.test>\r\nDATA\r\nsmuggled\r\n.\r\n",
+        );
+
+        self::assertCount(1, $responses);
+        self::assertStringStartsWith('552 ', $responses[0]);
+        self::assertSame([], $delivered);
+    }
+
+    #[Test]
+    public function bareLineFeedNeverEndsTheMessage(): void
+    {
+        $this->authenticateAndStartTransaction();
+        $this->server->onData("DATA\r\n");
+
+        $responses = $this->server->onData(
+            "Subject: a\r\n\r\nhello\n.\nMAIL FROM:<a@b.test>\r\nRCPT TO:<hidden@evil.test>\r\nDATA\r\nx\r\n.\r\n",
+        );
+
+        self::assertCount(1, $responses);
+        self::assertCount(1, $this->receivedMessages);
+        self::assertSame(
+            "Subject: a\r\n\r\nhello\r\n.\r\nMAIL FROM:<a@b.test>\r\nRCPT TO:<hidden@evil.test>\r\nDATA\r\nx\r\n",
+            $this->receivedMessages[0],
+        );
+    }
+
+    #[Test]
+    public function commandWithBareLineFeedIsRefused(): void
+    {
+        $this->authenticateAndStartTransaction();
+
+        $responses = $this->server->onData("RCPT TO:<bob@y.test\nRCPT TO:<hidden@evil.test>>\r\n");
+
+        self::assertStringStartsWith('500 ', $responses[0]);
+    }
+
+    #[Test]
+    public function malformedEnvelopeAddressesAreRefused(): void
+    {
+        $this->server->onData("EHLO test\r\n");
+        $this->server->onData('AUTH PLAIN ' . base64_encode("\0omar\0secret") . "\r\n");
+
+        self::assertStringStartsWith('501 ', $this->server->onData("MAIL FROM:<a b c>\r\n")[0]);
+        self::assertStringStartsWith('501 ', $this->server->onData("MAIL FROM:a@b.test\r\n")[0]);
+        self::assertStringStartsWith('250 ', $this->server->onData("MAIL FROM:<>\r\n")[0]);
+        self::assertStringStartsWith('501 ', $this->server->onData("RCPT TO:junk no brackets\r\n")[0]);
+        self::assertStringStartsWith('501 ', $this->server->onData("RCPT TO:<nobody>\r\n")[0]);
+        self::assertStringStartsWith('250 ', $this->server->onData("RCPT TO:<Postmaster>\r\n")[0]);
+    }
+
+    #[Test]
+    public function badCommandLimitClosesTheSession(): void
+    {
+        $responses = $this->server->onData(str_repeat("BOGUS\r\n", 8));
+
+        self::assertCount(5, $responses);
+        self::assertStringStartsWith('421 ', $responses[4]);
+        self::assertSame(SessionState::Closing, $this->server->state());
+        self::assertSame([], $this->server->onData("NOOP\r\n"));
+    }
+
+    #[Test]
+    public function failedAuthenticationCountsTowardTheLimit(): void
+    {
+        $this->server->onData("EHLO test\r\n");
+        $wrong = 'AUTH PLAIN ' . base64_encode("\0omar\0wrong") . "\r\n";
+
+        $responses = $this->server->onData(str_repeat($wrong, 10));
+
+        self::assertCount(5, $responses);
+        self::assertStringStartsWith('421 ', $responses[4]);
+    }
+
+    #[Test]
+    public function lineFeedFloodBeforeLoginIsOneReply(): void
+    {
+        $started = microtime(true);
+        $responses = $this->server->onData(str_repeat("\n", 1_048_576));
+
+        self::assertCount(1, $responses);
+        self::assertStringStartsWith('500 ', $responses[0]);
+        self::assertLessThan(1.0, microtime(true) - $started);
+    }
+
+    #[Test]
+    public function overlongCommandIsRefusedWholeAcrossReads(): void
+    {
+        $this->server->onData("EHLO test\r\n");
+
+        self::assertSame([], $this->server->onData('NOOP ' . str_repeat('A', 600)));
+        $responses = $this->server->onData("RSET\r\n");
+
+        self::assertCount(1, $responses);
+        self::assertStringStartsWith('500 ', $responses[0]);
+    }
+
+    #[Test]
+    public function longAuthLineIsAccepted(): void
+    {
+        $server = new ServerProtocol(hostname: 'test', tlsRequired: false);
+        $server->on(AuthEvent::class, fn(AuthEvent $e) => $e->accept());
+        $server->onData("EHLO test\r\n");
+        $token = base64_encode("user=omar\x01auth=Bearer " . str_repeat('t', 900) . "\x01\x01");
+
+        self::assertGreaterThan(510, strlen("AUTH XOAUTH2 $token"));
+        self::assertStringStartsWith('235 ', $server->onData("AUTH XOAUTH2 $token\r\n")[0]);
+    }
+
+    #[Test]
+    public function authPlainWithoutInitialResponseTakesTheNextLine(): void
+    {
+        $this->server->onData("EHLO test\r\n");
+
+        self::assertSame(["334 \r\n"], $this->server->onData("AUTH PLAIN\r\n"));
+        self::assertStringStartsWith('235 ', $this->server->onData(base64_encode("\0omar\0secret") . "\r\n")[0]);
+    }
+
+    #[Test]
+    public function xoauth2WithoutInitialResponseTakesTheNextLine(): void
+    {
+        $server = new ServerProtocol(hostname: 'test', tlsRequired: false);
+        $server->on(AuthEvent::class, fn(AuthEvent $e) => $e->accept());
+        $server->onData("EHLO test\r\n");
+
+        self::assertSame(["334 \r\n"], $server->onData("AUTH XOAUTH2\r\n"));
+        $token = base64_encode("user=omar\x01auth=Bearer tok\x01\x01");
+        self::assertStringStartsWith('235 ', $server->onData($token . "\r\n")[0]);
+    }
+
+    #[Test]
+    public function ehloAfterAuthenticationKeepsTheSessionSignedIn(): void
+    {
+        $this->server->onData("EHLO test\r\n");
+        $this->server->onData('AUTH PLAIN ' . base64_encode("\0omar\0secret") . "\r\n");
+
+        $ehlo = $this->server->onData("EHLO again\r\n")[0];
+
+        self::assertStringNotContainsString('AUTH', $ehlo);
+        self::assertStringStartsWith('250 ', $this->server->onData("MAIL FROM:<omar@test.com>\r\n")[0]);
+    }
+
+    #[Test]
+    public function enhancedStatusCodesAreNotAdvertised(): void
+    {
+        self::assertStringNotContainsString('ENHANCEDSTATUSCODES', $this->server->onData("EHLO test\r\n")[0]);
+    }
+
+    #[Test]
+    public function clientTextCannotForgeAReplyLine(): void
+    {
+        $server = new ServerProtocol(hostname: 'test', tlsRequired: false, authRequired: false);
+        $server->on(MailFromEvent::class, fn(MailFromEvent $e) => $e->reject("no\r\n250 forged"));
+        $server->onData("EHLO test\r\n");
+
+        $reply = $server->onData("MAIL FROM:<a@b.test>\r\n")[0];
+
+        self::assertSame(1, substr_count($reply, "\r\n"));
+        self::assertStringEndsWith("no  250 forged\r\n", $reply);
+    }
+
+    #[Test]
+    public function mailFromInsideATransactionIsBadSequence(): void
+    {
+        $this->authenticateAndStartTransaction();
+
+        self::assertStringStartsWith('503 ', $this->server->onData("MAIL FROM:<other@test.com>\r\n")[0]);
+    }
+
+    #[Test]
+    public function messageEventCarriesTheClientAddress(): void
+    {
+        $server = new ServerProtocol(hostname: 'test', tlsRequired: false, authRequired: false, clientIp: '203.0.113.9');
+        $seen = null;
+        $server->on(MessageEvent::class, function (MessageEvent $e) use (&$seen): void {
+            $seen = $e->clientIp;
+            $e->accept();
+        });
+
+        $server->onData("EHLO test\r\nMAIL FROM:<a@b.test>\r\nRCPT TO:<c@d.test>\r\nDATA\r\nx\r\n.\r\n");
+
+        self::assertSame('203.0.113.9', $seen);
+    }
+
+    private function tlsServer(): ServerProtocol
+    {
+        $server = new ServerProtocol(hostname: 'mail.test.com', tlsRequired: true);
+        $server->on(AuthEvent::class, function (AuthEvent $e): void {
+            $e->username() === 'omar' && $e->password() === 'secret' ? $e->accept() : $e->reject('Invalid credentials');
+        });
+
+        return $server;
+    }
 
     private function authenticateAndStartTransaction(): void
     {

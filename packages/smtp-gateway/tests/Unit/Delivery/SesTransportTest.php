@@ -30,7 +30,7 @@ final class SesTransportTest extends TestCase
     #[Test]
     public function sendWrapsClientExceptions(): void
     {
-        $client = $this->createMock(SesClientInterface::class);
+        $client = $this->createStub(SesClientInterface::class);
         $client->method('sendRawEmail')
             ->willThrowException(new \RuntimeException('AWS error'));
 
@@ -44,7 +44,7 @@ final class SesTransportTest extends TestCase
     #[Test]
     public function nameReturnsSes(): void
     {
-        $client = $this->createMock(SesClientInterface::class);
+        $client = $this->createStub(SesClientInterface::class);
         $transport = new SesTransport($client);
 
         self::assertSame('ses', $transport->name());

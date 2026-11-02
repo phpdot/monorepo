@@ -11,13 +11,16 @@ use PHPdot\Mail\Gateway\Delivery\TransportInterface;
 use PHPdot\Mail\Gateway\Exception\DeliveryException;
 use PHPdot\Mail\Gateway\Exception\StorageException;
 use PHPdot\Mail\Gateway\Storage\StorageInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\Attributes\Test;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
+#[AllowMockObjectsWithoutExpectations]
 final class DeliveryWorkerTest extends TestCase
 {
-    private StorageInterface&\PHPUnit\Framework\MockObject\MockObject $storage;
-    private TransportInterface&\PHPUnit\Framework\MockObject\MockObject $transport;
+    private StorageInterface&MockObject $storage;
+    private TransportInterface&MockObject $transport;
 
     protected function setUp(): void
     {
@@ -149,7 +152,7 @@ final class DeliveryWorkerTest extends TestCase
             sender: 'a@b.com',
             recipients: ['c@d.com'],
             size: 100,
-            state: QueueState::Sending,
+            state: QueueState::Pending,
             authUser: 'user',
             clientIp: '127.0.0.1',
             receivedAt: new \DateTimeImmutable(),
@@ -191,15 +194,15 @@ final class DeliveryWorkerTest extends TestCase
                 sender: 'a@b.com',
                 recipients: ['c@d.com'],
                 size: 100,
-                state: QueueState::Sending,
+                state: QueueState::Pending,
                 authUser: 'user',
                 clientIp: '127.0.0.1',
                 receivedAt: new \DateTimeImmutable(),
                 attempts: $attempt,
             );
 
-            $storage = $this->createMock(StorageInterface::class);
-            $transport = $this->createMock(TransportInterface::class);
+            $storage = $this->createStub(StorageInterface::class);
+            $transport = $this->createStub(TransportInterface::class);
 
             $storage->method('getEnvelope')->willReturn($envelope);
             $storage->method('retrieve')->willReturn('eml');
@@ -259,7 +262,7 @@ final class DeliveryWorkerTest extends TestCase
     #[Test]
     public function processBatchRespectsLimit(): void
     {
-        $this->storage->method('listRetryable')
+        $this->storage->expects(self::once())->method('listRetryable')
             ->with(5)
             ->willReturn(['a', 'b', 'c', 'd', 'e']);
 

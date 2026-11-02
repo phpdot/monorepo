@@ -56,11 +56,11 @@ $server = new StreamServer(
     host: '0.0.0.0',
     port: 2525,
     hostname: 'mail.example.com',
-    tlsRequired: false,
+    tlsRequired: true,
     authRequired: true,
 );
 
-// Optional: enable STARTTLS
+// STARTTLS: AUTH is offered only inside TLS while tlsRequired is true (the default)
 $server->enableTls('/path/to/cert.pem', '/path/to/key.pem');
 
 $server->start();
@@ -206,17 +206,20 @@ $worker->run();
 * AUTH PLAIN, LOGIN, XOAUTH2 (RFC 4954, RFC 7628) — pick which to offer with `authMechanisms`; an unoffered mechanism gets 504
 * MAIL FROM with SIZE check (RFC 1870)
 * RCPT TO with multiple recipients
-* DATA with dot-stuffing
+* DATA with dot-stuffing; lines end at CRLF alone, a bare CR or LF in a message is written as CRLF
+* An oversize message is read to its final dot, then refused with 552
 * RSET, NOOP, QUIT
 * PIPELINING support (RFC 2920)
 * 8BITMIME support (RFC 6152)
 
 ### Security
-* Require TLS before AUTH
+* Require TLS before AUTH; commands pipelined behind STARTTLS are discarded, never run in plaintext
 * Require AUTH before sending
+* Envelope addresses with a control character, space or missing brackets are refused
+* Commands with a bare CR or LF, or longer than 512 bytes (AUTH lines: 12 KB), are refused whole
 * Max message size enforcement
 * Max recipients per message
-* Max bad commands before disconnect
+* Max bad commands before disconnect: unknown, out-of-sequence and failed-AUTH replies all count, and the limit closes
 * Configurable: TLS optional, AUTH optional
 
 ### Storage
@@ -224,13 +227,15 @@ $worker->run();
 * Filesystem storage (works out of the box)
 * Queue states: pending → sending → sent / failed
 * Retry tracking with metadata
+* Files written whole and renamed in, owner-only; a claim is an atomic rename, so two workers never send one message
 
 ### Delivery
 * Pluggable transport interface
 * AWS SES transport (via SesClientInterface)
-* SMTP relay transport (any SMTP provider)
-* Exponential backoff retry (30s → 2h)
-* Stuck message recovery
+* SMTP relay transport (any SMTP provider): `encryption: 'tls'` requires STARTTLS on any port before credentials
+* Exponential backoff retry (30s → 2h); a 5xx refusal (`PermanentDeliveryException`) fails at once
+* Stuck message recovery, counted from the moment the message was claimed
+* A message recorded as sent is never re-sent, even when `onDelivered` throws
 * Event hooks: onDelivered, onFailed, onRetry
 
 ## License

@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace PHPdot\Mail\Gateway\Delivery;
 
 use PHPdot\Mail\Gateway\Exception\DeliveryException;
+use PHPdot\Mail\Gateway\Exception\PermanentDeliveryException;
 
 /**
  * Delivers messages by relaying via SMTP to an upstream server.
@@ -28,10 +29,16 @@ final class SmtpRelayTransport implements TransportInterface
         private readonly string|null $username = null,
         private readonly string|null $password = null,
         private readonly int $timeout = 30,
+        private readonly string|null $heloName = null,
     ) {}
 
     public function send(string $eml, string $sender, array $recipients): string
     {
+        $this->assertPath($sender, true);
+        foreach ($recipients as $rcpt) {
+            $this->assertPath($rcpt, false);
+        }
+
         $address = $this->buildAddress();
         $context = stream_context_create([
             'ssl' => [
@@ -52,10 +59,17 @@ final class SmtpRelayTransport implements TransportInterface
             stream_set_timeout($stream, $this->timeout);
             $this->expectCode($stream, 220, 'greeting');
 
-            $this->sendLine($stream, 'EHLO outbox');
-            $this->expectCode($stream, 250, 'EHLO');
+            $host = gethostname();
+            $helo = $this->heloName ?? ($host !== false && $host !== '' ? $host : 'localhost');
 
-            if ($this->encryption === 'tls' && $this->port === 587) {
+            $this->sendLine($stream, 'EHLO ' . $helo);
+            $ehlo = $this->expectCode($stream, 250, 'EHLO');
+
+            if ($this->encryption === 'tls') {
+                if (preg_match('/^250[ -]STARTTLS\s*$/mi', $ehlo) !== 1) {
+                    throw new DeliveryException('SMTP relay does not offer STARTTLS');
+                }
+
                 $this->sendLine($stream, 'STARTTLS');
                 $this->expectCode($stream, 220, 'STARTTLS');
 
@@ -68,7 +82,7 @@ final class SmtpRelayTransport implements TransportInterface
                     throw new DeliveryException('TLS upgrade failed for SMTP relay');
                 }
 
-                $this->sendLine($stream, 'EHLO outbox');
+                $this->sendLine($stream, 'EHLO ' . $helo);
                 $this->expectCode($stream, 250, 'EHLO after TLS');
             }
 
@@ -83,13 +97,13 @@ final class SmtpRelayTransport implements TransportInterface
 
             foreach ($recipients as $rcpt) {
                 $this->sendLine($stream, 'RCPT TO:<' . $rcpt . '>');
-                $this->expectCode($stream, 250, 'RCPT TO');
+                $this->expectCode($stream, [250, 251], 'RCPT TO');
             }
 
             $this->sendLine($stream, 'DATA');
             $this->expectCode($stream, 354, 'DATA');
 
-            $lines = explode("\r\n", $eml);
+            $lines = explode("\r\n", preg_replace('/\r\n|\r|\n/', "\r\n", $eml) ?? $eml);
 
             if ($lines[array_key_last($lines)] === '') {
                 array_pop($lines);
@@ -117,6 +131,16 @@ final class SmtpRelayTransport implements TransportInterface
         return 'smtp-relay';
     }
 
+    /**
+     * Refuse an envelope address that could carry another command: a control character, space or angle bracket.
+     */
+    private function assertPath(string $address, bool $mayBeEmpty): void
+    {
+        if (($address === '' && !$mayBeEmpty) || preg_match('/[\x00-\x20\x7F<>]/', $address) === 1) {
+            throw new PermanentDeliveryException('SMTP relay refused an invalid envelope address');
+        }
+    }
+
     private function buildAddress(): string
     {
         $protocol = match ($this->encryption) {
@@ -141,12 +165,12 @@ final class SmtpRelayTransport implements TransportInterface
     }
 
     /**
+     * Read one reply and require its code to be one expected; a 5xx reply is permanent and not worth retrying.
+     *
      * @param resource $stream
+     * @param int|list<int> $expected
      */
-    /**
-     * @param resource $stream
-     */
-    private function expectCode($stream, int $expected, string $context): string
+    private function expectCode($stream, int|array $expected, string $context): string
     {
         $response = '';
         $maxLines = 1000;
@@ -178,8 +202,13 @@ final class SmtpRelayTransport implements TransportInterface
         }
 
         $code = (int) substr($response, 0, 3);
-        if ($code !== $expected) {
-            throw new DeliveryException("SMTP relay unexpected response during $context: $response (expected $expected)");
+        $accepted = is_int($expected) ? [$expected] : $expected;
+
+        if (!in_array($code, $accepted, true)) {
+            $message = "SMTP relay unexpected response during $context: " . trim($response)
+                . ' (expected ' . implode(' or ', $accepted) . ')';
+
+            throw $code >= 500 && $code < 600 ? new PermanentDeliveryException($message) : new DeliveryException($message);
         }
 
         return $response;

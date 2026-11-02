@@ -173,11 +173,11 @@ final class StateMachine
     private function canStartTransaction(): bool
     {
         if ($this->authRequired) {
-            return $this->isAuthenticated();
+            return $this->state === SessionState::Authenticated;
         }
 
         return $this->state === SessionState::Greeted
             || $this->state === SessionState::Secured
-            || $this->isAuthenticated();
+            || $this->state === SessionState::Authenticated;
     }
 }

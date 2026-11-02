@@ -8,7 +8,9 @@ use PHPdot\Mail\Gateway\Connection\ServerConnection;
 use PHPdot\Mail\Gateway\DataType\Enum\SessionState;
 use PHPdot\Mail\Gateway\Server\Event\AuthEvent;
 use PHPdot\Mail\Gateway\Server\Event\ConnectEvent;
+use PHPdot\Mail\Gateway\Server\Event\MailFromEvent;
 use PHPdot\Mail\Gateway\Server\Event\MessageEvent;
+use PHPdot\Mail\Gateway\Server\Event\RcptToEvent;
 use PHPdot\Mail\Gateway\SmtpHandler;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
@@ -268,5 +270,27 @@ final class ServerConnectionTest extends TestCase
         $responses = $conn->onData("AUTH PLAIN $token\r\n");
 
         self::assertStringStartsWith('535 ', $responses[0]);
+    }
+
+    #[Test]
+    public function contextKeepsTheEnvelopeTheHandlersAccepted(): void
+    {
+        $handler = new SmtpHandler();
+        $handler->onMailFrom(fn(MailFromEvent $e) => $e->accept());
+        $handler->onRcptTo(fn(RcptToEvent $e) => $e->accept());
+        $seenIp = null;
+        $handler->onMessage(function (MessageEvent $e) use (&$seenIp): void {
+            $seenIp = $e->clientIp;
+            $e->accept();
+        });
+        $conn = new ServerConnection($handler, tlsRequired: false, authRequired: false, remoteAddress: '198.51.100.7');
+
+        $conn->onData("EHLO test\r\nMAIL FROM:<a@b.test>\r\nRCPT TO:<c@d.test>\r\n");
+
+        self::assertSame('a@b.test', $conn->context()->sender());
+        self::assertSame(['c@d.test'], $conn->context()->recipients());
+
+        $conn->onData("DATA\r\nx\r\n.\r\n");
+        self::assertSame('198.51.100.7', $seenIp);
     }
 }

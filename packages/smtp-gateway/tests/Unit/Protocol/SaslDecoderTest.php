@@ -32,14 +32,20 @@ final class SaslDecoderTest extends TestCase
     }
 
     #[Test]
-    public function decodesPlainWithAuthzid(): void
+    public function decodesPlainWhoseAuthzidIsTheUsername(): void
     {
-        // authzid\0authcid\0password
-        $token = base64_encode("admin\0omar\0secret");
-        $creds = $this->decoder->decodePlain($token);
+        $creds = $this->decoder->decodePlain(base64_encode("omar\0omar\0secret"));
 
         self::assertSame('omar', $creds->username);
         self::assertSame('secret', $creds->password);
+    }
+
+    #[Test]
+    public function refusesPlainWhoseAuthzidNamesSomeoneElse(): void
+    {
+        $this->expectException(AuthenticationException::class);
+
+        $this->decoder->decodePlain(base64_encode("admin\0omar\0secret"));
     }
 
     #[Test]

@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Child-process fixture: boots a StreamServer with implicit TLS (SMTPS).
+ * Child-process fixture: boots a StreamServer with implicit TLS (SMTPS), or with STARTTLS when asked.
  *
- * Usage: php implicit_tls_smtp_server.php <port> <cert.pem> <key.pem>
+ * Usage: php implicit_tls_smtp_server.php <port> <cert.pem> <key.pem> [starttls]
  *
  * Accepts exactly one credential pair (user/pass) and accepts every message.
  *
@@ -36,6 +36,7 @@ if (is_array($rawArgv)) {
 $port = (int) ($argv[1] ?? 0);
 $certFile = $argv[2] ?? '';
 $keyFile = $argv[3] ?? '';
+$startTls = ($argv[4] ?? '') === 'starttls';
 
 if ($port === 0 || $certFile === '' || $keyFile === '') {
     fwrite(STDERR, "usage: php implicit_tls_smtp_server.php <port> <cert.pem> <key.pem>\n");
@@ -63,5 +64,9 @@ $server = new PHPdot\Mail\Gateway\Server\StreamServer(
     tlsRequired: true,
     authRequired: true,
 );
-$server->enableImplicitTls($certFile, $keyFile);
+if ($startTls) {
+    $server->enableTls($certFile, $keyFile);
+} else {
+    $server->enableImplicitTls($certFile, $keyFile);
+}
 $server->start();

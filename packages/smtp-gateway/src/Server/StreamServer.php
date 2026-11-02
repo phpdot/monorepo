@@ -60,6 +60,9 @@ final class StreamServer implements ServerInterface
     /** @var array<int, resource> Streams mid-TLS-handshake keyed by (int) resource id (implicit TLS mode). */
     private array $handshaking = [];
 
+    /** @var array<int, resource> Streams mid-STARTTLS-handshake keyed by (int) resource id. */
+    private array $upgrading = [];
+
     /** @var list<\Closure(): void> Run once, after the listener is bound and before the loop. */
     private array $listeningCallbacks = [];
 
@@ -74,7 +77,7 @@ final class StreamServer implements ServerInterface
         private readonly int $maxMessageSize = 26214400,
         private readonly int $maxRecipients = 100,
         private readonly int $maxBadCommands = 20,
-        private readonly bool $tlsRequired = false,
+        private readonly bool $tlsRequired = true,
         private readonly bool $authRequired = true,
         private readonly int $connectionTimeout = 300,
         private readonly \Closure|null $wireLogger = null,
@@ -257,13 +260,9 @@ final class StreamServer implements ServerInterface
 
         $greeting = $conn->greeting();
 
-        if (str_starts_with($greeting, '421')) {
-            @fwrite($client, $greeting);
+        if (!$this->writeAll($client, $greeting) || str_starts_with($greeting, '421')) {
             $this->removeClient($id);
-            return;
         }
-
-        @fwrite($client, $greeting);
     }
 
     /**
@@ -304,6 +303,11 @@ final class StreamServer implements ServerInterface
             return;
         }
 
+        if (isset($this->upgrading[$id])) {
+            $this->driveStartTls($stream, $id);
+            return;
+        }
+
         $conn = $this->connections[$id] ?? null;
 
         if ($conn === null) {
@@ -328,8 +332,7 @@ final class StreamServer implements ServerInterface
 
         foreach ($responses as $response) {
             $this->logWire($id, 'S>', $response);
-            $written = @fwrite($stream, $response);
-            if ($written === false) {
+            if (!$this->writeAll($stream, $response)) {
                 $this->removeClient($id);
                 return;
             }
@@ -337,28 +340,80 @@ final class StreamServer implements ServerInterface
 
         if ($conn->needsTlsUpgrade()) {
             if ($this->tlsCertFile === null || $this->tlsKeyFile === null) {
-                @fwrite($stream, "454 TLS not configured\r\n");
+                $this->writeAll($stream, "454 TLS not configured\r\n");
                 $this->removeClient($id);
                 return;
             }
 
-            $result = @stream_socket_enable_crypto(
-                $stream,
-                true,
-                STREAM_CRYPTO_METHOD_TLSv1_2_SERVER | STREAM_CRYPTO_METHOD_TLSv1_3_SERVER,
-            );
-
-            if ($result !== true) {
-                $this->removeClient($id);
-                return;
-            }
-
-            $conn->tlsUpgraded();
+            $this->upgrading[$id] = $stream;
+            $this->driveStartTls($stream, $id);
+            return;
         }
 
         if ($conn->isClosing()) {
             $this->removeClient($id);
         }
+    }
+
+    /**
+     * Drive a STARTTLS handshake on a non-blocking stream: 0 means it is still in progress, resumed on the next read.
+     *
+     * @param resource $stream
+     */
+    private function driveStartTls($stream, int $id): void
+    {
+        $result = @stream_socket_enable_crypto(
+            $stream,
+            true,
+            STREAM_CRYPTO_METHOD_TLSv1_2_SERVER | STREAM_CRYPTO_METHOD_TLSv1_3_SERVER,
+        );
+
+        if ($result === 0) {
+            return;
+        }
+
+        unset($this->upgrading[$id]);
+        $conn = $this->connections[$id] ?? null;
+
+        if ($result !== true || $conn === null) {
+            $this->removeClient($id);
+            return;
+        }
+
+        $conn->tlsUpgraded();
+    }
+
+    /**
+     * Write every byte to a non-blocking stream, waiting for it to drain; false once it fails or stays full.
+     *
+     * @param resource $stream
+     */
+    private function writeAll($stream, string $bytes): bool
+    {
+        $wait = max(1, $this->connectionTimeout);
+
+        while ($bytes !== '') {
+            $written = @fwrite($stream, $bytes);
+
+            if ($written === false) {
+                return false;
+            }
+
+            if ($written > 0) {
+                $bytes = substr($bytes, $written);
+                continue;
+            }
+
+            $read = null;
+            $write = [$stream];
+            $except = null;
+
+            if (@stream_select($read, $write, $except, $wait) !== 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function reapIdle(): void
@@ -373,7 +428,7 @@ final class StreamServer implements ServerInterface
             if (($now - $lastTime) > $this->connectionTimeout) {
 
                 if (isset($this->clients[$id], $this->connections[$id])) {
-                    @fwrite($this->clients[$id], "421 Connection timed out\r\n");
+                    $this->writeAll($this->clients[$id], "421 Connection timed out\r\n");
                 }
                 $this->removeClient($id);
             }
@@ -386,7 +441,13 @@ final class StreamServer implements ServerInterface
             @fclose($this->clients[$id]);
         }
 
-        unset($this->clients[$id], $this->connections[$id], $this->lastActivity[$id], $this->handshaking[$id]);
+        unset(
+            $this->clients[$id],
+            $this->connections[$id],
+            $this->lastActivity[$id],
+            $this->handshaking[$id],
+            $this->upgrading[$id],
+        );
     }
 
     private function cleanup(): void
@@ -396,6 +457,7 @@ final class StreamServer implements ServerInterface
         }
 
         $this->handshaking = [];
+        $this->upgrading = [];
 
         if ($this->socket !== null) {
             @fclose($this->socket);

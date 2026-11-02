@@ -12,109 +12,88 @@ declare(strict_types=1);
 namespace PHPdot\Mail\Gateway\Protocol;
 
 /**
- * Splits incoming byte stream into CRLF-terminated lines.
- *
- * SMTP is strictly line-oriented (RFC 5321 Section 2.3.8).
- * No literal handling needed — DATA mode is managed by the session.
+ * Splits incoming bytes into lines ended by CRLF alone, so a bare CR or LF never ends a line (RFC 5321 Section 2.3.8).
+ * A line longer than its limit is dropped whole, up to the CRLF that ends it, and reported once.
  */
 final class LineParser
 {
     private string $buffer = '';
 
-    /** Max line length per RFC 5321 Section 4.5.3.1.6: 512 including CRLF. */
-    private int $maxLineLength;
+    private int $offset = 0;
 
-    /** Max buffer size to prevent memory exhaustion (default 27MB — slightly over 25MB message limit). */
-    private int $maxBufferSize;
+    private bool $discarding = false;
 
-    public function __construct(int $maxLineLength = 512, int $maxBufferSize = 28_311_552)
+    public function __construct(
+        private readonly int $maxLineLength = 512,
+        private readonly int $maxBufferSize = 28_311_552,
+    ) {}
+
+    /**
+     * Add received bytes to the buffer, cutting what was already read once per call.
+     */
+    public function append(string $data): void
     {
-        $this->maxLineLength = $maxLineLength;
-        $this->maxBufferSize = $maxBufferSize;
+        if ($this->offset > 0) {
+            $this->buffer = substr($this->buffer, $this->offset);
+            $this->offset = 0;
+        }
+
+        $this->buffer .= $data;
+
+        if ($this->discarding) {
+            $this->skipDiscarded();
+        }
     }
 
     /**
-     * Feed raw bytes and return complete lines.
+     * The next complete line without its CRLF: null while none is buffered, false for one past $maxLength, dropped.
+     */
+    public function next(int $maxLength): string|false|null
+    {
+        if ($this->discarding) {
+            return null;
+        }
+
+        $end = strpos($this->buffer, "\r\n", $this->offset);
+
+        if ($end === false) {
+            if (strlen($this->buffer) - $this->offset > $maxLength + 1) {
+                $this->discarding = true;
+                $this->skipDiscarded();
+                return false;
+            }
+
+            return null;
+        }
+
+        $line = substr($this->buffer, $this->offset, $end - $this->offset);
+        $this->offset = $end + 2;
+
+        if (strlen($line) > $maxLength) {
+            return false;
+        }
+
+        return $line;
+    }
+
+    /**
+     * Feed raw bytes and return complete command lines; over-long lines are dropped.
      *
-     * @return list<string> Complete lines without CRLF terminator.
+     * @return list<string>
      */
     public function feed(string $data): array
     {
-        $this->buffer .= $data;
-        $lines = [];
-
-        while ($this->buffer !== '') {
-            $crlfPos = strpos($this->buffer, "\r\n");
-            if ($crlfPos === false) {
-
-                $lfPos = strpos($this->buffer, "\n");
-                if ($lfPos !== false) {
-                    $crlfPos = $lfPos;
-                    $crlfLen = 1;
-                } else {
-
-                    if ($this->maxLineLength > 0 && strlen($this->buffer) > $this->maxLineLength) {
-
-                        $line = substr($this->buffer, 0, $this->maxLineLength);
-                        $this->buffer = '';
-                        $lines[] = $line;
-                    }
-                    break;
-                }
-            } else {
-                $crlfLen = 2;
-            }
-
-            $line = substr($this->buffer, 0, $crlfPos);
-            $this->buffer = substr($this->buffer, $crlfPos + $crlfLen);
-
-            if ($this->maxLineLength > 0 && strlen($line) > $this->maxLineLength) {
-                $line = substr($line, 0, $this->maxLineLength);
-            }
-
-            $lines[] = $line;
-        }
-
-        return $lines;
+        return $this->drain($data, $this->maxLineLength);
     }
 
     /**
-     * Feed raw bytes in DATA mode — lines can be up to 998 chars (RFC 5322 Section 2.1.1).
+     * Feed raw bytes in DATA mode, where a line may run to the buffer limit.
      *
      * @return list<string>
      */
     public function feedData(string $data): array
     {
-        $this->buffer .= $data;
-
-        if ($this->maxBufferSize > 0 && strlen($this->buffer) > $this->maxBufferSize) {
-            $line = substr($this->buffer, 0, $this->maxBufferSize);
-            $this->buffer = '';
-            return [$line];
-        }
-
-        $lines = [];
-
-        while ($this->buffer !== '') {
-            $crlfPos = strpos($this->buffer, "\r\n");
-            if ($crlfPos === false) {
-                $lfPos = strpos($this->buffer, "\n");
-                if ($lfPos !== false) {
-                    $crlfPos = $lfPos;
-                    $crlfLen = 1;
-                } else {
-                    break;
-                }
-            } else {
-                $crlfLen = 2;
-            }
-
-            $line = substr($this->buffer, 0, $crlfPos);
-            $this->buffer = substr($this->buffer, $crlfPos + $crlfLen);
-            $lines[] = $line;
-        }
-
-        return $lines;
+        return $this->drain($data, $this->maxBufferSize);
     }
 
     /**
@@ -122,7 +101,7 @@ final class LineParser
      */
     public function pending(): string
     {
-        return $this->buffer;
+        return substr($this->buffer, $this->offset);
     }
 
     /**
@@ -131,5 +110,39 @@ final class LineParser
     public function reset(): void
     {
         $this->buffer = '';
+        $this->offset = 0;
+        $this->discarding = false;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function drain(string $data, int $maxLength): array
+    {
+        $this->append($data);
+        $lines = [];
+
+        while (($line = $this->next($maxLength)) !== null) {
+            if ($line !== false) {
+                $lines[] = $line;
+            }
+        }
+
+        return $lines;
+    }
+
+    private function skipDiscarded(): void
+    {
+        $end = strpos($this->buffer, "\r\n", $this->offset);
+
+        if ($end === false) {
+            $keep = str_ends_with($this->buffer, "\r") ? "\r" : '';
+            $this->buffer = $keep;
+            $this->offset = 0;
+            return;
+        }
+
+        $this->offset = $end + 2;
+        $this->discarding = false;
     }
 }

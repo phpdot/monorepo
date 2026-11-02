@@ -76,6 +76,7 @@ final class ServerConnection
             stateMachine: $stateMachine,
             implicitTls: $implicitTls,
             authMechanisms: $authMechanisms,
+            clientIp: $this->context->clientIp,
         );
 
         $this->registerHandlers();
@@ -198,9 +199,10 @@ final class ServerConnection
             }
 
             if (!$event->isHandled()) {
-                $this->context->setSender($event->sender);
                 $event->accept();
             }
+
+            $this->context->setSender($event->sender);
         });
 
         $this->protocol->on(RcptToEvent::class, function (RcptToEvent $event): void {
@@ -221,9 +223,10 @@ final class ServerConnection
             }
 
             if (!$event->isHandled()) {
-                $this->context->addRecipient($event->recipient);
                 $event->accept();
             }
+
+            $this->context->addRecipient($event->recipient);
         });
 
         $this->protocol->on(MessageEvent::class, function (MessageEvent $event): void {

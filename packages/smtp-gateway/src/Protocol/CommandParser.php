@@ -62,6 +62,33 @@ final class CommandParser
     }
 
     /**
+     * Split "FROM:<path> params" into the address and its parameters, or null when the path breaks RFC 5321 4.1.2.
+     * The address may hold no control character, space or bracket; a source route is dropped, `<>` is the empty path.
+     *
+     * @return array{string, string}|null
+     */
+    public static function parsePath(string $argument, string $keyword): array|null
+    {
+        $pattern = '/^' . preg_quote($keyword, '/') . ':[ ]?<(?:@[^:<>]*:)?([^<>]*)>(?:[ ]+(.*))?$/i';
+
+        if (preg_match($pattern, $argument, $matches) !== 1) {
+            return null;
+        }
+
+        $address = $matches[1];
+
+        if (preg_match('/[\x00-\x20\x7F-\xFF]/', $address) === 1) {
+            return null;
+        }
+
+        if ($address !== '' && strcasecmp($address, 'postmaster') !== 0 && preg_match('/^[^@]+@[^@]+$/', $address) !== 1) {
+            return null;
+        }
+
+        return [$address, $matches[2] ?? ''];
+    }
+
+    /**
      * Extract SIZE parameter from MAIL FROM argument.
      *
      * RFC 1870: MAIL FROM:<addr> SIZE=123

@@ -11,9 +11,12 @@ declare(strict_types=1);
 
 namespace PHPdot\Mail\Gateway\Storage;
 
+use DateTimeImmutable;
+use JsonException;
 use PHPdot\Mail\Gateway\DataType\DTO\MessageEnvelope;
 use PHPdot\Mail\Gateway\DataType\Enum\QueueState;
 use PHPdot\Mail\Gateway\Exception\StorageException;
+use Throwable;
 
 /**
  * Stores .eml files and JSON metadata on the local filesystem.
@@ -44,14 +47,13 @@ final class FilesystemStorage implements StorageInterface
         $emlPath = $dir . '/' . $envelope->id . '.eml';
         $metaPath = $dir . '/' . $envelope->id . '.json';
 
-        if (file_put_contents($emlPath, $eml) === false) {
-            throw new StorageException('Failed to write .eml: ' . $emlPath);
-        }
+        $this->write($emlPath, $eml);
 
-        $json = json_encode($envelope->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-        if (file_put_contents($metaPath, $json) === false) {
+        try {
+            $this->write($metaPath, $this->encode($envelope));
+        } catch (StorageException $e) {
             @unlink($emlPath);
-            throw new StorageException('Failed to write metadata: ' . $metaPath);
+            throw $e;
         }
     }
 
@@ -82,26 +84,44 @@ final class FilesystemStorage implements StorageInterface
             throw new StorageException('Failed to read metadata: ' . $path);
         }
 
-        /** @var array<string, mixed> $data */
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw new StorageException('Unreadable metadata: ' . $path, 0, $e);
+        }
 
-        return MessageEnvelope::fromArray($data);
+        if (!is_array($data)) {
+            throw new StorageException('Unreadable metadata: ' . $path);
+        }
+
+        try {
+            /** @var array<string, mixed> $data */
+            return MessageEnvelope::fromArray($data);
+        } catch (Throwable $e) {
+            throw new StorageException('Invalid metadata: ' . $path, 0, $e);
+        }
     }
 
+    /**
+     * A move into Sending is the claim: the pending metadata is renamed into place, so only one worker wins it.
+     */
     public function updateEnvelope(MessageEnvelope $envelope): void
     {
-
-        $currentPath = $this->findFile($envelope->id, '.json');
-        $currentEml = $this->findFile($envelope->id, '.eml');
-
         $newDir = $this->stateDir($envelope->state);
         $newMetaPath = $newDir . '/' . $envelope->id . '.json';
         $newEmlPath = $newDir . '/' . $envelope->id . '.eml';
 
-        $json = json_encode($envelope->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
-        if (file_put_contents($newMetaPath, $json) === false) {
-            throw new StorageException('Failed to update metadata');
+        if ($envelope->state === QueueState::Sending) {
+            $pending = $this->stateDir(QueueState::Pending) . '/' . $envelope->id . '.json';
+            if (!@rename($pending, $newMetaPath)) {
+                throw new StorageException('Message already claimed or gone: ' . $envelope->id);
+            }
         }
+
+        $currentPath = $this->findFile($envelope->id, '.json');
+        $currentEml = $this->findFile($envelope->id, '.eml');
+
+        $this->write($newMetaPath, $this->encode($envelope));
 
         if ($currentEml !== null && $currentEml !== $newEmlPath) {
             if (!rename($currentEml, $newEmlPath)) {
@@ -125,7 +145,7 @@ final class FilesystemStorage implements StorageInterface
         }
 
         foreach ($files as $file) {
-            if (str_ends_with($file, '.json')) {
+            if (str_ends_with($file, '.json') && !str_starts_with($file, '.')) {
                 $ids[] = substr($file, 0, -5);
                 if (count($ids) >= $limit) {
                     break;
@@ -138,16 +158,15 @@ final class FilesystemStorage implements StorageInterface
 
     public function listRetryable(int $limit = 100): array
     {
-        $now = new \DateTimeImmutable();
+        $now = new DateTimeImmutable();
         $ids = [];
 
-        foreach ($this->listByState(QueueState::Pending, $limit * 2) as $id) {
+        foreach ($this->listByState(QueueState::Pending, PHP_INT_MAX) as $id) {
             try {
                 $envelope = $this->getEnvelope($id);
                 if ($envelope->nextRetryAt !== null && $envelope->nextRetryAt <= $now) {
                     $ids[] = $id;
                 } elseif ($envelope->nextRetryAt === null && $envelope->attempts === 0) {
-
                     $ids[] = $id;
                 }
 
@@ -195,6 +214,30 @@ final class FilesystemStorage implements StorageInterface
         return $stats;
     }
 
+    private function encode(MessageEnvelope $envelope): string
+    {
+        try {
+            return json_encode($envelope->toArray(), JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT);
+        } catch (JsonException $e) {
+            throw new StorageException('Failed to encode metadata: ' . $envelope->id, 0, $e);
+        }
+    }
+
+    /**
+     * Write a file beside its target, owner-only, and rename it in, so no reader ever sees half of it.
+     */
+    private function write(string $path, string $contents): void
+    {
+        $temporary = dirname($path) . '/.' . basename($path) . '.' . bin2hex(random_bytes(6)) . '.tmp';
+
+        if (@file_put_contents($temporary, $contents) !== strlen($contents)
+            || !@chmod($temporary, 0o600)
+            || !@rename($temporary, $path)) {
+            @unlink($temporary);
+            throw new StorageException('Failed to write: ' . $path);
+        }
+    }
+
     private function stateDir(QueueState $state): string
     {
         return $this->basePath . '/' . $state->value;
@@ -220,7 +263,7 @@ final class FilesystemStorage implements StorageInterface
         foreach (QueueState::cases() as $state) {
             $dir = $this->stateDir($state);
             if (!is_dir($dir)) {
-                if (!mkdir($dir, 0755, true) && !is_dir($dir)) {
+                if (!mkdir($dir, 0o700, true) && !is_dir($dir)) {
                     throw new StorageException('Failed to create directory: ' . $dir);
                 }
             }

@@ -92,4 +92,24 @@ final class CommandParserTest extends TestCase
         self::assertSame('8BITMIME', CommandParser::extractBodyType('FROM:<a@b.com> BODY=8BITMIME'));
         self::assertNull(CommandParser::extractBodyType('FROM:<a@b.com>'));
     }
+
+    #[Test]
+    public function parsesAPathAndItsParameters(): void
+    {
+        self::assertSame(['a@b.test', 'SIZE=10'], CommandParser::parsePath('FROM: <a@b.test> SIZE=10', 'FROM'));
+        self::assertSame(['', ''], CommandParser::parsePath('FROM:<>', 'FROM'));
+        self::assertSame(['u@d.test', ''], CommandParser::parsePath('TO:<@r1,@r2:u@d.test>', 'TO'));
+        self::assertSame(['Postmaster', ''], CommandParser::parsePath('TO:<Postmaster>', 'TO'));
+    }
+
+    #[Test]
+    public function refusesAPathThatCouldCarryAnotherCommand(): void
+    {
+        self::assertNull(CommandParser::parsePath("TO:<bob@y.test\nRCPT TO:<x@evil.test>>", 'TO'));
+        self::assertNull(CommandParser::parsePath("TO:<bob@y.test\0>", 'TO'));
+        self::assertNull(CommandParser::parsePath('FROM:<a b c>', 'FROM'));
+        self::assertNull(CommandParser::parsePath('TO:junk no brackets', 'TO'));
+        self::assertNull(CommandParser::parsePath('TO:<nobody>', 'TO'));
+        self::assertNull(CommandParser::parsePath('FROM:<a@b.test>SIZE=1', 'FROM'));
+    }
 }

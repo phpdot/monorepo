@@ -33,7 +33,7 @@ final class ReplyBuilder
      */
     public function reply(ReplyCode $code, string $text): string
     {
-        return $code->value . ' ' . $text . "\r\n";
+        return $code->value . ' ' . self::clean($text) . "\r\n";
     }
 
     /**
@@ -52,13 +52,21 @@ final class ReplyBuilder
 
         foreach ($lines as $i => $line) {
             if ($i === $last) {
-                $result .= $code->value . ' ' . $line . "\r\n";
+                $result .= $code->value . ' ' . self::clean($line) . "\r\n";
             } else {
-                $result .= $code->value . '-' . $line . "\r\n";
+                $result .= $code->value . '-' . self::clean($line) . "\r\n";
             }
         }
 
         return $result;
+    }
+
+    /**
+     * Reply text with every control character made a space, so no client or host text can end the reply line.
+     */
+    private static function clean(string $text): string
+    {
+        return preg_replace('/[\x00-\x1F\x7F]/', ' ', $text) ?? '';
     }
 
     /**
