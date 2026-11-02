@@ -22,7 +22,7 @@
         "ext-json": "*",
         "ext-openssl": "*",
         "paragonie/constant_time_encoding": "^2.6 || ^3.0",
-        "phpdot/contracts": "^0.5",
+        "phpdot/contracts": "^0.6",
         "psr/clock": "^1.0",
         "symfony/serializer": "^8.0",
         "web-auth/cose-lib": "^4.7",
@@ -30,8 +30,8 @@
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.94",
-        "phpdot/container": "^0.5",
-        "phpdot/iam": "^0.5",
+        "phpdot/container": "^0.6",
+        "phpdot/iam": "^0.6",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-strict-rules": "^2.0",
         "phpunit/phpunit": "^13.0"

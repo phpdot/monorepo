@@ -31,7 +31,7 @@ Structured error codes with context, translatable messages, and uniform output a
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/contracts` | `^0.5` |
+| `phpdot/contracts` | `^0.6` |
 
 ## Installation
 

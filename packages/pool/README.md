@@ -32,8 +32,8 @@ return, and prevents leaks and cross-coroutine sharing — created in `onWorkerS
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-swoole` | `>= 6.2` |
-| `phpdot/config` | `^0.5` |
-| `phpdot/contracts` | `^0.5` |
+| `phpdot/config` | `^0.6` |
+| `phpdot/contracts` | `^0.6` |
 | `psr/container` | `^2.0` |
 
 ## Installation
