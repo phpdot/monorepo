@@ -26,7 +26,7 @@ including the host's own assistant — sees the same door.
 |---|---|
 | PHP | `>= 8.5` |
 | `ext-json` | `*` |
-| `mcp/sdk` | `^0.8` |
+| `mcp/sdk` | `^0.8 || ^0.9` |
 | `php-http/discovery` | `^1.20` |
 | `phpdot/attribute` | `^0.6` |
 | `phpdot/cache` | `^0.6` |
