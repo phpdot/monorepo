@@ -41,7 +41,7 @@ declare(strict_types=1);
 namespace PHPdot\Mcp\Server;
 
 use Mcp\Schema\ToolAnnotations;
-use Mcp\Server;
+use Mcp\Server\Server;
 use Mcp\Server\Session\Psr16SessionStore;
 use Mcp\Server\Transport\StreamableHttpTransport;
 use PHPdot\Cache\Driver\FileDriver;

@@ -20,7 +20,7 @@
     "require": {
         "php": ">=8.5",
         "ext-json": "*",
-        "mcp/sdk": "^0.8 || ^0.9",
+        "mcp/sdk": "^0.8 || ^0.9 || ^0.10",
         "php-http/discovery": "^1.20",
         "phpdot/attribute": "^0.6",
         "phpdot/cache": "^0.6",

@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace PHPdot\Mcp\Server;
 
-use Mcp\Capability\Registry\ElementReference;
-use Mcp\Capability\Registry\ReferenceHandlerInterface;
-use Mcp\Capability\Registry\ToolReference;
+use Mcp\Server\Capability\Registry\ElementReference;
+use Mcp\Server\Capability\Registry\ReferenceHandlerInterface;
+use Mcp\Server\Capability\Registry\ToolReference;
 use PHPdot\Mcp\Contract\ToolActorInterface;
 use PHPdot\Mcp\Exception\ToolException;
 use PHPdot\Mcp\Tool\ToolArguments;

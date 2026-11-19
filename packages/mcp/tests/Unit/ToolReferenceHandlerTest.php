@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace PHPdot\Mcp\Tests\Unit;
 
-use Mcp\Capability\Registry\ElementReference;
-use Mcp\Capability\Registry\ToolReference;
 use Mcp\Schema\Tool;
+use Mcp\Server\Capability\Registry\ElementReference;
+use Mcp\Server\Capability\Registry\ToolReference;
 use PHPdot\Mcp\Exception\ToolException;
 use PHPdot\Mcp\Server\McpConfig;
 use PHPdot\Mcp\Server\ToolReferenceHandler;

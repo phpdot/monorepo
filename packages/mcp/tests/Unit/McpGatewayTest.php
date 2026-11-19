@@ -141,7 +141,7 @@ final class McpGatewayTest extends TestCase
             'jsonrpc' => '2.0',
             'id'      => 4,
             'method'  => 'tools/call',
-            'params'  => ['name' => 'catalog_purge', 'arguments' => []],
+            'params'  => ['name' => 'catalog_purge', 'arguments' => (object) []],
         ], $session, $viewer);
 
         $decoded = $this->decode($response);
