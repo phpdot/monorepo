@@ -16,13 +16,15 @@ namespace PHPdot\WebAuthn\Exception;
 
 use RuntimeException;
 use Throwable;
+use Webauthn\Exception\CounterException;
 use Webauthn\Exception\WebauthnException as VendorWebauthnException;
 
 class WebauthnException extends RuntimeException
 {
     /**
      * Translate any ceremony failure — vendor tree, metadata tree, or a
-     * foreign CBOR/cose/SPL escape — into the package hierarchy.
+     * foreign CBOR/cose/SPL escape — into the package hierarchy; a counter
+     * gone back keeps its own leaf.
      *
      * @param Throwable $failure The caught failure
      *
@@ -30,6 +32,12 @@ class WebauthnException extends RuntimeException
      */
     public static function from(Throwable $failure): self
     {
+        for ($cause = $failure; $cause !== null; $cause = $cause->getPrevious()) {
+            if ($cause instanceof CounterException) {
+                return new CounterRegressedException($cause->getMessage(), 0, $failure);
+            }
+        }
+
         if ($failure instanceof VendorWebauthnException) {
             return new CeremonyFailedException($failure->getMessage(), 0, $failure);
         }

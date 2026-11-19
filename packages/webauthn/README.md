@@ -75,7 +75,15 @@ Configuration arrives through the `#[Config('webauthn')]` DTO — `rpId`, `rpNam
 `allowedOrigins` (mandatory: an empty origin list refuses to construct rather than fall back
 to the library's looser deprecated origin check), the COSE algorithm set (shipped wide:
 ES256/384/512, RS256/384/512, PS256/384/512, Ed25519), challenge bytes (minimum 16, default
-32), and the ceremony TTL (default 300s on the injected PSR-20 clock).
+32), the ceremony TTL (default 300s on the injected PSR-20 clock), and the two requirement
+levels — `userVerification` and `residentKey`, each `required` (default), `preferred` or
+`discouraged`. User verification applies to both ceremonies: with `required`, a response whose
+authenticator did not verify its user (no PIN, no biometric) is refused, so a passkey alone is
+possession plus verification. `residentKey: required` asks the authenticator to make every
+registered credential discoverable, which `beginAuthentication(null)` depends on — a request the
+server cannot verify, so it is not an enforced guarantee. Each parked challenge remembers which
+ceremony began it; a response finished against the other ceremony is refused like an unknown
+challenge.
 
 ## Storage contract
 
@@ -102,7 +110,10 @@ otherwise hard-fail at parse time), the wide algorithm manager, and both validat
 touched after build. `WebauthnService` (scoped) orchestrates: challenge generation, single-use
 state, the duplicate refusal the library never performs, the mandatory counter write, and the
 exception fence — the library's two disjoint exception roots plus foreign CBOR/cose escapes all
-translate to `PHPdot\WebAuthn\Exception\WebauthnException` and its leaves.
+translate to `PHPdot\WebAuthn\Exception\WebauthnException` and its leaves. A signature
+counter that went back — the clone signal — is its own leaf, `CounterRegressedException`, so a
+host can record it apart from every other refusal; an authenticator that keeps no counter
+(always zero) still passes.
 
 ```mermaid
 graph TD

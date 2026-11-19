@@ -19,6 +19,7 @@ namespace PHPdot\WebAuthn\Authentication;
 use PHPdot\Iam\Authentication\AuthenticationResult;
 use PHPdot\Iam\Authentication\Contract\AuthenticationStageInterface;
 use PHPdot\Iam\Authentication\Contract\CredentialsInterface;
+use PHPdot\WebAuthn\Exception\CounterRegressedException;
 use PHPdot\WebAuthn\Exception\WebauthnException;
 use PHPdot\WebAuthn\WebauthnService;
 
@@ -47,6 +48,8 @@ final readonly class WebauthnStage implements AuthenticationStageInterface
 
         try {
             $handle = $this->webauthn->finishAuthentication($credentials->responseJson);
+        } catch (CounterRegressedException) {
+            return AuthenticationResult::failed('webauthn_counter_regressed');
         } catch (WebauthnException) {
             return AuthenticationResult::failed('webauthn_ceremony_failed');
         }

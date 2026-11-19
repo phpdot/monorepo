@@ -69,6 +69,20 @@ final class WebauthnStageTest extends TestCase
         self::assertSame('webauthn_ceremony_failed', $replay->reason);
     }
 
+    #[Test]
+    public function aCounterThatWentBackAnswersItsOwnReason(): void
+    {
+        [$service, , $sim] = $this->service();
+        $stage = new WebauthnStage($service, new StaticUsers());
+        $this->register($service, $sim);
+
+        $challenge = $this->challengeOf($service->beginAuthentication(null));
+        $result = $stage(new WebauthnCredentials($sim->assertion($challenge, 4)));
+
+        self::assertTrue($result->isFailed());
+        self::assertSame('webauthn_counter_regressed', $result->reason);
+    }
+
     /**
      * @return array{WebauthnService, InMemoryCredentialRecords, AuthenticatorSimulator}
      */

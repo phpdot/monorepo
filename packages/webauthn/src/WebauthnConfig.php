@@ -51,6 +51,11 @@ final readonly class WebauthnConfig
         -8 => Ed25519::class,
     ];
 
+    /**
+     * The requirement levels WebAuthn defines for user verification and for resident keys.
+     */
+    public const array REQUIREMENTS = ['required', 'preferred', 'discouraged'];
+
     private const int MIN_CHALLENGE_BYTES = 16;
 
     /**
@@ -62,6 +67,8 @@ final readonly class WebauthnConfig
      * @param list<int> $algorithms COSE identifiers to advertise and accept
      * @param int $challengeBytes Challenge entropy in bytes
      * @param int $ceremonyTtl Seconds a begun ceremony may hang unfinished
+     * @param string $userVerification Whether the authenticator must verify its user, in both ceremonies
+     * @param string $residentKey Whether a registered credential must be discoverable (stored on the authenticator)
      */
     public function __construct(
         public string $rpId = '',
@@ -74,6 +81,8 @@ final readonly class WebauthnConfig
         /** @var positive-int */
         public int $challengeBytes = 32,
         public int $ceremonyTtl = 300,
+        public string $userVerification = 'required',
+        public string $residentKey = 'required',
     ) {
         if ($rpId === '') {
             throw ConfigurationException::missing('rpId is required');
@@ -86,6 +95,18 @@ final readonly class WebauthnConfig
         if ($challengeBytes < self::MIN_CHALLENGE_BYTES) {
             throw ConfigurationException::missing(
                 sprintf('challengeBytes must be at least %d', self::MIN_CHALLENGE_BYTES),
+            );
+        }
+
+        if (!in_array($userVerification, self::REQUIREMENTS, true)) {
+            throw ConfigurationException::invalid(
+                sprintf('userVerification must be one of %s', implode(', ', self::REQUIREMENTS)),
+            );
+        }
+
+        if (!in_array($residentKey, self::REQUIREMENTS, true)) {
+            throw ConfigurationException::invalid(
+                sprintf('residentKey must be one of %s', implode(', ', self::REQUIREMENTS)),
             );
         }
 

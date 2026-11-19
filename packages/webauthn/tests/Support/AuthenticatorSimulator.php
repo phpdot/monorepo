@@ -63,10 +63,10 @@ final class AuthenticatorSimulator
      *
      * @return string The credential JSON the browser would post
      */
-    public function attestation(string $challenge, int $signCount): string
+    public function attestation(string $challenge, int $signCount, bool $verified = true): string
     {
         $clientDataJson = $this->clientData('webauthn.create', $challenge);
-        $authData = $this->authenticatorData($signCount, withCredential: true);
+        $authData = $this->authenticatorData($signCount, withCredential: true, verified: $verified);
         $signature = $this->sign($authData . hash('sha256', $clientDataJson, true));
 
         $attestationObject = (new Encoder())->encode([
@@ -89,10 +89,10 @@ final class AuthenticatorSimulator
      *
      * @return string The credential JSON the browser would post
      */
-    public function assertion(string $challenge, int $signCount): string
+    public function assertion(string $challenge, int $signCount, bool $verified = true): string
     {
         $clientDataJson = $this->clientData('webauthn.get', $challenge);
-        $authData = $this->authenticatorData($signCount, withCredential: false);
+        $authData = $this->authenticatorData($signCount, withCredential: false, verified: $verified);
         $signature = $this->sign($authData . hash('sha256', $clientDataJson, true));
 
         return $this->credentialJson([
@@ -148,10 +148,10 @@ final class AuthenticatorSimulator
      *
      * @return string
      */
-    private function authenticatorData(int $signCount, bool $withCredential): string
+    private function authenticatorData(int $signCount, bool $withCredential, bool $verified): string
     {
         $data = hash('sha256', $this->rpId, true)
-            . pack('C', $withCredential ? 0x45 : 0x05)
+            . pack('C', 0x01 | ($verified ? 0x04 : 0x00) | ($withCredential ? 0x40 : 0x00))
             . pack('N', $signCount);
 
         if (!$withCredential) {

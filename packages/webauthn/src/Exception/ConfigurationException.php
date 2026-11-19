@@ -25,4 +25,16 @@ final class ConfigurationException extends WebauthnException
     {
         return new self(sprintf('The WebAuthn configuration is incomplete: %s.', $what));
     }
+
+    /**
+     * A value that is present but not one the package accepts.
+     *
+     * @param string $what What is wrong with it
+     *
+     * @return self
+     */
+    public static function invalid(string $what): self
+    {
+        return new self(sprintf('The WebAuthn configuration is invalid: %s.', $what));
+    }
 }

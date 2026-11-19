@@ -25,6 +25,24 @@ final class WebauthnConfigTest extends TestCase
         self::assertSame(32, $config->challengeBytes);
         self::assertSame(300, $config->ceremonyTtl);
         self::assertSame('none', $config->attestation);
+        self::assertSame('required', $config->userVerification);
+        self::assertSame('required', $config->residentKey);
+    }
+
+    #[Test]
+    public function anUnknownUserVerificationIsRefused(): void
+    {
+        $this->expectException(ConfigurationException::class);
+
+        new WebauthnConfig(rpId: 'example.test', allowedOrigins: ['https://example.test'], userVerification: 'always');
+    }
+
+    #[Test]
+    public function anUnknownResidentKeyRequirementIsRefused(): void
+    {
+        $this->expectException(ConfigurationException::class);
+
+        new WebauthnConfig(rpId: 'example.test', allowedOrigins: ['https://example.test'], residentKey: 'sometimes');
     }
 
     #[Test]

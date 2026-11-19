@@ -8,6 +8,7 @@ use function json_decode;
 
 use PHPdot\WebAuthn\Base64Url;
 use PHPdot\WebAuthn\Exception\CeremonyFailedException;
+use PHPdot\WebAuthn\Exception\CounterRegressedException;
 use PHPdot\WebAuthn\Exception\DuplicateCredentialException;
 use PHPdot\WebAuthn\Exception\InvalidResponseException;
 use PHPdot\WebAuthn\Exception\UnknownCredentialException;
@@ -20,6 +21,7 @@ use PHPdot\WebAuthn\Tests\Support\StaticUsers;
 use PHPdot\WebAuthn\WebauthnConfig;
 use PHPdot\WebAuthn\WebauthnEngine;
 use PHPdot\WebAuthn\WebauthnService;
+use PHPdot\WebAuthn\WebauthnUser;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
@@ -149,12 +151,123 @@ final class CeremonyTest extends TestCase
         $service->finishRegistration($user, '{"no":"id","at":"all"}');
     }
 
+    #[Test]
+    public function theOptionsAskForUserVerificationAndAResidentKeyByDefault(): void
+    {
+        [$service, , ] = $this->service();
+
+        $creation = json_decode($service->beginRegistration((new StaticUsers())->user()), true);
+        $request = json_decode($service->beginAuthentication(null), true);
+
+        self::assertSame('required', $creation['authenticatorSelection']['userVerification']);
+        self::assertSame('required', $creation['authenticatorSelection']['residentKey']);
+        self::assertSame('required', $request['userVerification']);
+    }
+
+    #[Test]
+    public function aRegistrationWithoutUserVerificationIsRefusedByDefault(): void
+    {
+        [$service, $records, $sim] = $this->service();
+        $user = (new StaticUsers())->user();
+        $challenge = $this->challengeOf($service->beginRegistration($user));
+
+        try {
+            $service->finishRegistration($user, $sim->attestation($challenge, self::REGISTRATION_COUNT, verified: false));
+            self::fail('an unverified registration was accepted');
+        } catch (CeremonyFailedException) {
+            self::assertFalse($records->exists(Base64Url::encode($sim->credentialId())));
+        }
+    }
+
+    #[Test]
+    public function anAuthenticationWithoutUserVerificationIsRefusedByDefault(): void
+    {
+        [$service, , $sim] = $this->service();
+        $this->register($service, $sim);
+        $challenge = $this->challengeOf($service->beginAuthentication(null));
+
+        $this->expectException(CeremonyFailedException::class);
+
+        $service->finishAuthentication($sim->assertion($challenge, self::REGISTRATION_COUNT + 1, verified: false));
+    }
+
+    #[Test]
+    public function aHostThatOnlyPrefersVerificationAcceptsAnUnverifiedAuthentication(): void
+    {
+        [$service, , $sim] = $this->service(userVerification: 'preferred', residentKey: 'preferred');
+        $this->register($service, $sim);
+
+        $request = $service->beginAuthentication(null);
+        $handle = $service->finishAuthentication($sim->assertion($this->challengeOf($request), self::REGISTRATION_COUNT + 1, verified: false));
+
+        self::assertSame('preferred', json_decode($request, true)['userVerification']);
+        self::assertSame((new StaticUsers())->user()->handle, $handle);
+    }
+
+    #[Test]
+    public function aCounterThatWentBackIsItsOwnFailureAndIsNotSaved(): void
+    {
+        [$service, $records, $sim] = $this->service();
+        $this->register($service, $sim);
+        $challenge = $this->challengeOf($service->beginAuthentication(null));
+
+        try {
+            $service->finishAuthentication($sim->assertion($challenge, self::REGISTRATION_COUNT - 1));
+            self::fail('a counter that went back was accepted');
+        } catch (CounterRegressedException) {
+            $stored = json_decode((string) $records->findByCredentialId(Base64Url::encode($sim->credentialId())), true);
+
+            self::assertSame(self::REGISTRATION_COUNT, $stored['counter']);
+        }
+    }
+
+    #[Test]
+    public function anAuthenticatorThatKeepsNoCounterKeepsWorking(): void
+    {
+        [$service, , $sim] = $this->service();
+        $user = (new StaticUsers())->user();
+        $service->finishRegistration($user, $sim->attestation($this->challengeOf($service->beginRegistration($user)), 0));
+
+        foreach ([1, 2] as $round) {
+            $handle = $service->finishAuthentication($sim->assertion($this->challengeOf($service->beginAuthentication(null)), 0));
+
+            self::assertSame($user->handle, $handle, "round {$round}");
+        }
+    }
+
+    #[Test]
+    public function aRegistrationChallengeCannotFinishAnAuthentication(): void
+    {
+        [$service, , $sim] = $this->service();
+        $this->register($service, $sim);
+        $parked = $this->challengeOf($service->beginRegistration(new WebauthnUser(Base64Url::encode('someone-else'), 'mallory')));
+
+        $this->expectException(CeremonyFailedException::class);
+
+        $service->finishAuthentication($sim->assertion($parked, self::REGISTRATION_COUNT + 1, verified: false));
+    }
+
+    #[Test]
+    public function anAuthenticationChallengeCannotFinishARegistration(): void
+    {
+        [$service, $records, $sim] = $this->service();
+        $user = (new StaticUsers())->user();
+        $parked = $this->challengeOf($service->beginAuthentication(null));
+
+        try {
+            $service->finishRegistration($user, $sim->attestation($parked, self::REGISTRATION_COUNT));
+            self::fail('a registration finished on an authentication challenge');
+        } catch (CeremonyFailedException|InvalidResponseException) {
+            self::assertFalse($records->exists(Base64Url::encode($sim->credentialId())));
+        }
+    }
+
     /**
      * @return array{WebauthnService, InMemoryCredentialRecords, AuthenticatorSimulator}
      */
-    private function service(): array
+    private function service(string $userVerification = 'required', string $residentKey = 'required'): array
     {
-        $config = new WebauthnConfig(rpId: 'example.test', rpName: 'Example', allowedOrigins: ['https://example.test']);
+        $config = new WebauthnConfig(rpId: 'example.test', rpName: 'Example', allowedOrigins: ['https://example.test'], userVerification: $userVerification, residentKey: $residentKey);
         $engine = new WebauthnEngine($config);
         $records = new InMemoryCredentialRecords();
         $service = new WebauthnService(

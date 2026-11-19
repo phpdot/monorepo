@@ -75,7 +75,7 @@ final class WebauthnService
             new PublicKeyCredentialUserEntity($user->name, Base64Url::decode($user->handle), $user->displayName),
             $this->newChallenge(),
             $this->credentialParameters(),
-            AuthenticatorSelectionCriteria::create(),
+            AuthenticatorSelectionCriteria::create(null, $this->config->userVerification, $this->config->residentKey),
             $this->config->attestation,
             $excluded,
             $this->config->timeout,
@@ -146,7 +146,7 @@ final class WebauthnService
             $this->newChallenge(),
             $this->config->rpId,
             $allowed,
-            PublicKeyCredentialRequestOptions::USER_VERIFICATION_REQUIREMENT_PREFERRED,
+            $this->config->userVerification,
             $this->config->timeout,
         );
 
@@ -207,7 +207,10 @@ final class WebauthnService
     private function park(PublicKeyCredentialCreationOptions|PublicKeyCredentialRequestOptions $options): string
     {
         $json = $this->engine->serializer()->serialize($options, 'json');
-        $this->ceremonies->save(Base64Url::encode($options->challenge), $json);
+        $this->ceremonies->save(
+            Base64Url::encode($options->challenge),
+            json_encode(['ceremony' => $options::class, 'options' => $json], JSON_THROW_ON_ERROR),
+        );
 
         return $json;
     }
@@ -296,8 +299,13 @@ final class WebauthnService
     {
         $challenge = Base64Url::encode($credential->response->clientDataJSON->challenge);
 
-        $optionsJson = $this->ceremonies->consume($challenge)
-            ?? throw new CeremonyFailedException('The challenge is unknown, consumed, or expired.');
+        $parked = $this->ceremonies->consume($challenge);
+        $state = $parked === null ? null : json_decode($parked, true);
+        $optionsJson = is_array($state) && ($state['ceremony'] ?? null) === $optionsClass ? ($state['options'] ?? null) : null;
+
+        if (!is_string($optionsJson)) {
+            throw new CeremonyFailedException('The challenge is unknown, consumed, expired, or for the other ceremony.');
+        }
 
         return $this->decode(fn(): mixed => $this->engine->serializer()->deserialize($optionsJson, $optionsClass, 'json'));
     }
