@@ -347,7 +347,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: 4328936
@@ -380,7 +380,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: actions/create-github-app-token@v2
+      - uses: actions/create-github-app-token@v3
         id: app-token
         with:
           app-id: 4328936
