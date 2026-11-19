@@ -10,6 +10,7 @@ use PHPdot\Totp\Otp\Totp;
 use PHPdot\Totp\Secret\Secret;
 use PHPdot\Totp\Tests\Support\FrozenClock;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class TotpTest extends TestCase
@@ -160,4 +161,34 @@ final class TotpTest extends TestCase
     {
         return new Totp(new Secret(self::SEED), Algorithm::Sha1, 6, 30, new FrozenClock(self::FROZEN));
     }
+
+    #[Test]
+    public function aTimeBeforeTheEpochIsRefused(): void
+    {
+        $plain = new Totp(new Secret(self::SEED));
+        $later = new Totp(new Secret(self::SEED), Algorithm::Sha1, 6, 30, new FrozenClock(self::FROZEN), 1_000_000_000);
+
+        foreach ([[$plain, -1], [$plain, -100000], [$later, 999_999_999], [$later, 999_999_971]] as [$totp, $at]) {
+            try {
+                $totp->at($at);
+                self::fail("a code was made for {$at}");
+            } catch (InvalidParameterException) {
+                self::addToAssertionCount(1);
+            }
+        }
+
+        self::assertSame($plain->at(0), $plain->at(29));
+        self::assertSame($later->at(1_000_000_000), $later->at(1_000_000_029));
+    }
+
+    #[Test]
+    public function nearTheEpochVerifyAndTheWindowSkipTheStepsBeforeIt(): void
+    {
+        $totp = new Totp(new Secret(self::SEED), Algorithm::Sha1, 6, 30, new FrozenClock(10));
+
+        self::assertSame(0, $totp->verifyAt($totp->at(10), 10)->timestep);
+        self::assertFalse($totp->verifyAt('000000', 10)->passed);
+        self::assertSame([0, 1, 2], array_keys($totp->window(2)->codes));
+    }
+
 }

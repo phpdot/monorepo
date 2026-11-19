@@ -6,6 +6,7 @@ namespace PHPdot\Totp\Tests\Unit;
 
 use PHPdot\Totp\Exception\OtpException;
 use PHPdot\Totp\Result\OtpWindow;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class OtpWindowTest extends TestCase
@@ -37,4 +38,13 @@ final class OtpWindowTest extends TestCase
 
         $window->current();
     }
+
+    #[Test]
+    public function everyCodeComesInAscendingStepWhateverOrderItWasGivenIn(): void
+    {
+        $window = new OtpWindow([11 => 'cccccc', 9 => 'aaaaaa', 10 => 'bbbbbb'], 10);
+
+        self::assertSame(['aaaaaa', 'bbbbbb', 'cccccc'], $window->all());
+    }
+
 }

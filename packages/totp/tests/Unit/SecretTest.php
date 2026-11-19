@@ -7,6 +7,7 @@ namespace PHPdot\Totp\Tests\Unit;
 use PHPdot\Totp\Exception\InvalidParameterException;
 use PHPdot\Totp\Exception\InvalidSecretException;
 use PHPdot\Totp\Secret\Secret;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class SecretTest extends TestCase
@@ -60,4 +61,14 @@ final class SecretTest extends TestCase
         // Base32 of ASCII "12345678901234567890" (the RFC test seed).
         self::assertSame('GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ', (new Secret('12345678901234567890'))->toBase32());
     }
+
+    #[Test]
+    public function aTooShortBase32SecretSaysWhatIsWrong(): void
+    {
+        $this->expectException(InvalidSecretException::class);
+        $this->expectExceptionMessageMatches('/Base32/');
+
+        Secret::fromBase32('A');
+    }
+
 }

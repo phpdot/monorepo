@@ -68,6 +68,9 @@ final readonly class OtpWindow
      */
     public function all(): array
     {
-        return array_values($this->codes);
+        $codes = $this->codes;
+        ksort($codes);
+
+        return array_values($codes);
     }
 }

@@ -7,6 +7,7 @@ namespace PHPdot\Totp\Tests\Unit;
 use PHPdot\Totp\Exception\InvalidSecretException;
 use PHPdot\Totp\Secret\Base32;
 use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class Base32Test extends TestCase
@@ -62,4 +63,31 @@ final class Base32Test extends TestCase
 
         Base32::decode('MZXW6YTB1'); // '1' is not in the Base32 alphabet
     }
+
+    #[Test]
+    public function aSpellingWithBitsLeftOverIsRefused(): void
+    {
+        foreach (['MZXW6YTBOJ', 'MZXW6YTBOP', 'MZXW6YR'] as $loose) {
+            try {
+                Base32::decode($loose);
+                self::fail("{$loose} was decoded");
+            } catch (InvalidSecretException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
+    #[Test]
+    public function aLengthNoByteCanEndOnIsRefused(): void
+    {
+        foreach (['A', 'MZX', 'MZXW6Y', 'MZXW6YTBOIA', 'MZXW6YTBOIZ'] as $broken) {
+            try {
+                Base32::decode($broken);
+                self::fail("{$broken} was decoded");
+            } catch (InvalidSecretException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
 }

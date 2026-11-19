@@ -8,6 +8,7 @@ use PHPdot\Totp\Enum\Algorithm;
 use PHPdot\Totp\Exception\InvalidParameterException;
 use PHPdot\Totp\Otp\Hotp;
 use PHPdot\Totp\Secret\Secret;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 
 final class HotpTest extends TestCase
@@ -63,4 +64,16 @@ final class HotpTest extends TestCase
 
         new Hotp(new Secret('12345678901234567890'), Algorithm::Sha1, 9);
     }
+
+    #[Test]
+    public function storingTheMatchedCounterPlusOneRefusesTheSameCodeAgain(): void
+    {
+        $code = $this->hotp->at(5);
+        $first = $this->hotp->verify($code, 5);
+
+        self::assertTrue($first->passed);
+        self::assertSame(5, $first->timestep);
+        self::assertFalse($this->hotp->verify($code, (int) $first->timestep + 1, 3)->passed);
+    }
+
 }

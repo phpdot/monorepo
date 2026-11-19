@@ -64,6 +64,11 @@ run of codes around now, and `verify()`/`verifyAt()` for validation. `Hotp` is t
 Defaults are **SHA-1 / 6 digits / 30s** — what every authenticator app expects; SHA-256/512 and 7–8 digits
 are available via `Algorithm` but not all scanners honour non-default parameters.
 
+`Secret::fromBase32()` accepts only the canonical spelling of a key (any case, spaces and `=` ignored):
+a string with stray trailing bits or an impossible length is refused, so two different strings never stand
+for the same secret. `Totp` refuses a time before its epoch. `Hotp::verify($otp, $counter)` takes the next
+counter not yet used; on success store the matched counter **plus one**, which refuses the same code again.
+
 ### Security
 
 The cryptography here is small and RFC-verified; the real risks live **around** it, in your application.

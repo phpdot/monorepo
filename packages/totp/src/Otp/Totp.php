@@ -68,10 +68,18 @@ final class Totp extends Otp
 
     /**
      * The code valid at a specific Unix timestamp.
+     *
+     * @throws InvalidParameterException if `$input` is before the epoch
      */
     public function at(int $input): string
     {
-        return $this->compute($this->counterAt($input));
+        $step = $this->counterAt($input);
+
+        if ($step < 0) {
+            throw new InvalidParameterException("Time must not be before the epoch, got {$input}.");
+        }
+
+        return $this->compute($step);
     }
 
     /**
@@ -106,11 +114,12 @@ final class Totp extends Otp
 
     /**
      * The codes for `$steps` periods either side of now (default ±1: previous,
-     * current, next), keyed by time-step. For display, not verification.
+     * current, next), keyed by time-step; no step before the epoch is included.
+     * For display, not verification.
      *
      * @param int $steps
      *
-     * @throws InvalidParameterException if `$steps` is negative
+     * @throws InvalidParameterException if `$steps` is negative, or now is before the epoch
      *
      * @return OtpWindow
      */
@@ -122,8 +131,12 @@ final class Totp extends Otp
 
         $center = $this->counterAt($this->timestamp());
 
+        if ($center < 0) {
+            throw new InvalidParameterException('The clock is before the epoch.');
+        }
+
         $codes = [];
-        for ($i = -$steps; $i <= $steps; ++$i) {
+        for ($i = max(-$steps, -$center); $i <= $steps; ++$i) {
             $codes[$center + $i] = $this->compute($center + $i);
         }
 
@@ -174,7 +187,7 @@ final class Totp extends Otp
         for ($i = -$window; $i <= $window; ++$i) {
             $step = $center + $i;
 
-            if ($after !== null && $step <= $after) {
+            if ($step < 0 || ($after !== null && $step <= $after)) {
                 continue;
             }
 
@@ -210,7 +223,8 @@ final class Totp extends Otp
     }
 
     /**
-     * The time-step index for a Unix timestamp (whole periods elapsed since the epoch).
+     * The time-step index for a Unix timestamp: whole periods elapsed since the epoch, rounded down, so a time
+     * before the epoch is a negative step rather than step 0.
      *
      * @param int $timestamp
      *
@@ -218,6 +232,9 @@ final class Totp extends Otp
      */
     private function counterAt(int $timestamp): int
     {
-        return intdiv($timestamp - $this->epoch, max(1, $this->period));
+        $elapsed = $timestamp - $this->epoch;
+        $step = intdiv($elapsed, $this->period);
+
+        return $elapsed < 0 && $elapsed % $this->period !== 0 ? $step - 1 : $step;
     }
 }

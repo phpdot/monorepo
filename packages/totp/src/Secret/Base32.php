@@ -56,11 +56,12 @@ final class Base32
     }
 
     /**
-     * Decode Base32 (any case, padding and whitespace ignored) to raw bytes.
+     * Decode Base32 (any case, padding and whitespace ignored) to raw bytes. Only the one spelling `encode()`
+     * gives for those bytes is accepted, so two different strings never decode to the same secret.
      *
      * @param string $base32
      *
-     * @throws InvalidSecretException if a character is outside the Base32 alphabet
+     * @throws InvalidSecretException if a character is outside the alphabet, or the spelling is not canonical
      *
      * @return string
      */
@@ -90,6 +91,14 @@ final class Base32
                 $bitsLeft -= 8;
                 $output .= chr(($buffer >> $bitsLeft) & 0xff);
             }
+        }
+
+        if ($bitsLeft >= 5) {
+            throw new InvalidSecretException('Invalid Base32 length: no whole byte ends on its last character.');
+        }
+
+        if (($buffer & ((1 << $bitsLeft) - 1)) !== 0) {
+            throw new InvalidSecretException('Invalid Base32: its last character carries bits beyond the last byte.');
         }
 
         return $output;

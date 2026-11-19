@@ -39,8 +39,9 @@ final class Hotp extends Otp
     /**
      * Verify a code at `$counter`, optionally looking ahead `$window` counters.
      *
-     * On success the returned {@see Verification} carries the matched counter —
-     * store it as your new counter to resynchronise and prevent reuse.
+     * `$counter` is the next counter not yet used. On success the returned
+     * {@see Verification} carries the matched counter: store that counter plus one
+     * as the next, which resynchronises and refuses the same code again.
      *
      * @param string $otp
      * @param int $counter
