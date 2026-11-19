@@ -19,9 +19,9 @@ message replay, a set of Symfony Console commands for operating queues, and a co
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/console` | `^0.6` |
+| `phpdot/console` | `^0.7` |
 | `php-amqplib/php-amqplib` | `^3.0` |
-| `phpdot/contracts` | `^0.6` |
+| `phpdot/contracts` | `^0.7` |
 | `symfony/console` | `^8.0` |
 
 php-amqplib brings `ext-sockets` and `ext-mbstring`. `phpdot/container` is a dev-only suggestion — the

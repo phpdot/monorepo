@@ -20,8 +20,8 @@ rather than being guessed.
 |---|---|
 | PHP | `>= 8.5` |
 | `composer-runtime-api` | `^2.2` |
-| `phpdot/config` | `^0.6` |
-| `phpdot/package` | `^0.6` |
+| `phpdot/config` | `^0.7` |
+| `phpdot/package` | `^0.7` |
 
 `phpdot/container` is a dev-only suggestion — the `#[Config('path')]` / binding attributes are inert
 until a phpdot application reflects them.

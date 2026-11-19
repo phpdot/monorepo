@@ -26,8 +26,8 @@ A PSR-3 / Monolog writer for the PHPdot observability engine.
 | Requirement | Constraint |
 |---|---|
 | PHP | `>= 8.5` |
-| `phpdot/contracts` | `^0.6` |
-| `phpdot/logs` | `^0.6` — `TracerLogger` renders `exception` context through the engine's `_e()` |
+| `phpdot/contracts` | `^0.7` |
+| `phpdot/logs` | `^0.7` — `TracerLogger` renders `exception` context through the engine's `_e()` |
 | `psr/log` | `^3.0` |
 
 `phpdot/container` is `require-dev` only (and a `suggest` entry) — the `#[Singleton]` attributes in

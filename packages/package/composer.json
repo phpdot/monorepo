@@ -18,7 +18,7 @@
     "require": {
         "php": ">=8.5",
         "composer-runtime-api": "^2.2",
-        "phpdot/container": "^0.6",
+        "phpdot/container": "^0.7",
         "symfony/console": "^8.0"
     },
     "require-dev": {

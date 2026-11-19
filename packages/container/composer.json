@@ -21,8 +21,8 @@
         "php": ">=8.5",
         "composer-runtime-api": "^2.2",
         "php-di/php-di": "^7.0",
-        "phpdot/attribute": "^0.6",
-        "phpdot/contracts": "^0.6",
+        "phpdot/attribute": "^0.7",
+        "phpdot/contracts": "^0.7",
         "psr/container": "^2.0",
         "symfony/console": "^8.0"
     },
