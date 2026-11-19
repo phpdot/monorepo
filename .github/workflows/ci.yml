@@ -256,6 +256,16 @@ jobs:
           fi
           php -r 'exit(extension_loaded("swoole") ? 0 : 1);'
 
+      # The rehearsal resolves every package's deps fresh, so GitHub-hosted
+      # dists (phpstan, php-cs-fixer) re-download 45 times per run and
+      # codeload's anonymous per-IP quota rate-limits it (HTTP 429) partway
+      # through. A shared composer cache means each dist downloads once.
+      - name: Cache composer dists
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/composer
+          key: rehearsal-composer-${{ hashFiles('composer.lock', 'packages/*/composer.json') }}
+
       - name: Standalone composer check per package
         run: |
           set -euo pipefail
